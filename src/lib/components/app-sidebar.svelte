@@ -50,7 +50,7 @@
 					</Avatar.Root>
 					<h1 class="text-2xl font-bold">Botender</h1>
 				</div> -->
-				<h1 class="ml-2 text-2xl font-bold">Botender</h1>
+				<h1 class="p-2 text-2xl font-bold">Botender</h1>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 	</Sidebar.Header>
