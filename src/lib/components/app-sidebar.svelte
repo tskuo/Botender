@@ -1,12 +1,14 @@
 <script lang="ts">
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
 	import FoldersIcon from '@lucide/svelte/icons/folders';
 	import WebhookIcon from '@lucide/svelte/icons/webhook';
-
-	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 
 	const items = [
 		{
@@ -73,5 +75,31 @@
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
 	</Sidebar.Content>
-	<Sidebar.Footer />
+	<Sidebar.Footer>
+		<Sidebar.Menu>
+			<Sidebar.MenuItem>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<Sidebar.MenuButton
+								{...props}
+								class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+							>
+								Username
+								<ChevronUpIcon class="ml-auto" />
+							</Sidebar.MenuButton>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content side="top" class="w-(--bits-dropdown-menu-anchor-width)">
+						<!-- <DropdownMenu.Item>
+							<span>Account</span>
+						</DropdownMenu.Item> -->
+						<DropdownMenu.Item>
+							<span>Sign out</span>
+						</DropdownMenu.Item>
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+			</Sidebar.MenuItem>
+		</Sidebar.Menu>
+	</Sidebar.Footer>
 </Sidebar.Root>
