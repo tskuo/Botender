@@ -19,6 +19,8 @@
 		{ value: 'task-new', label: 'New task' }
 	];
 
+	let { data } = $props();
+
 	let scope = $state('overall');
 
 	const triggerContent = $derived(
@@ -56,15 +58,11 @@
 					</Select.Root>
 				</div>
 				<div class="p-2">
-					<div class="pt-4">
-						<PlaygroundTask name="Welcome Newcomers" />
-					</div>
-					<div class="pt-4">
-						<PlaygroundTask name="Redirect Ads" />
-					</div>
-					<div class="pt-4">
-						<PlaygroundTask name="Answer Repeated Questions" />
-					</div>
+					{#each data.tasks as task (task.id)}
+						<div class="pt-4">
+							<PlaygroundTask name={task.name} trigger={task.trigger} action={task.action} />
+						</div>
+					{/each}
 				</div>
 			</ScrollArea>
 		</div>
@@ -73,11 +71,11 @@
 				<div></div>
 				<div class="flex flex-col gap-2">
 					<Select.Root type="single">
-						<Select.Trigger class="w-[180px]"></Select.Trigger>
+						<Select.Trigger class="w-[180px]">Select a channel</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="light">Light</Select.Item>
-							<Select.Item value="dark">Dark</Select.Item>
-							<Select.Item value="system">System</Select.Item>
+							<Select.Item value="introducion">#introducion</Select.Item>
+							<Select.Item value="random">#random</Select.Item>
+							<Select.Item value="faq">#faq</Select.Item>
 						</Select.Content>
 					</Select.Root>
 					<Textarea placeholder="Enter user message ... " />
