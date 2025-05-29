@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import UndoIcon from '@lucide/svelte/icons/undo';
 	import PlayIcon from '@lucide/svelte/icons/play';
 
 	let { data } = $props();
@@ -23,7 +24,6 @@
 	// scopes.push({ value: 'new', label: 'New task' });
 
 	let scope = $state('overall');
-	let selectedTask = $derived(playgroundTasks.find((task: Task) => task.id === scope));
 
 	const triggerContent = $derived(
 		scopes.find((s) => s.value === scope)?.label ?? 'Select the scope'
@@ -33,15 +33,26 @@
 <div class="flex h-screen w-full flex-col">
 	<div class="flex items-center justify-between p-2">
 		<h2 class="p-2 font-bold">Playground</h2>
-		<Button
-			variant="secondary"
-			onclick={() => {
-				console.log($state.snapshot(playgroundTasks));
-			}}
-		>
-			<PaintbrushIcon class="size-4" />
-			Clear
-		</Button>
+		<div class="flex gap-2">
+			<Button
+				variant="secondary"
+				onclick={() => {
+					playgroundTasks = data.tasks;
+				}}
+			>
+				<UndoIcon class="size-4" />
+				Reset
+			</Button>
+			<Button
+				variant="secondary"
+				onclick={() => {
+					console.log($state.snapshot(playgroundTasks));
+				}}
+			>
+				<PaintbrushIcon class="size-4" />
+				Clear
+			</Button>
+		</div>
 	</div>
 	<Separator />
 	<div class="grid flex-1 grid-cols-5">
