@@ -10,18 +10,19 @@
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import PlayIcon from '@lucide/svelte/icons/play';
 
-	const scopes = [
-		{ value: 'overall', label: 'Overall behaviors' },
-		{ value: 'triggers', label: 'Triggers' },
-		{ value: 'task-1', label: 'Task: Wecome Newcomers' },
-		{ value: 'task-2', label: 'Task: Redirect Ads' },
-		{ value: 'task-3', label: 'Task: Answer Repeated Questions' },
-		{ value: 'task-new', label: 'New task' }
-	];
-
 	let { data } = $props();
 
+	const scopes = [
+		{ value: 'overall', label: 'Overall behaviors' },
+		{ value: 'triggers', label: 'Triggers' }
+	];
+	data.tasks.forEach((task: Task) => {
+		scopes.push({ value: task.id, label: 'Task: ' + task.name });
+	});
+	scopes.push({ value: 'new', label: 'New task' });
+
 	let scope = $state('overall');
+	let selectedTask = $derived(data.tasks.find((task: Task) => task.id === scope));
 
 	const triggerContent = $derived(
 		scopes.find((s) => s.value === scope)?.label ?? 'Select the scope'
@@ -43,7 +44,7 @@
 				<h3 class="p-2">Scope</h3>
 				<div class="p-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
-						<Select.Trigger class="w-[180px]">
+						<Select.Trigger class="w-full">
 							{triggerContent}
 						</Select.Trigger>
 						<Select.Content>
@@ -58,11 +59,36 @@
 					</Select.Root>
 				</div>
 				<div class="p-2">
-					{#each data.tasks as task (task.id)}
+					{#if scope === 'overall'}
+						{#each data.tasks as task (task.id)}
+							<div class="pt-4">
+								<PlaygroundTask name={task.name} trigger={task.trigger} action={task.action} />
+							</div>
+						{/each}
+					{:else if scope === 'triggers'}
+						{#each data.tasks as task (task.id)}
+							<div class="pt-4">
+								<PlaygroundTask
+									name={task.name}
+									trigger={task.trigger}
+									action={task.action}
+									triggersOnly={true}
+								/>
+							</div>
+						{/each}
+					{:else if scope === 'new'}
 						<div class="pt-4">
-							<PlaygroundTask name={task.name} trigger={task.trigger} action={task.action} />
+							<PlaygroundTask />
 						</div>
-					{/each}
+					{:else}
+						<div class="pt-4">
+							<PlaygroundTask
+								name={selectedTask.name}
+								trigger={selectedTask.trigger}
+								action={selectedTask.action}
+							/>
+						</div>
+					{/if}
 				</div>
 			</ScrollArea>
 		</div>
