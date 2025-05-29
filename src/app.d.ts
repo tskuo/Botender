@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
@@ -8,6 +10,14 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	type Task = {
+		id: string;
+		action: string;
+		createAt: Timestamp;
+		name: string;
+		trigger: string;
+	};
 }
 
 export {};
