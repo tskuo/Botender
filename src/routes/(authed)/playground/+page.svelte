@@ -1,6 +1,6 @@
 <script lang="ts">
 	// import my components
-	import PlaygroundTask from '$lib/components/PlaygroundTask.svelte';
+	import PlaygroundTaskSection from '$lib/components/PlaygroundTaskSection.svelte';
 
 	// import ui components
 	import * as Form from '$lib/components/ui/form/index.js';
@@ -108,7 +108,7 @@
 					{#each playgroundTasks as task (task.id)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === task.id}
 							<div class="pt-4">
-								<PlaygroundTask
+								<PlaygroundTaskSection
 									bind:name={task.name}
 									bind:trigger={task.trigger}
 									bind:action={task.action}
