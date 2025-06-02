@@ -180,6 +180,8 @@
 	--color-sidebar-ring: var(--sidebar-ring);
 
 	--color-discord-yellow: oklch(0.907 0.1585 104.04);
+	--color-discord-green: oklch(0.8335 0.2088 151.18);
+	--color-discord-pink: oklch(0.7106 0.2509 339.8);
 }
 
 @layer base {
