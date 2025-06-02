@@ -26,7 +26,7 @@
 			<Card.Content>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">Channel</h3>
+					<h3 class="font-semibold">Introduction</h3>
 				</div>
 				<div class="mb-3 flex">
 					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />

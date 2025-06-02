@@ -23,19 +23,21 @@
 	import BotIcon from '@lucide/svelte/icons/bot';
 
 	// import form-related things
-	import { playgroundRunFormSchema, type PlaygroundRunFormSchema } from '$lib/schema';
+	import { playgroundCreateCaseSchema, type PlaygroundCreateCaseSchema } from '$lib/schema';
 	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import type { PageProps } from './$types';
 
+	// data props
 	let { data }: PageProps = $props();
 
+	// initialize form
 	const form = superForm(data.form, {
-		validators: zodClient(playgroundRunFormSchema)
+		validators: zodClient(playgroundCreateCaseSchema)
 	});
-
 	const { form: formData, enhance } = form;
 
+	// initialize states
 	let playgroundTasks = $state(data.tasks);
 
 	const scopes = [
@@ -156,45 +158,53 @@
 							</div>
 							<p class="mb-3 pl-6">{displayedBotResponse}</p>
 						{/if}
+						<form method="POST" use:enhance action="?/createCase">
+							<Form.Field {form} name="channel">
+								<Form.Control>
+									{#snippet children({ props })}
+										<!-- <Form.Label>Channel</Form.Label> -->
+										<Input type="hidden" {...props} value={displayedChannel} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field {form} name="userMessage">
+								<Form.Control>
+									{#snippet children({ props })}
+										<!-- <Form.Label>User Message</Form.Label> -->
+										<Input type="hidden" {...props} bind:value={displayedUserMessage} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field {form} name="triggeredTask">
+								<Form.Control>
+									{#snippet children({ props })}
+										<!-- <Form.Label>Triggered Task</Form.Label> -->
+										<Input type="hidden" {...props} bind:value={triggeredTask} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field {form} name="botResponse">
+								<Form.Control>
+									{#snippet children({ props })}
+										<!-- <Form.Label>Bot Response</Form.Label> -->
+										<Input type="hidden" {...props} bind:value={displayedBotResponse} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Button>Save this case</Form.Button>
+						</form>
 					{:else}
 						<div></div>
 					{/if}
 				</div>
-				<!-- <form method="POST" use:enhance>
-					<Form.Field {form} name="channel">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Channel</Form.Label>
-								<Select.Root type="single" bind:value={$formData.channel} name={props.name}>
-									<Select.Trigger {...props}>
-										{$formData.channel ? $formData.channel : 'Select a channel'}
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Item value="#introduction" label="#introduction" />
-										<Select.Item value="#random" label="#random" />
-										<Select.Item value="#faq" label="#faq" />
-									</Select.Content>
-								</Select.Root>
-							{/snippet}
-						</Form.Control>
-						<Form.Description>Select a channel where the user sends the message to</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-					<Form.Field {form} name="userMessage">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Channel</Form.Label>
-								<Input {...props} bind:value={$formData.userMessage} />
-							{/snippet}
-						</Form.Control>
-						<Form.Description>This is user's message.</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-					<Form.Button class="w-fit self-end">
-						<PlayIcon class="size-4" />
-						Run
-					</Form.Button>
-				</form> -->
 				<div class="flex flex-col gap-2">
 					<Select.Root type="single" bind:value={selectedChannel}>
 						<Select.Trigger class="w-[180px]">

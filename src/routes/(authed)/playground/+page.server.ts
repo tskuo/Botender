@@ -1,7 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
-import { playgroundRunFormSchema } from '$lib/schema';
+import { playgroundCreateCaseSchema } from '$lib/schema.js';
+
 import { zod } from 'sveltekit-superforms/adapters';
 
 export const load: PageServerLoad = async ({ fetch }) => {
@@ -11,7 +12,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
 
 		return {
 			tasks,
-			form: await superValidate(zod(playgroundRunFormSchema))
+			form: await superValidate(zod(playgroundCreateCaseSchema))
 		};
 	} catch {
 		throw error(404, 'Fail to fetch tasks.');
@@ -19,15 +20,23 @@ export const load: PageServerLoad = async ({ fetch }) => {
 };
 
 export const actions: Actions = {
-	default: async (event) => {
-		const formData = await event.request.formData();
-		const form = await superValidate(formData, zod(playgroundRunFormSchema));
-		// const form = await superValidate(event, zod(playgroundRunFormSchema));
+	createCase: async (event) => {
+		const form = await superValidate(event, zod(playgroundCreateCaseSchema));
+
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-		console.log(formData.get('playgroundTasks'));
-		console.log(form.data.channel);
+
+		const resCase = await event.fetch('/api/cases', {
+			method: 'POST',
+			body: JSON.stringify({ form }),
+			headers: {
+				'Content-Type': 'appplication/json'
+			}
+		});
+
+		console.log(resCase.ok);
+
 		return {
 			form
 		};
