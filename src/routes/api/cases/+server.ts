@@ -1,6 +1,29 @@
 import { json, error } from '@sveltejs/kit';
-import { serverTimestamp, addDoc, collection } from 'firebase/firestore';
+import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '$lib/firebase';
+
+export const GET = async () => {
+	try {
+		const querySnapshot = await getDocs(
+			query(collection(db, 'cases'), orderBy('createAt', 'desc'))
+		);
+		const res: Case[] = [];
+		querySnapshot.forEach((doc) => {
+			const c = {
+				id: doc.id,
+				botResponse: doc.data().botResponse,
+				channel: doc.data().channel,
+				createAt: doc.data().createAt,
+				triggeredTask: doc.data().triggeredTask,
+				userMessage: doc.data().userMessage
+			};
+			res.push(c);
+		});
+		return json(res);
+	} catch {
+		throw error(400, 'Fail to fetch data from Firestore.');
+	}
+};
 
 export const POST = async ({ request }) => {
 	try {

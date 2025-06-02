@@ -18,6 +18,15 @@ declare global {
 		name: string;
 		trigger: string;
 	};
+
+	type Case = {
+		id: string;
+		botResponse: string;
+		channel: string;
+		createAt: Timestamp;
+		triggeredTask: string;
+		userMessage: string;
+	};
 }
 
 export {};

@@ -11,6 +11,14 @@
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
+
+	let {
+		channel = '',
+		userMessage = '',
+		triggeredTask = '0',
+		botResponse = '',
+		tasks = []
+	} = $props();
 </script>
 
 <Dialog.Root>
@@ -26,25 +34,21 @@
 			<Card.Content>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">Introduction</h3>
+					<h3 class="font-semibold">{channel}</h3>
 				</div>
 				<div class="mb-3 flex">
 					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
-					<p>
-						Hello, everyone! My name is Min Park (she/her), a Ph.D. student from Korea Institute of
-						Science and Technology (KAIST), as well as the moderator of this server.
-					</p>
+					<p>{userMessage}</p>
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">Welcome Newcomers</h3>
+					<h3 class="font-semibold">
+						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
+					</h3>
 				</div>
 				<div class="mb-3 flex">
 					<BotIcon class="mt-1 mr-2 size-4 flex-none" />
-					<p>
-						Since you love games and musicals, you might be interested in joining channels like
-						#sports, #plants, and #cafe!
-					</p>
+					<p>{botResponse}</p>
 				</div>
 			</Card.Content>
 			<Card.Footer>
