@@ -9,11 +9,13 @@
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
+	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
+	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
 </script>
 
 <Dialog.Root>
 	<Dialog.Trigger>
-		<Card.Root class="text-left">
+		<Card.Root class="text-left hover:bg-gray-50">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
@@ -45,9 +47,18 @@
 					</p>
 				</div>
 			</Card.Content>
-			<!-- <Card.Footer>
-				<p>Card Footer</p>
-			</Card.Footer> -->
+			<Card.Footer>
+				<div class="flex w-full items-center justify-around">
+					<div class="flex items-center">
+						<ThumbsUpIcon class="mr-2 size-5" />
+						<p>1</p>
+					</div>
+					<div class="flex items-center">
+						<ThumbsDownIcon class="mr-2 size-5" />
+						<p>1</p>
+					</div>
+				</div>
+			</Card.Footer>
 		</Card.Root>
 	</Dialog.Trigger>
 	<Dialog.Content>
