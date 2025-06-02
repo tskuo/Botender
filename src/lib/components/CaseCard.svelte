@@ -18,7 +18,9 @@
 		userMessage = '',
 		triggeredTask = '0',
 		botResponse = '',
-		tasks = []
+		tasks = [],
+		testCaseBadge = true,
+		checkingBadge = true
 	} = $props();
 
 	const textLengthCap = 200;
@@ -30,8 +32,12 @@
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
-					<Badge variant="outline">worth checking</Badge>
-					<Badge variant="outline">test case</Badge>
+					{#if checkingBadge}
+						<Badge class="bg-discord-yellow text-black">worth checking</Badge>
+					{/if}
+					{#if testCaseBadge}
+						<Badge>test case</Badge>
+					{/if}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
@@ -87,7 +93,14 @@
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Case ID: {id}</Dialog.Title>
+			<Dialog.Title class="mb-2 flex gap-2">
+				{#if checkingBadge}
+					<Badge class="bg-discord-yellow text-black">worth checking</Badge>
+				{/if}
+				{#if testCaseBadge}
+					<Badge>test case</Badge>
+				{/if}
+			</Dialog.Title>
 			<Dialog.Description>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
@@ -95,6 +108,7 @@
 						{channel.startsWith('#') ? channel.slice(1) : channel}
 					</h3>
 				</div>
+
 				<div class="mb-4 flex">
 					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
 					<p>{userMessage}</p>
@@ -105,7 +119,7 @@
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
 					</h3>
 				</div>
-				<div class="mb-1 flex">
+				<div class="mb-4 flex">
 					{#if botResponse !== ''}
 						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
 
@@ -118,6 +132,7 @@
 						</p>
 					{/if}
 				</div>
+				<p>Case ID: {id}</p>
 			</Dialog.Description>
 		</Dialog.Header>
 	</Dialog.Content>
