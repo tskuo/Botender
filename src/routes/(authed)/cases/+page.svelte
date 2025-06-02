@@ -16,6 +16,7 @@
 	<div class="grid auto-rows-fr gap-2 p-4 md:grid-cols-2 lg:grid-cols-3">
 		{#each data.cases as c (c.id)}
 			<CaseCard
+				id={c.id}
 				channel={c.channel}
 				userMessage={c.userMessage}
 				triggeredTask={c.triggeredTask}

@@ -13,6 +13,7 @@
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
 
 	let {
+		id = '',
 		channel = '',
 		userMessage = '',
 		triggeredTask = '0',
@@ -86,10 +87,37 @@
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Are you sure absolutely sure?</Dialog.Title>
+			<Dialog.Title>Case ID: {id}</Dialog.Title>
 			<Dialog.Description>
-				This action cannot be undone. This will permanently delete your account and remove your data
-				from our servers.
+				<div class="mb-2 flex items-center">
+					<HashIcon class="mr-2 size-4" />
+					<h3 class="font-semibold">
+						{channel.startsWith('#') ? channel.slice(1) : channel}
+					</h3>
+				</div>
+				<div class="mb-4 flex">
+					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
+					<p>{userMessage}</p>
+				</div>
+				<div class="mb-2 flex items-center">
+					<WrenchIcon class="mr-2 size-4" />
+					<h3 class="font-semibold">
+						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
+					</h3>
+				</div>
+				<div class="mb-1 flex">
+					{#if botResponse !== ''}
+						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+
+						<p>
+							{#if botResponse.length <= textLengthCap}
+								{botResponse}
+							{:else}
+								{botResponse.substring(0, textLengthCap)}...
+							{/if}
+						</p>
+					{/if}
+				</div>
 			</Dialog.Description>
 		</Dialog.Header>
 	</Dialog.Content>
