@@ -11,6 +11,7 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
+	import * as Alert from '$lib/components/ui/alert/index.js';
 
 	// import lucide icons
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
@@ -21,6 +22,7 @@
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
+	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
 
 	// import form-related things
 	import { playgroundCreateCaseSchema, type PlaygroundCreateCaseSchema } from '$lib/schema';
@@ -33,7 +35,17 @@
 
 	// initialize form
 	const form = superForm(data.form, {
-		validators: zodClient(playgroundCreateCaseSchema)
+		validators: zodClient(playgroundCreateCaseSchema),
+		onSubmit() {
+			disalbeCreateCaseButton = true;
+		},
+		onError() {
+			disalbeCreateCaseButton = false;
+		},
+		onUpdated() {
+			disalbeCreateCaseButton = true;
+			savedCase = true;
+		}
 	});
 	const { form: formData, enhance } = form;
 
@@ -58,6 +70,8 @@
 	let triggeredTask = $state('');
 	let running = $state(false);
 	let showCase = $state(false);
+	let disalbeCreateCaseButton = $state(true);
+	let savedCase = $state(false);
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -199,7 +213,19 @@
 								<Form.Description />
 								<Form.FieldErrors />
 							</Form.Field>
-							<Form.Button>Save this case</Form.Button>
+							{#if savedCase}
+								<Alert.Root>
+									<CircleCheckIcon class="size-4" />
+									<Alert.Title>Success!</Alert.Title>
+									<Alert.Description>This case is saved in the database.</Alert.Description>
+								</Alert.Root>
+							{:else}
+								<Form.Button
+									disabled={running || !showCase || disalbeCreateCaseButton || savedCase}
+								>
+									Save this case
+								</Form.Button>
+							{/if}
 						</form>
 					{:else}
 						<div></div>
@@ -241,6 +267,8 @@
 							triggeredTask = taskId;
 							displayedBotResponse = botResponse;
 							running = false;
+							disalbeCreateCaseButton = false;
+							savedCase = false;
 							enteredUserMessage = '';
 						}}
 					>
