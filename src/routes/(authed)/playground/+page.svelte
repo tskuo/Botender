@@ -209,7 +209,7 @@
 					<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
 					<Button
 						class="w-fit self-end"
-						disabled={running || enteredUserMessage.trim() === ''}
+						disabled={running || enteredUserMessage.trim() === '' || selectedChannel === ''}
 						onclick={async () => {
 							running = true;
 							showCase = true;
