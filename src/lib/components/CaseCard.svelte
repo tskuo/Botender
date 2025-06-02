@@ -23,7 +23,7 @@
 
 <Dialog.Root>
 	<Dialog.Trigger>
-		<Card.Root class="text-left">
+		<Card.Root class="h-full w-full text-left">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
