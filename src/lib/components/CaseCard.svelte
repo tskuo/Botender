@@ -19,6 +19,8 @@
 		botResponse = '',
 		tasks = []
 	} = $props();
+
+	const textLengthCap = 200;
 </script>
 
 <Dialog.Root>
@@ -34,11 +36,19 @@
 			<Card.Content>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">{channel}</h3>
+					<h3 class="font-semibold">
+						{channel.startsWith('#') ? channel.slice(1) : channel}
+					</h3>
 				</div>
-				<div class="mb-3 flex">
+				<div class="mb-4 flex">
 					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
-					<p>{userMessage}</p>
+					<p>
+						{#if userMessage.length <= textLengthCap}
+							{userMessage}
+						{:else}
+							{userMessage.substring(0, textLengthCap)}...
+						{/if}
+					</p>
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
@@ -46,12 +56,21 @@
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
 					</h3>
 				</div>
-				<div class="mb-3 flex">
-					<BotIcon class="mt-1 mr-2 size-4 flex-none" />
-					<p>{botResponse}</p>
+				<div class="mb-1 flex">
+					{#if botResponse !== ''}
+						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+
+						<p>
+							{#if botResponse.length <= textLengthCap}
+								{botResponse}
+							{:else}
+								{botResponse.substring(0, textLengthCap)}...
+							{/if}
+						</p>
+					{/if}
 				</div>
 			</Card.Content>
-			<Card.Footer>
+			<Card.Footer class="mt-auto">
 				<div class="flex w-full items-center justify-around">
 					<div class="flex items-center">
 						<ThumbsUpIcon class="mr-2 size-5" />
