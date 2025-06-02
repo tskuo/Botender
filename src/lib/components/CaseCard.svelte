@@ -15,7 +15,7 @@
 
 <Dialog.Root>
 	<Dialog.Trigger>
-		<Card.Root class="text-left hover:bg-gray-50">
+		<Card.Root class="text-left">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
