@@ -1,8 +1,9 @@
 <script lang="ts">
+	// import ui components
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Avatar from '$lib/components/ui/avatar/index.js';
 
+	// import lucide icons
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';

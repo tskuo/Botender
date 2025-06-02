@@ -53,17 +53,14 @@
 	let enteredUserMessage = $state('');
 	let displayedUserMessage = $state('');
 	let displayedBotResponse = $state('');
-	let channel = $state('');
-	let userMessage = $state('');
 	let triggeredTask = $state('');
-	let reply = $state('');
 	let running = $state(false);
 	let showCase = $state(false);
 </script>
 
 <div class="flex h-screen w-full flex-col">
 	<div class="flex items-center justify-between p-2">
-		<h2 class="p-2 font-bold">Playground</h2>
+		<h2 class="p-2 text-xl font-bold">Playground</h2>
 		<div class="flex gap-2">
 			<Button
 				variant="secondary"
