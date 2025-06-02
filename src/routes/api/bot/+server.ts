@@ -30,7 +30,6 @@ export const POST = async ({ request }) => {
 		const response = result.response;
 		const taskId = response.text().trim();
 
-		console.log('taskId: ', taskId);
 		let botResponse = '';
 
 		if (taskId !== '0') {
@@ -40,7 +39,6 @@ export const POST = async ({ request }) => {
 				return json({ taskId: taskId, botResponse: botResponse }, { status: 201 });
 			}
 
-			console.log('selectedTask id:', selectedTask.id);
 			let agentSystemPrompt =
 				"You are a helpful assistant that replies to a user's message based on the following instructions:\n";
 			agentSystemPrompt = agentSystemPrompt.concat(
