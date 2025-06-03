@@ -3,8 +3,8 @@
 </script>
 
 <div class="flex h-screen w-full flex-col">
-	<div class="p-2">
-		<h2 class="p-2 text-xl font-bold">Dashboard</h2>
+	<div class="sticky top-0 z-10 bg-white">
+		<h2 class="p-4 text-xl font-bold">Dashboard</h2>
+		<Separator />
 	</div>
-	<Separator />
 </div>

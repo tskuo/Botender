@@ -75,30 +75,33 @@
 </script>
 
 <div class="flex h-screen w-full flex-col">
-	<div class="flex items-center justify-between p-2">
-		<h2 class="p-2 text-xl font-bold">Playground</h2>
-		<div class="flex gap-2">
-			<Button
-				variant="secondary"
-				onclick={() => {
-					playgroundTasks = data.tasks;
-				}}
-			>
-				<UndoIcon class="size-4" />
-				Reset
-			</Button>
-			<Button
-				variant="secondary"
-				onclick={() => {
-					showCase = false;
-				}}
-			>
-				<PaintbrushIcon class="size-4" />
-				Clear
-			</Button>
+	<div class="sticky top-0 z-10 bg-white">
+		<div class="flex items-center justify-between p-3">
+			<h2 class=" text-xl font-bold">Playground</h2>
+			<div class="flex gap-2">
+				<Button
+					variant="secondary"
+					onclick={() => {
+						playgroundTasks = data.tasks;
+					}}
+				>
+					<UndoIcon class="size-4" />
+					Reset
+				</Button>
+				<Button
+					variant="secondary"
+					onclick={() => {
+						showCase = false;
+					}}
+				>
+					<PaintbrushIcon class="size-4" />
+					Clear
+				</Button>
+			</div>
 		</div>
+		<Separator />
 	</div>
-	<Separator />
+
 	<div class="grid flex-1 md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
 			<ScrollArea class="h-full w-full">

@@ -34,14 +34,15 @@
 </script>
 
 <div class="flex h-screen w-full flex-col">
-	<div class="flex items-center p-2">
-		<Button href="/proposals" variant="ghost" size="icon">
-			<ChevronLeftIcon />
-		</Button>
-		<!-- <ChevronLeftIcon class="size-4" /> -->
-		<h2 class="p-2 text-xl font-bold">Proposal: What to do when the channels are irrelevant</h2>
+	<div class="sticky top-0 z-10 bg-white">
+		<div class="flex items-center p-3">
+			<Button href="/proposals" variant="ghost" size="icon">
+				<ChevronLeftIcon />
+			</Button>
+			<h2 class="text-xl font-bold">Proposal: What to do when the channels are irrelevant</h2>
+		</div>
+		<Separator />
 	</div>
-	<Separator />
 	<div class="grid flex-auto md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
 			<div class="p-2">
