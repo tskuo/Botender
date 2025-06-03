@@ -26,7 +26,43 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				<Table.Row>
+				<Table.Row class="h-16">
+					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
+					<Table.Cell>filzzz</Table.Cell>
+					<Table.Cell>xacaranda</Table.Cell>
+					<Table.Cell>
+						<span class="text-discord-green mr-2">1</span> /
+						<span class="text-discord-pink mx-2">1</span> /
+						<span class=" ml-2">1</span>
+					</Table.Cell>
+					<Table.Cell>
+						<div class="flex items-center">
+							<ArrowBigUpIcon class="mr-2 size-4" />
+							<p class="mr-8">0</p>
+							<ArrowBigDownIcon class="mr-2 size-4" />
+							<p>0</p>
+						</div>
+					</Table.Cell>
+				</Table.Row>
+				<Table.Row class="h-16">
+					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
+					<Table.Cell>filzzz</Table.Cell>
+					<Table.Cell>xacaranda</Table.Cell>
+					<Table.Cell>
+						<span class="text-discord-green mr-2">1</span> /
+						<span class="text-discord-pink mx-2">1</span> /
+						<span class=" ml-2">1</span>
+					</Table.Cell>
+					<Table.Cell>
+						<div class="flex items-center">
+							<ArrowBigUpIcon class="mr-2 size-4" />
+							<p class="mr-8">0</p>
+							<ArrowBigDownIcon class="mr-2 size-4" />
+							<p>0</p>
+						</div>
+					</Table.Cell>
+				</Table.Row>
+				<Table.Row class="h-16">
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
