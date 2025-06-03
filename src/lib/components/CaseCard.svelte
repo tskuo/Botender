@@ -43,7 +43,7 @@
 			<Card.Content>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">
+					<h3 class="font-medium">
 						{channel.startsWith('#') ? channel.slice(1) : channel}
 					</h3>
 				</div>
@@ -59,7 +59,7 @@
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">
+					<h3 class="font-medium">
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
 					</h3>
 				</div>
@@ -104,7 +104,7 @@
 			<Dialog.Description>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">
+					<h3 class="font-medium">
 						{channel.startsWith('#') ? channel.slice(1) : channel}
 					</h3>
 				</div>
@@ -115,7 +115,7 @@
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
-					<h3 class="font-semibold">
+					<h3 class="font-medium">
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
 					</h3>
 				</div>

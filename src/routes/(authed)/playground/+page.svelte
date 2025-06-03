@@ -102,7 +102,7 @@
 	<div class="grid flex-1 md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
 			<ScrollArea class="h-full w-full">
-				<h3 class="p-2">Scope</h3>
+				<h3 class="p-2 font-medium">Scope</h3>
 				<div class="px-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
 						<Select.Trigger class="w-full">

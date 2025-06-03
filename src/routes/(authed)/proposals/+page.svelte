@@ -26,7 +26,7 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				<Table.Row class="h-16">
+				<Table.Row class="h-14">
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
@@ -44,7 +44,7 @@
 						</div>
 					</Table.Cell>
 				</Table.Row>
-				<Table.Row class="h-16">
+				<Table.Row class="h-14">
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
@@ -62,7 +62,7 @@
 						</div>
 					</Table.Cell>
 				</Table.Row>
-				<Table.Row class="h-16">
+				<Table.Row class="h-14">
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>

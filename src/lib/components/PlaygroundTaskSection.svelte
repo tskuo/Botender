@@ -12,7 +12,7 @@
 
 <div class="border-l">
 	<div class="pl-3">
-		<h3 class="font-semibold">Task: {name}</h3>
+		<h3 class="font-medium">Task: {name}</h3>
 		<div class="grid w-full gap-1.5 pt-3">
 			<Label for="trigger">Trigger</Label>
 			<Textarea placeholder="Enter task trigger here." id="trigger" bind:value={trigger} />
