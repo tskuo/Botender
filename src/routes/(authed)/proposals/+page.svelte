@@ -19,11 +19,11 @@
 			<Table.Caption>A list of active proposals.</Table.Caption>
 			<Table.Header>
 				<Table.Row class="hover:bg-trasparent">
-					<Table.Head class="w-1/3">Title</Table.Head>
-					<Table.Head>Initiator</Table.Head>
-					<Table.Head>Last Edited By</Table.Head>
-					<Table.Head>Test Cases</Table.Head>
-					<Table.Head>Voting</Table.Head>
+					<Table.Head class="w-1/3"><h3>Title</h3></Table.Head>
+					<Table.Head><h3>Initiator</h3></Table.Head>
+					<Table.Head><h3>Last Edited By</h3></Table.Head>
+					<Table.Head><h3>Test Cases</h3></Table.Head>
+					<Table.Head><h3>Voting</h3></Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
