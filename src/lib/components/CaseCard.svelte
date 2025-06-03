@@ -105,7 +105,7 @@
 					<Badge>test case</Badge>
 				{/if}
 			</Dialog.Title>
-			<Dialog.Description>
+			<Dialog.Description class="text-left">
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
 					<h3 class="font-medium">

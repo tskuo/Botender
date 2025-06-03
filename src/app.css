@@ -19,14 +19,14 @@
 }
 
 @font-face {
-	font-family: 'GintoDiscord';
+	font-family: 'GintoDiscordMedium';
 	src: url('/fonts/ABCGintoDiscord-Medium.woff2') format('woff2');
 	font-weight: medium;
 	font-style: normal;
 }
 
 @font-face {
-	font-family: 'GintoDiscord';
+	font-family: 'GintoDiscordMedium';
 	src: url('/fonts/ABCGintoDiscord-MediumItalic.woff2') format('woff2');
 	font-weight: medium;
 	font-style: italic;
@@ -311,5 +311,9 @@
 	h1,
 	h2 {
 		font-family: 'GintoDiscordNord', sans-serif;
+	}
+
+	h3 {
+		font-family: 'GintoDiscordMedium', sans-serif;
 	}
 }
