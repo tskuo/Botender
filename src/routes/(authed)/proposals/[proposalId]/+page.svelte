@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
-
+	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -72,10 +72,22 @@
 		<div class="flex h-full flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
 			<div class="flex-1 overflow-hidden">
 				<div class="p-4 md:h-1/2">
-					<h3>Check test cases</h3>
-					<p class="text-muted-foreground mb-1">
-						2 people have collaboratively propose the following edit
-					</p>
+					<div class="mb-2 md:mb-0 md:flex md:justify-between">
+						<div>
+							<h3>Check test cases</h3>
+							<p class="text-muted-foreground mb-1">5 cases in total</p>
+						</div>
+						<ToggleGroup.Root
+							size="lg"
+							variant="outline"
+							type="single"
+							class="mx-auto self-start md:mr-0"
+						>
+							<ToggleGroup.Item value="good" class="px-8 text-lg">2 good</ToggleGroup.Item>
+							<ToggleGroup.Item value="bad" class="px-8 text-lg">2 bad</ToggleGroup.Item>
+							<ToggleGroup.Item value="tbd" class="px-8 text-lg">1 tbd</ToggleGroup.Item>
+						</ToggleGroup.Root>
+					</div>
 					<Carousel.Root
 						opts={{
 							align: 'start'
