@@ -9,6 +9,7 @@
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
+	import BotOffIcon from '@lucide/svelte/icons/bot-off';
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
 
@@ -74,6 +75,9 @@
 								{botResponse.substring(0, textLengthCap)}...
 							{/if}
 						</p>
+					{:else if botResponse === '' && triggeredTask !== '0'}
+						<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
+						<p>The bot chose not to respond.</p>
 					{/if}
 				</div>
 			</Card.Content>
@@ -130,6 +134,9 @@
 								{botResponse.substring(0, textLengthCap)}...
 							{/if}
 						</p>
+					{:else if botResponse === '' && triggeredTask !== '0'}
+						<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
+						<p>The bot chose not to respond.</p>
 					{/if}
 				</div>
 				<p>Case ID: {id}</p>

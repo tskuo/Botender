@@ -35,7 +35,9 @@ export const actions: Actions = {
 			}
 		});
 
-		console.log(resCase.ok);
+		if (!resCase.ok) {
+			return fail(400, { form });
+		}
 
 		return {
 			form

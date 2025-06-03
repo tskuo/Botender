@@ -6,6 +6,7 @@
 	// import lucide icons
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
+	import { goto } from '$app/navigation';
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -17,7 +18,7 @@
 		<Table.Root>
 			<Table.Caption>A list of active proposals.</Table.Caption>
 			<Table.Header>
-				<Table.Row>
+				<Table.Row class="hover:bg-trasparent">
 					<Table.Head class="w-1/3">Title</Table.Head>
 					<Table.Head>Initiator</Table.Head>
 					<Table.Head>Last Edited By</Table.Head>
@@ -26,7 +27,12 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				<Table.Row class="h-14">
+				<Table.Row
+					class="h-14 hover:cursor-pointer"
+					onclick={() => {
+						goto('/proposals/1');
+					}}
+				>
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
@@ -44,7 +50,12 @@
 						</div>
 					</Table.Cell>
 				</Table.Row>
-				<Table.Row class="h-14">
+				<Table.Row
+					class="h-14 hover:cursor-pointer"
+					onclick={() => {
+						goto('/proposals/2');
+					}}
+				>
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
@@ -62,7 +73,12 @@
 						</div>
 					</Table.Cell>
 				</Table.Row>
-				<Table.Row class="h-14">
+				<Table.Row
+					class="h-14 hover:cursor-pointer"
+					onclick={() => {
+						goto('/proposals/3');
+					}}
+				>
 					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
 					<Table.Cell>filzzz</Table.Cell>
 					<Table.Cell>xacaranda</Table.Cell>
