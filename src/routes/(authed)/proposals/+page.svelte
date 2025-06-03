@@ -14,7 +14,7 @@
 		<h2 class="p-4 text-xl font-bold">Proposals</h2>
 		<Separator />
 	</div>
-	<div class="h-full p-2">
+	<div class="h-full p-3">
 		<Table.Root>
 			<Table.Caption>A list of active proposals.</Table.Caption>
 			<Table.Header>
