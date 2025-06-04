@@ -19,6 +19,12 @@ declare global {
 		trigger: string;
 	};
 
+	type EditedTask = {
+		action: string;
+		name: string;
+		trigger: string;
+	};
+
 	type Case = {
 		id: string;
 		botResponse: string;

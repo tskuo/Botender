@@ -7,6 +7,9 @@
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
 	import { goto } from '$app/navigation';
+
+	// data props
+	let { data }: PageProps = $props();
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -27,75 +30,31 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				<Table.Row
-					class="h-14 hover:cursor-pointer"
-					onclick={() => {
-						goto('/proposals/1');
-					}}
-				>
-					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
-					<Table.Cell>filzzz</Table.Cell>
-					<Table.Cell>xacaranda</Table.Cell>
-					<Table.Cell>
-						<span class="text-discord-green mr-2">1</span> /
-						<span class="text-discord-pink mx-2">1</span> /
-						<span class=" ml-2">1</span>
-					</Table.Cell>
-					<Table.Cell>
-						<div class="flex items-center">
-							<ArrowBigUpIcon class="mr-2 size-4" />
-							<p class="mr-8">0</p>
-							<ArrowBigDownIcon class="mr-2 size-4" />
-							<p>0</p>
-						</div>
-					</Table.Cell>
-				</Table.Row>
-				<Table.Row
-					class="h-14 hover:cursor-pointer"
-					onclick={() => {
-						goto('/proposals/2');
-					}}
-				>
-					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
-					<Table.Cell>filzzz</Table.Cell>
-					<Table.Cell>xacaranda</Table.Cell>
-					<Table.Cell>
-						<span class="text-discord-green mr-2">1</span> /
-						<span class="text-discord-pink mx-2">1</span> /
-						<span class=" ml-2">1</span>
-					</Table.Cell>
-					<Table.Cell>
-						<div class="flex items-center">
-							<ArrowBigUpIcon class="mr-2 size-4" />
-							<p class="mr-8">0</p>
-							<ArrowBigDownIcon class="mr-2 size-4" />
-							<p>0</p>
-						</div>
-					</Table.Cell>
-				</Table.Row>
-				<Table.Row
-					class="h-14 hover:cursor-pointer"
-					onclick={() => {
-						goto('/proposals/3');
-					}}
-				>
-					<Table.Cell class="font-medium">What to do when the channels are irrelevant</Table.Cell>
-					<Table.Cell>filzzz</Table.Cell>
-					<Table.Cell>xacaranda</Table.Cell>
-					<Table.Cell>
-						<span class="text-discord-green mr-2">1</span> /
-						<span class="text-discord-pink mx-2">1</span> /
-						<span class=" ml-2">1</span>
-					</Table.Cell>
-					<Table.Cell>
-						<div class="flex items-center">
-							<ArrowBigUpIcon class="mr-2 size-4" />
-							<p class="mr-8">0</p>
-							<ArrowBigDownIcon class="mr-2 size-4" />
-							<p>0</p>
-						</div>
-					</Table.Cell>
-				</Table.Row>
+				{#each data.proposals as proposal (proposal.id)}
+					<Table.Row
+						class="h-14 hover:cursor-pointer"
+						onclick={() => {
+							goto(`/proposals/${proposal.id}`);
+						}}
+					>
+						<Table.Cell class="font-medium">{proposal.title}</Table.Cell>
+						<Table.Cell>{proposal.initiator}</Table.Cell>
+						<Table.Cell>placeholder</Table.Cell>
+						<Table.Cell>
+							<span class="text-discord-green mr-2">1</span> /
+							<span class="text-discord-pink mx-2">1</span> /
+							<span class=" ml-2">1</span>
+						</Table.Cell>
+						<Table.Cell>
+							<div class="flex items-center">
+								<ArrowBigUpIcon class="mr-2 size-4" />
+								<p class="mr-8">0</p>
+								<ArrowBigDownIcon class="mr-2 size-4" />
+								<p>0</p>
+							</div>
+						</Table.Cell>
+					</Table.Row>
+				{/each}
 			</Table.Body>
 		</Table.Root>
 	</div>

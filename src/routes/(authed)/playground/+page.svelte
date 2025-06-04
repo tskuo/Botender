@@ -1,6 +1,6 @@
 <script lang="ts">
 	// import my components
-	import PlaygroundTaskSection from '$lib/components/PlaygroundTaskSection.svelte';
+	import TaskSection from '$lib/components/TaskSection.svelte';
 
 	// import ui components
 	import * as Form from '$lib/components/ui/form/index.js';
@@ -28,6 +28,8 @@
 	import { playgroundCreateCaseSchema, type PlaygroundCreateCaseSchema } from '$lib/schema';
 	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+
+	// import types
 	import type { PageProps } from './$types';
 
 	// data props
@@ -124,7 +126,7 @@
 					{#each playgroundTasks as task (task.id)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === task.id}
 							<div class="pt-4">
-								<PlaygroundTaskSection
+								<TaskSection
 									bind:name={task.name}
 									bind:trigger={task.trigger}
 									bind:action={task.action}

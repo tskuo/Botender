@@ -1,6 +1,8 @@
 <script lang="ts">
 	// import my components
 	import CaseCard from '$lib/components/CaseCard.svelte';
+	import TaskSection from '$lib/components/TaskSection.svelte';
+	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -15,9 +17,18 @@
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 
+	// import types
+	import type { PageProps } from './$types';
+
+	// data props
+	let { data }: PageProps = $props();
+
+	// currently deployed, latest proposed, and user edited tasks
+	let editedTasks = $state(data.proposal.proposedTasks);
+
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
-	let sheetWidth = 0;
+	let sheetWidth = $state(0);
 
 	// Update width on mount and on resize
 	function updateSheetWidth() {
@@ -26,6 +37,7 @@
 		}
 	}
 	import { onMount } from 'svelte';
+
 	onMount(() => {
 		updateSheetWidth();
 		window.addEventListener('resize', updateSheetWidth);
@@ -39,7 +51,7 @@
 			<Button href="/proposals" variant="ghost" size="icon">
 				<ChevronLeftIcon />
 			</Button>
-			<h2 class="text-xl font-bold">Proposal: What to do when the channels are irrelevant</h2>
+			<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 		</div>
 		<Separator />
 	</div>
@@ -47,27 +59,53 @@
 		<div class="border-r p-2 md:col-span-2">
 			<div class="p-2">
 				<h3>Description</h3>
-				<p class="text-muted-foreground mb-1">filzzz initiated 18 hours ago</p>
-				<p>
-					Regardless of what a person says in the #introduction channel, the bot seems to recommend
-					all three channels (#sports, #plants, and #cafe), even if the person's introduction may be
-					irrelevant to some or all of them.
+				<p class="text-muted-foreground mb-1">
+					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
+						[],
+						{
+							year: 'numeric',
+							month: 'numeric',
+							day: 'numeric',
+							hour: '2-digit',
+							minute: '2-digit',
+							hour12: false
+						}
+					)}
 				</p>
+				<p>{data.proposal.description}</p>
 			</div>
 			<div class="p-2">
 				<h3>Discussion</h3>
-				<p class="text-muted-foreground mb-1">3 people have joined the discussion on Discord</p>
-				<p>
-					Regardless of what a person says in the #introduction channel, the bot seems to recommend
-					all three channels (#sports, #plants, and #cafe), even if the person's introduction may be
-					irrelevant to some or all of them.
-				</p>
+				<p class="text-muted-foreground mb-1">3 people have joined the discussion</p>
+				<p>Summary: {data.proposal.discussionSummary}</p>
 			</div>
 			<div class="p-2">
 				<h3>Proposed Edit</h3>
-				<p class="text-muted-foreground mb-1">
-					2 people have collaboratively propose the following edit
+				<p class="text-muted-foreground">
+					X people have collaboratively proposed the following edits to these tasks:
 				</p>
+
+				{#each data.tasks as task (task.id)}
+					{#if task.name !== data.proposal.proposedTasks[task.id].name || task.trigger !== data.proposal.proposedTasks[task.id].trigger || task.action !== data.proposal.proposedTasks[task.id].action}
+						<div class="pt-4">
+							<TaskSection
+								name={data.proposal.proposedTasks[task.id].name}
+								trigger={data.proposal.proposedTasks[task.id].trigger}
+								action={data.proposal.proposedTasks[task.id].action}
+							/>
+						</div>
+						<div class="pt-4">
+							<TaskDiffSection
+								oldName={task.name}
+								oldTrigger={task.trigger}
+								oldAction={task.action}
+								newName={data.proposal.proposedTasks[task.id].name}
+								newTrigger={data.proposal.proposedTasks[task.id].trigger}
+								newAction={data.proposal.proposedTasks[task.id].action}
+							/>
+						</div>
+					{/if}
+				{/each}
 			</div>
 		</div>
 		<div class="flex h-full flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
