@@ -24,7 +24,7 @@
 		checkingBadge = true
 	} = $props();
 
-	const textLengthCap = 200;
+	const textLengthCap = 150;
 </script>
 
 <Dialog.Root>

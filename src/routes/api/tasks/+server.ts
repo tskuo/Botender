@@ -13,7 +13,7 @@ export const GET = async () => {
 			const task = {
 				id: doc.id,
 				action: doc.data().action,
-				createAt: doc.data().createAt,
+				createAt: doc.data().createAt.toDate(),
 				name: doc.data().name,
 				trigger: doc.data().trigger
 			};

@@ -14,7 +14,7 @@ declare global {
 	type Task = {
 		id: string;
 		action: string;
-		createAt: Timestamp;
+		createAt: date;
 		name: string;
 		trigger: string;
 	};
