@@ -28,7 +28,10 @@
 		<div class="overflow-auto border-r p-4 md:col-span-2">
 			<div class="grid auto-rows-fr gap-2">
 				{#each data.tasks as task (task.id)}
-					<Card.Root class="hover:cursor-pointer" onclick={() => (clickedTaskId = task.id)}>
+					<Card.Root
+						class="hover:bg-muted/50 hover:cursor-pointer"
+						onclick={() => (clickedTaskId = task.id)}
+					>
 						<Card.Header>
 							<Card.Title><h3>{task.name}</h3></Card.Title>
 							<!-- <Card.Description>Card Description</Card.Description> -->

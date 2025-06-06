@@ -29,7 +29,7 @@
 
 <Dialog.Root>
 	<Dialog.Trigger class="hover:cursor-pointer">
-		<Card.Root class="h-full w-full text-left">
+		<Card.Root class="hover:bg-muted/50 h-full w-full text-left">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
