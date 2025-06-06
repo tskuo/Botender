@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
-
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
@@ -29,7 +27,8 @@ declare global {
 		id: string;
 		botResponse: string;
 		channel: string;
-		createAt: Timestamp;
+		createAt: date;
+		realUserMessage: boolean;
 		triggeredTask: string;
 		userMessage: string;
 	};

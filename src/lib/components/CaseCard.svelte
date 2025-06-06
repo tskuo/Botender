@@ -6,7 +6,8 @@
 
 	// import lucide icons
 	import HashIcon from '@lucide/svelte/icons/hash';
-	import UserRoundIcon from '@lucide/svelte/icons/user-round';
+	import UserIcon from '@lucide/svelte/icons/user';
+	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import BotOffIcon from '@lucide/svelte/icons/bot-off';
@@ -15,16 +16,18 @@
 
 	let {
 		id = '',
-		channel = '',
-		userMessage = '',
-		triggeredTask = '0',
 		botResponse = '',
+		channel = '',
+		createdAt = new Date(),
+		realUserMessage = false,
+		triggeredTask = '0',
+		userMessage = '',
 		tasks = [],
 		testCaseBadge = false,
 		checkingBadge = false
 	} = $props();
 
-	const textLengthCap = 150;
+	const textLengthCap = 95;
 </script>
 
 <Dialog.Root>
@@ -49,7 +52,11 @@
 					</h4>
 				</div>
 				<div class="mb-4 flex">
-					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
+					{#if realUserMessage}
+						<UserCheckIcon class="mt-1 mr-2 size-4 flex-none" />
+					{:else}
+						<UserIcon class="mt-1 mr-2 size-4 flex-none" />
+					{/if}
 					<p>
 						{#if userMessage.length <= textLengthCap}
 							{userMessage}
@@ -114,7 +121,11 @@
 				</div>
 
 				<div class="mb-4 flex">
-					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
+					{#if realUserMessage}
+						<UserCheckIcon class="mt-1 mr-2 size-4 flex-none" />
+					{:else}
+						<UserIcon class="mt-1 mr-2 size-4 flex-none" />
+					{/if}
 					<p>{userMessage}</p>
 				</div>
 				<div class="mb-2 flex items-center">

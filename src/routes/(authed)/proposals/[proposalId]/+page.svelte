@@ -140,15 +140,7 @@
 							{#each data.testCases as testCase (testCase.id)}
 								<Carousel.Item class="xl:basis-1/2">
 									<div class="p-1">
-										<CaseCard
-											id={testCase.id}
-											channel={testCase.channel}
-											userMessage={testCase.userMessage}
-											triggeredTask={testCase.triggeredTask}
-											botResponse={testCase.botResponse}
-											testCaseBadge={true}
-											tasks={data.tasks}
-										/>
+										<CaseCard {...testCase} testCaseBadge={true} tasks={data.tasks} />
 									</div>
 								</Carousel.Item>
 							{/each}

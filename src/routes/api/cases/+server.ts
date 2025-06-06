@@ -13,7 +13,8 @@ export const GET = async () => {
 				id: doc.id,
 				botResponse: doc.data().botResponse,
 				channel: doc.data().channel,
-				createAt: doc.data().createAt,
+				createAt: doc.data().createAt.toDate(),
+				realUserMessage: doc.data().realUserMessage,
 				triggeredTask: doc.data().triggeredTask,
 				userMessage: doc.data().userMessage
 			};
