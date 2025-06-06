@@ -1,15 +1,22 @@
 <script lang="ts">
 	// import my components
-	import TaskCard from '$lib/components/TaskCard.svelte';
+	import TaskSection from '$lib/components/TaskSection.svelte';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
 
 	// import types
 	import type { PageProps } from './$types';
 
 	// data props
 	let { data }: PageProps = $props();
+
+	let clickedTaskId = $state('');
+
+	const textLengthCap = 190;
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -17,18 +24,60 @@
 		<h2 class="p-4 text-xl font-bold">Tasks</h2>
 		<Separator />
 	</div>
-	<div class="grid md:grid-cols-5">
-		<div class="grid auto-rows-fr gap-2 border-r p-4 md:col-span-2">
+	<div class="grid h-full flex-1 md:grid-cols-5">
+		<div class="grid h-full auto-rows-fr gap-2 border-r p-4 md:col-span-2">
 			{#each data.tasks as task (task.id)}
-				<TaskCard
-					id={task.id}
-					action={task.action}
-					createAt={task.createAt}
-					name={task.name}
-					trigger={task.trigger}
-				/>
+				<Card.Root class="hover:cursor-pointer" onclick={() => (clickedTaskId = task.id)}>
+					<Card.Header>
+						<Card.Title><h3>{task.name}</h3></Card.Title>
+						<!-- <Card.Description>Card Description</Card.Description> -->
+					</Card.Header>
+					<Card.Content>
+						<p class="mb-2">
+							<span class="font-[GintoDiscordMedium]">Trigger:</span>
+							{#if task.trigger.length <= textLengthCap}
+								{task.trigger}
+							{:else}
+								{task.trigger.substring(0, textLengthCap)}...
+							{/if}
+						</p>
+						<p>
+							<span class="font-[GintoDiscordMedium]">Action:</span>
+							{#if task.action.length <= textLengthCap}
+								{task.action}
+							{:else}
+								{task.action.substring(0, textLengthCap)}...
+							{/if}
+						</p>
+					</Card.Content>
+					<Card.Footer class="mt-auto">
+						<p>X proposals</p>
+					</Card.Footer>
+				</Card.Root>
 			{/each}
 		</div>
-		<div class="h-full md:col-span-3"></div>
+		<div class="h-full md:col-span-3">
+			{#if clickedTaskId}
+				<div class="p-4">
+					{#each data.tasks as task (task.id)}
+						{#if task.id === clickedTaskId}
+							<h3 class="mb-4 text-lg">Task: {task.name}</h3>
+							<div class="mb-4 w-full">
+								<h3 class="mb-1">Trigger:</h3>
+								<p>{task.trigger}</p>
+							</div>
+							<div class=" mb-2 w-full">
+								<h3 class="mb-1">Action:</h3>
+								<p>{task.action}</p>
+							</div>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<div class="flex h-full items-center justify-center">
+					<p class="text-muted-foreground">Click on a task to see its details.</p>
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>

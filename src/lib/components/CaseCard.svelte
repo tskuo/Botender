@@ -20,15 +20,15 @@
 		triggeredTask = '0',
 		botResponse = '',
 		tasks = [],
-		testCaseBadge = true,
-		checkingBadge = true
+		testCaseBadge = false,
+		checkingBadge = false
 	} = $props();
 
 	const textLengthCap = 150;
 </script>
 
 <Dialog.Root>
-	<Dialog.Trigger>
+	<Dialog.Trigger class="hover:cursor-pointer">
 		<Card.Root class="h-full w-full text-left">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
@@ -44,9 +44,9 @@
 			<Card.Content>
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-medium">
+					<h4 class="font-medium">
 						{channel.startsWith('#') ? channel.slice(1) : channel}
-					</h3>
+					</h4>
 				</div>
 				<div class="mb-4 flex">
 					<UserRoundIcon class="mt-1 mr-2 size-4 flex-none" />
@@ -60,9 +60,9 @@
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
-					<h3 class="font-medium">
+					<h4 class="font-medium">
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
-					</h3>
+					</h4>
 				</div>
 				<div class="mb-1 flex">
 					{#if botResponse !== ''}
@@ -108,9 +108,9 @@
 			<Dialog.Description class="text-left">
 				<div class="mb-2 flex items-center">
 					<HashIcon class="mr-2 size-4" />
-					<h3 class="font-medium">
+					<h4 class="font-medium">
 						{channel.startsWith('#') ? channel.slice(1) : channel}
-					</h3>
+					</h4>
 				</div>
 
 				<div class="mb-4 flex">
@@ -119,9 +119,9 @@
 				</div>
 				<div class="mb-2 flex items-center">
 					<WrenchIcon class="mr-2 size-4" />
-					<h3 class="font-medium">
+					<h4 class="font-medium">
 						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
-					</h3>
+					</h4>
 				</div>
 				<div class="mb-4 flex">
 					{#if botResponse !== ''}
