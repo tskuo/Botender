@@ -25,6 +25,6 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 			testCases
 		};
 	} catch {
-		throw error(404, 'Fail to fetch tasks.');
+		throw error(404, 'Fail to fetch the proposal.');
 	}
 };

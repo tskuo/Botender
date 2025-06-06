@@ -57,7 +57,7 @@
 	</div>
 	<div class="grid flex-auto md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
-			<div class="mb-4 p-2">
+			<div class="mb-2 p-2">
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1">
 					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
@@ -74,7 +74,7 @@
 				</p>
 				<p>{data.proposal.description}</p>
 			</div>
-			<div class="mb-4 p-2">
+			<div class="mb-2 p-2">
 				<h3>Discussion</h3>
 				<p class="text-muted-foreground mb-1">3 people have joined the discussion</p>
 				<p>Summary: {data.proposal.discussionSummary}</p>
@@ -114,7 +114,10 @@
 					<div class="mb-2 md:mb-0 md:flex md:justify-between">
 						<div>
 							<h3>Check test cases</h3>
-							<p class="text-muted-foreground mb-1">5 cases in total</p>
+							<p class="text-muted-foreground mb-1">
+								{data.testCases.length}
+								{data.testCases.length === 1 ? 'case' : 'cases'} in total
+							</p>
 						</div>
 						<ToggleGroup.Root
 							size="lg"
