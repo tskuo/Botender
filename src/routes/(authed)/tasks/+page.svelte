@@ -25,36 +25,38 @@
 		<Separator />
 	</div>
 	<div class="grid h-full flex-1 md:grid-cols-5">
-		<div class="grid h-full auto-rows-fr gap-2 border-r p-4 md:col-span-2">
-			{#each data.tasks as task (task.id)}
-				<Card.Root class="hover:cursor-pointer" onclick={() => (clickedTaskId = task.id)}>
-					<Card.Header>
-						<Card.Title><h3>{task.name}</h3></Card.Title>
-						<!-- <Card.Description>Card Description</Card.Description> -->
-					</Card.Header>
-					<Card.Content>
-						<p class="mb-2">
-							<span class="font-[GintoDiscordMedium]">Trigger:</span>
-							{#if task.trigger.length <= textLengthCap}
-								{task.trigger}
-							{:else}
-								{task.trigger.substring(0, textLengthCap)}...
-							{/if}
-						</p>
-						<p>
-							<span class="font-[GintoDiscordMedium]">Action:</span>
-							{#if task.action.length <= textLengthCap}
-								{task.action}
-							{:else}
-								{task.action.substring(0, textLengthCap)}...
-							{/if}
-						</p>
-					</Card.Content>
-					<Card.Footer class="mt-auto">
-						<p>X proposals</p>
-					</Card.Footer>
-				</Card.Root>
-			{/each}
+		<div class="overflow-auto border-r p-4 md:col-span-2">
+			<div class="grid auto-rows-fr gap-2">
+				{#each data.tasks as task (task.id)}
+					<Card.Root class="hover:cursor-pointer" onclick={() => (clickedTaskId = task.id)}>
+						<Card.Header>
+							<Card.Title><h3>{task.name}</h3></Card.Title>
+							<!-- <Card.Description>Card Description</Card.Description> -->
+						</Card.Header>
+						<Card.Content>
+							<p class="mb-2">
+								<span class="font-[GintoDiscordMedium]">Trigger:</span>
+								{#if task.trigger.length <= textLengthCap}
+									{task.trigger}
+								{:else}
+									{task.trigger.substring(0, textLengthCap)}...
+								{/if}
+							</p>
+							<p>
+								<span class="font-[GintoDiscordMedium]">Action:</span>
+								{#if task.action.length <= textLengthCap}
+									{task.action}
+								{:else}
+									{task.action.substring(0, textLengthCap)}...
+								{/if}
+							</p>
+						</Card.Content>
+						<Card.Footer class="mt-auto">
+							<p>X proposals</p>
+						</Card.Footer>
+					</Card.Root>
+				{/each}
+			</div>
 		</div>
 		<div class="h-full md:col-span-3">
 			{#if clickedTaskId}
