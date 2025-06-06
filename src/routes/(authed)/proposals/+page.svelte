@@ -8,6 +8,9 @@
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
 	import { goto } from '$app/navigation';
 
+	// import types
+	import type { PageProps } from './$types';
+
 	// data props
 	let { data }: PageProps = $props();
 </script>
@@ -22,11 +25,11 @@
 			<Table.Caption>A list of active proposals.</Table.Caption>
 			<Table.Header>
 				<Table.Row class="hover:bg-trasparent">
-					<Table.Head class="w-1/3"><h3>Title</h3></Table.Head>
-					<Table.Head><h3>Initiator</h3></Table.Head>
-					<Table.Head><h3>Last Edited By</h3></Table.Head>
-					<Table.Head><h3>Test Cases</h3></Table.Head>
-					<Table.Head><h3>Voting</h3></Table.Head>
+					<Table.Head class="w-1/3"><h4>Title</h4></Table.Head>
+					<Table.Head><h4>Initiator</h4></Table.Head>
+					<Table.Head><h4>Last Edited By</h4></Table.Head>
+					<Table.Head><h4>Test Cases</h4></Table.Head>
+					<Table.Head><h4>Voting</h4></Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>

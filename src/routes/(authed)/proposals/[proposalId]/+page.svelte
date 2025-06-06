@@ -57,7 +57,7 @@
 	</div>
 	<div class="grid flex-auto md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
-			<div class="p-2">
+			<div class="mb-4 p-2">
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1">
 					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
@@ -74,7 +74,7 @@
 				</p>
 				<p>{data.proposal.description}</p>
 			</div>
-			<div class="p-2">
+			<div class="mb-4 p-2">
 				<h3>Discussion</h3>
 				<p class="text-muted-foreground mb-1">3 people have joined the discussion</p>
 				<p>Summary: {data.proposal.discussionSummary}</p>
@@ -134,15 +134,17 @@
 						class="mx-auto w-4/5 max-w-screen md:w-5/6"
 					>
 						<Carousel.Content>
-							{#each Array(5) as _, i (i)}
+							{#each data.testCases as testCase (testCase.id)}
 								<Carousel.Item class="xl:basis-1/2">
 									<div class="p-1">
 										<CaseCard
-											id={'xxx'}
-											channel={'#introduction'}
-											userMessage={'This is Sebastian writing. I am currently building up a research group in Berlin with a focus on the intersection of data engineering and ML. We have a postdoc opening in my group, which I would like to share here:'}
-											triggeredTask={'Welcome Newcomers'}
-											botResponse={'Welcome to our community! We have channels for sports, plants, and cafe discussions. Feel free to join any of them!'}
+											id={testCase.id}
+											channel={testCase.channel}
+											userMessage={testCase.userMessage}
+											triggeredTask={testCase.triggeredTask}
+											botResponse={testCase.botResponse}
+											testCaseBadge={true}
+											tasks={data.tasks}
 										/>
 									</div>
 								</Carousel.Item>

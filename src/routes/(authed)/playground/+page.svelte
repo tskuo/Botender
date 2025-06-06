@@ -107,7 +107,7 @@
 	<div class="grid flex-1 md:grid-cols-5">
 		<div class="border-r p-2 md:col-span-2">
 			<ScrollArea class="h-full w-full">
-				<h3 class="p-2 font-medium">Scope</h3>
+				<h4 class="p-2 font-medium">Scope</h4>
 				<div class="px-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
 						<Select.Trigger class="w-full">
@@ -144,11 +144,11 @@
 					{#if showCase}
 						<div class="mb-1 flex items-center">
 							<HashIcon class="mr-2 size-4" />
-							<h3 class="font-semibold">Channel: {displayedChannel}</h3>
+							<h4 class="font-semibold">Channel: {displayedChannel}</h4>
 						</div>
 						<div class="flex items-center">
 							<UserRoundIcon class="mr-2 size-4" />
-							<h3 class="font-semibold">User Message</h3>
+							<h4 class="font-semibold">User Message</h4>
 						</div>
 						<p class="mb-3 pl-6">{displayedUserMessage}</p>
 						{#if running}
@@ -162,17 +162,17 @@
 						{:else}
 							<div class="mb-1 flex items-center">
 								<WrenchIcon class="mr-2 size-4" />
-								<h3 class="font-semibold">Triggered Task:</h3>
+								<h4 class="font-semibold">Triggered Task:</h4>
 
-								<h3 class="ml-1 font-semibold">
+								<h4 class="ml-1 font-semibold">
 									{playgroundTasks.find((task) => task.id === triggeredTask)?.name ??
 										'No Task is Triggered'}
-								</h3>
+								</h4>
 							</div>
 							<div class="flex items-center">
 								{#if triggeredTask !== '0'}
 									<BotIcon class="mr-2 size-4" />
-									<h3 class="font-semibold">Bot's Response</h3>
+									<h4 class="font-semibold">Bot's Response</h4>
 								{/if}
 							</div>
 							<p class="mb-3 pl-6">{displayedBotResponse}</p>

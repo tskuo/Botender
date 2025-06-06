@@ -20,7 +20,7 @@
 
 <div class="border-l">
 	<div class="pl-3">
-		<h3 class="font-medium">
+		<h4 class="font-medium">
 			Task: {#each diffName as n}
 				<span
 					class={n.added ? 'text-discord-green' : n.removed ? 'text-discord-pink line-through' : ''}
@@ -28,7 +28,7 @@
 					{n.value}
 				</span>
 			{/each}
-		</h3>
+		</h4>
 		<div class="grid w-full gap-1.5 pt-3">
 			<Label for="trigger">Trigger</Label>
 			<div>

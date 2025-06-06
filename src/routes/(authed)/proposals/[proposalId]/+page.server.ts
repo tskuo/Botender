@@ -9,9 +9,20 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 		const resTasks = await fetch('/api/tasks');
 		const tasks: Task[] = await resTasks.json();
 
+		const testCases = [];
+
+		for (const caseId of proposal.testCases) {
+			const resCase = await fetch(`/api/cases/${caseId}`);
+			if (resCase.ok) {
+				const testCase = await resCase.json();
+				testCases.push(testCase);
+			}
+		}
+
 		return {
 			proposal,
-			tasks
+			tasks,
+			testCases
 		};
 	} catch {
 		throw error(404, 'Fail to fetch tasks.');

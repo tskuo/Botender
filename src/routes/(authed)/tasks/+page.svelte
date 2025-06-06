@@ -63,11 +63,11 @@
 						{#if task.id === clickedTaskId}
 							<h3 class="mb-4 text-lg">Task: {task.name}</h3>
 							<div class="mb-4 w-full">
-								<h3 class="mb-1">Trigger:</h3>
+								<h4 class="mb-1">Trigger:</h4>
 								<p>{task.trigger}</p>
 							</div>
 							<div class=" mb-2 w-full">
-								<h3 class="mb-1">Action:</h3>
+								<h4 class="mb-1">Action:</h4>
 								<p>{task.action}</p>
 							</div>
 						{/if}

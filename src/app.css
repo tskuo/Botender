@@ -315,6 +315,7 @@
 
 	h3 {
 		font-family: 'GintoDiscordMedium', sans-serif;
+		font-size: var(--text-lg);
 	}
 	h4 {
 		font-family: 'GintoDiscordMedium', sans-serif;
