@@ -137,14 +137,7 @@
 				<div class="mb-4 flex">
 					{#if botResponse !== ''}
 						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
-
-						<p>
-							{#if botResponse.length <= textLengthCap}
-								{botResponse}
-							{:else}
-								{botResponse.substring(0, textLengthCap)}...
-							{/if}
-						</p>
+						<p>{botResponse}</p>
 					{:else if botResponse === '' && triggeredTask !== '0'}
 						<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
 						<p>The bot chose not to respond.</p>
