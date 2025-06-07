@@ -8,7 +8,7 @@ export const playgroundRunFormSchema = z.object({
 export const playgroundCreateCaseSchema = z.object({
 	channel: z.string(),
 	userMessage: z.string(),
-	triggeredTask: z.string(),
+	triggeredTaskId: z.string(),
 	botResponse: z.string()
 });
 

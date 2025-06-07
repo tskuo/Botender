@@ -7,15 +7,15 @@ import { zod } from 'sveltekit-superforms/adapters';
 
 export const load: PageServerLoad = async ({ fetch }) => {
 	try {
-		const resTasks = await fetch('/api/tasks');
-		const tasks: Task[] = await resTasks.json();
+		const res = await fetch('/api/tasks?latest=true');
+		const latestTasks = await res.json();
 
 		return {
-			tasks,
+			latestTasks,
 			form: await superValidate(zod(playgroundCreateCaseSchema))
 		};
 	} catch {
-		throw error(404, 'Fail to fetch tasks.');
+		throw error(404, 'Fail to fetch the latest tasks.');
 	}
 };
 

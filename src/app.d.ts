@@ -10,9 +10,7 @@ declare global {
 	}
 
 	type Task = {
-		id: string;
 		action: string;
-		createAt: date;
 		name: string;
 		trigger: string;
 	};

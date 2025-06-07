@@ -1,15 +1,27 @@
 import { json, error } from '@sveltejs/kit';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '$lib/firebase';
 
-export const GET = async () => {
+export const GET = async ({ url }) => {
 	try {
+		const latest = url.searchParams.get('latest');
+		if (latest === 'true') {
+			const querySnapshot = await getDocs(
+				query(collection(db, 'taskHistory'), orderBy('createAt', 'desc'), limit(1))
+			);
+			const res = {
+				...querySnapshot.docs[0].data(),
+				id: querySnapshot.docs[0].id,
+				createAt: querySnapshot.docs[0].data().createAt.toDate()
+			};
+			return json(res);
+		}
+
+		const res: Task[] = [];
 		const querySnapshot = await getDocs(
 			query(collection(db, 'tasks'), orderBy('createAt', 'desc'))
 		);
-		const res: Task[] = [];
 		querySnapshot.forEach((doc) => {
-			// const task = { id: doc.id, ...doc.data() };
 			const task = {
 				id: doc.id,
 				action: doc.data().action,

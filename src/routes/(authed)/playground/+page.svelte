@@ -52,16 +52,16 @@
 	const { form: formData, enhance } = form;
 
 	// initialize states
-	let playgroundTasks = $state(data.tasks);
+	let playgroundTasks = $state(data.latestTasks.tasks);
 
 	const scopes = [
 		{ value: 'overall', label: 'Overall behaviors' },
 		{ value: 'triggers', label: 'Triggers' }
 	];
-	data.tasks.forEach((task: Task) => {
-		scopes.push({ value: task.id, label: 'Task: ' + task.name });
-	});
-	// scopes.push({ value: 'new', label: 'New task' });
+
+	for (const taskId in data.latestTasks.tasks) {
+		scopes.push({ value: taskId, label: 'Task: ' + data.latestTasks.tasks[taskId].name });
+	}
 
 	let scope = $state('overall');
 	let selectedChannel = $state('');
@@ -69,7 +69,7 @@
 	let enteredUserMessage = $state('');
 	let displayedUserMessage = $state('');
 	let displayedBotResponse = $state('');
-	let triggeredTask = $state('');
+	let triggeredTaskId = $state('');
 	let running = $state(false);
 	let showCase = $state(false);
 	let disalbeCreateCaseButton = $state(true);
@@ -84,7 +84,7 @@
 				<Button
 					variant="secondary"
 					onclick={() => {
-						playgroundTasks = data.tasks;
+						playgroundTasks = data.latestTasks.tasks;
 					}}
 				>
 					<UndoIcon class="size-4" />
@@ -123,13 +123,13 @@
 					</Select.Root>
 				</div>
 				<div class="px-2 py-2">
-					{#each playgroundTasks as task (task.id)}
-						{#if scope === 'overall' || scope === 'triggers' || scope === task.id}
+					{#each Object.entries(playgroundTasks) as [taskId, task] (taskId)}
+						{#if scope === 'overall' || scope === 'triggers' || scope === taskId}
 							<div class="pt-4">
 								<TaskSection
-									bind:name={task.name}
-									bind:trigger={task.trigger}
-									bind:action={task.action}
+									bind:name={playgroundTasks[taskId].name}
+									bind:trigger={playgroundTasks[taskId].trigger}
+									bind:action={playgroundTasks[taskId].action}
 									triggersOnly={scope === 'triggers'}
 								/>
 							</div>
@@ -165,12 +165,13 @@
 								<h4 class="font-semibold">Triggered Task:</h4>
 
 								<h4 class="ml-1 font-semibold">
-									{playgroundTasks.find((task) => task.id === triggeredTask)?.name ??
-										'No Task is Triggered'}
+									{triggeredTaskId in playgroundTasks
+										? playgroundTasks[triggeredTaskId].name
+										: 'No Task is Triggered'}
 								</h4>
 							</div>
 							<div class="flex items-center">
-								{#if triggeredTask !== '0'}
+								{#if triggeredTaskId !== '0'}
 									<BotIcon class="mr-2 size-4" />
 									<h4 class="font-semibold">Bot's Response</h4>
 								{/if}
@@ -198,11 +199,11 @@
 								<Form.Description />
 								<Form.FieldErrors />
 							</Form.Field>
-							<Form.Field {form} name="triggeredTask">
+							<Form.Field {form} name="triggeredTaskId">
 								<Form.Control>
 									{#snippet children({ props })}
 										<!-- <Form.Label>Triggered Task</Form.Label> -->
-										<Input type="hidden" {...props} bind:value={triggeredTask} />
+										<Input type="hidden" {...props} bind:value={triggeredTaskId} />
 									{/snippet}
 								</Form.Control>
 								<Form.Description />
@@ -261,7 +262,8 @@
 								body: JSON.stringify({
 									channel: selectedChannel,
 									userMessage: enteredUserMessage,
-									playgroundTasks: playgroundTasks
+									tasks: playgroundTasks,
+									soures: 'playground'
 								}),
 								headers: {
 									'Content-Type': 'application/json'
@@ -269,7 +271,7 @@
 							});
 
 							const { taskId, botResponse } = await response.json();
-							triggeredTask = taskId;
+							triggeredTaskId = taskId;
 							displayedBotResponse = botResponse;
 							running = false;
 							disalbeCreateCaseButton = false;
