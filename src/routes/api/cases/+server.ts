@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '$lib/firebase';
+import ThumbsDown from '@lucide/svelte/icons/thumbs-down';
 
 export const GET = async () => {
 	try {
@@ -34,8 +35,18 @@ export const POST = async ({ request }) => {
 			createAt: serverTimestamp(),
 			channel: form.data.channel,
 			userMessage: form.data.userMessage,
-			triggeredTask: form.data.triggeredTask,
-			botResponse: form.data.botResponse
+			realUserMessage: form.data.realUserMessage
+		});
+
+		await addDoc(collection(db, 'cases', docRef.id, 'botResponses'), {
+			createAt: serverTimestamp(),
+			botResponse: form.data.botResponse,
+			proposalEditId: (form.data.source === 'proposal' ? form.data.proposalEditId : '') || '',
+			proposalId: (form.data.source === 'proposal' ? form.data.proposalId : '') || '',
+			taskHistoryId: form.data.taskHistoryId ?? '',
+			thumbsDown: [],
+			thumbsUp: [],
+			triggeredTask: form.data.triggeredTaskId
 		});
 
 		return json({ id: docRef.id }, { status: 201 });

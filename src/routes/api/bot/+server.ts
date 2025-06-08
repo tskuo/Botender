@@ -4,7 +4,7 @@ import { json, error } from '@sveltejs/kit';
 
 export const POST = async ({ request }) => {
 	try {
-		const { channel, userMessage, tasks, source } = await request.json();
+		const { channel, userMessage, tasks } = await request.json();
 
 		const orchestratorSystemPrompt =
 			"You are a helpful assistant that determines the relevance of a user's message to specific tasks. If the message is relevant to a particular task's trigger, respond with that task's ID. If it is relevant to more than one task's trigger, respond with the ID of the task to which it is most relevant. If the message is not relevant to any tasks' triggers, respond with 0.";

@@ -12,6 +12,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 
 	// import lucide icons
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
@@ -199,10 +200,27 @@
 								<Form.Description />
 								<Form.FieldErrors />
 							</Form.Field>
+							<Form.Field {form} name="realUserMessage">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Checkbox class="hidden" {...props} checked={false} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field {form} name="taskHistoryId">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Input type="hidden" {...props} value={data.latestTasks.id} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
 							<Form.Field {form} name="triggeredTaskId">
 								<Form.Control>
 									{#snippet children({ props })}
-										<!-- <Form.Label>Triggered Task</Form.Label> -->
 										<Input type="hidden" {...props} bind:value={triggeredTaskId} />
 									{/snippet}
 								</Form.Control>
@@ -212,8 +230,16 @@
 							<Form.Field {form} name="botResponse">
 								<Form.Control>
 									{#snippet children({ props })}
-										<!-- <Form.Label>Bot Response</Form.Label> -->
 										<Input type="hidden" {...props} bind:value={displayedBotResponse} />
+									{/snippet}
+								</Form.Control>
+								<Form.Description />
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field {form} name="source">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Input type="hidden" {...props} value="playground" />
 									{/snippet}
 								</Form.Control>
 								<Form.Description />

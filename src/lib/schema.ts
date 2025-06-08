@@ -6,10 +6,13 @@ export const playgroundRunFormSchema = z.object({
 });
 
 export const playgroundCreateCaseSchema = z.object({
+	botResponse: z.string(),
 	channel: z.string(),
-	userMessage: z.string(),
+	realUserMessage: z.boolean(),
+	taskHistoryId: z.string(),
 	triggeredTaskId: z.string(),
-	botResponse: z.string()
+	userMessage: z.string(),
+	source: z.string()
 });
 
 export type PlaygroundRunFormSchema = typeof playgroundRunFormSchema;
