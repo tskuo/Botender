@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '$lib/firebase';
-import ThumbsDown from '@lucide/svelte/icons/thumbs-down';
 
 export const GET = async () => {
 	try {
@@ -12,11 +11,9 @@ export const GET = async () => {
 		querySnapshot.forEach((doc) => {
 			const c = {
 				id: doc.id,
-				botResponse: doc.data().botResponse,
 				channel: doc.data().channel,
 				createAt: doc.data().createAt.toDate(),
 				realUserMessage: doc.data().realUserMessage,
-				triggeredTask: doc.data().triggeredTask,
 				userMessage: doc.data().userMessage
 			};
 			res.push(c);

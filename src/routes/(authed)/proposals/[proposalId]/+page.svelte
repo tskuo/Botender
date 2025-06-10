@@ -20,6 +20,9 @@
 	// import types
 	import type { PageProps } from './$types';
 
+	// import svelte features
+	import { onMount } from 'svelte';
+
 	// data props
 	let { data }: PageProps = $props();
 
@@ -36,7 +39,6 @@
 			sheetWidth = rightCol.offsetWidth;
 		}
 	}
-	import { onMount } from 'svelte';
 
 	onMount(() => {
 		updateSheetWidth();

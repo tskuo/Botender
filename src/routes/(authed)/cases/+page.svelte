@@ -2,6 +2,8 @@
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import CaseCard from '$lib/components/CaseCard.svelte';
+
+	// import types
 	import type { PageProps } from './$types';
 
 	// data props
@@ -16,7 +18,7 @@
 
 	<div class="grid auto-rows-fr gap-2 p-4 md:grid-cols-2 lg:grid-cols-3">
 		{#each data.cases as c (c.id)}
-			<CaseCard {...c} tasks={data.tasks} />
+			<CaseCard {...c} tasks={data.latestTasks.tasks} />
 		{/each}
 	</div>
 </div>

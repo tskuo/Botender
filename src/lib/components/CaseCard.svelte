@@ -13,6 +13,10 @@
 	import BotOffIcon from '@lucide/svelte/icons/bot-off';
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
+	import LoaderIcon from '@lucide/svelte/icons/loader';
+
+	// import svelte features
+	import { onMount } from 'svelte';
 
 	let {
 		id = '',
@@ -22,12 +26,32 @@
 		realUserMessage = false,
 		triggeredTask = '0',
 		userMessage = '',
-		tasks = [],
+		tasks = {},
 		testCaseBadge = false,
 		checkingBadge = false
 	} = $props();
 
+	let loadingBotResponse = $state(true);
+
 	const textLengthCap = 95;
+
+	onMount(async () => {
+		const res = await fetch(`/api/cases/${id}?botResponses=true`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		if (!res.ok) {
+			console.error(`Failed to fetch the bot response of case #${id}`, res.statusText);
+			return;
+		}
+		const data = await res.json();
+		const botResponses = data.botResponses;
+		triggeredTask = botResponses[0].triggeredTask;
+		botResponse = botResponses[0].botResponse;
+		loadingBotResponse = false;
+	});
 </script>
 
 <Dialog.Root>
@@ -65,41 +89,50 @@
 						{/if}
 					</p>
 				</div>
-				<div class="mb-2 flex items-center">
-					<WrenchIcon class="mr-2 size-4" />
-					<h4 class="font-medium">
-						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
-					</h4>
-				</div>
-				<div class="mb-1 flex">
-					{#if botResponse !== ''}
-						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+				{#if loadingBotResponse}
+					<div class="mb-2 flex items-center">
+						<LoaderIcon class="mr-2 size-4 animate-spin" />
+						<p>Loading bot response...</p>
+					</div>
+				{:else}
+					<div class="mb-2 flex items-center">
+						<WrenchIcon class="mr-2 size-4" />
+						<h4 class="font-medium">
+							{triggeredTask in tasks ? tasks[triggeredTask].name : 'No Task is Triggered'}
+						</h4>
+					</div>
+					<div class="mb-1 flex">
+						{#if botResponse !== ''}
+							<BotIcon class="mt-1 mr-2 size-4 flex-none" />
 
-						<p>
-							{#if botResponse.length <= textLengthCap}
-								{botResponse}
-							{:else}
-								{botResponse.substring(0, textLengthCap)}...
-							{/if}
-						</p>
-					{:else if botResponse === '' && triggeredTask !== '0'}
-						<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
-						<p>The bot chose not to respond.</p>
-					{/if}
-				</div>
+							<p>
+								{#if botResponse.length <= textLengthCap}
+									{botResponse}
+								{:else}
+									{botResponse.substring(0, textLengthCap)}...
+								{/if}
+							</p>
+						{:else if botResponse === '' && triggeredTask !== '0'}
+							<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
+							<p>The bot chose not to respond.</p>
+						{/if}
+					</div>
+				{/if}
 			</Card.Content>
-			<Card.Footer class="mt-auto">
-				<div class="flex w-full items-center justify-around">
-					<div class="flex items-center">
-						<ThumbsUpIcon class="mr-2 size-5" />
-						<p>1</p>
+			{#if !loadingBotResponse}
+				<Card.Footer class="mt-auto">
+					<div class="flex w-full items-center justify-around">
+						<div class="flex items-center">
+							<ThumbsUpIcon class="mr-2 size-5" />
+							<p>1</p>
+						</div>
+						<div class="flex items-center">
+							<ThumbsDownIcon class="mr-2 size-5" />
+							<p>1</p>
+						</div>
 					</div>
-					<div class="flex items-center">
-						<ThumbsDownIcon class="mr-2 size-5" />
-						<p>1</p>
-					</div>
-				</div>
-			</Card.Footer>
+				</Card.Footer>
+			{/if}
 		</Card.Root>
 	</Dialog.Trigger>
 	<Dialog.Content>
@@ -128,21 +161,28 @@
 					{/if}
 					<p>{userMessage}</p>
 				</div>
-				<div class="mb-2 flex items-center">
-					<WrenchIcon class="mr-2 size-4" />
-					<h4 class="font-medium">
-						{tasks.find((task: Task) => task.id === triggeredTask)?.name ?? 'No Task is Triggered'}
-					</h4>
-				</div>
-				<div class="mb-4 flex">
-					{#if botResponse !== ''}
-						<BotIcon class="mt-1 mr-2 size-4 flex-none" />
-						<p>{botResponse}</p>
-					{:else if botResponse === '' && triggeredTask !== '0'}
-						<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
-						<p>The bot chose not to respond.</p>
-					{/if}
-				</div>
+				{#if loadingBotResponse}
+					<div class="mb-2 flex items-center">
+						<LoaderIcon class="mr-2 size-4 animate-spin" />
+						<p>Loading bot response...</p>
+					</div>
+				{:else}
+					<div class="mb-2 flex items-center">
+						<WrenchIcon class="mr-2 size-4" />
+						<h4 class="font-medium">
+							{triggeredTask in tasks ? tasks[triggeredTask].name : 'No Task is Triggered'}
+						</h4>
+					</div>
+					<div class="mb-4 flex">
+						{#if botResponse !== ''}
+							<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+							<p>{botResponse}</p>
+						{:else if botResponse === '' && triggeredTask !== '0'}
+							<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
+							<p>The bot chose not to respond.</p>
+						{/if}
+					</div>
+				{/if}
 				<p>Case ID: {id}</p>
 			</Dialog.Description>
 		</Dialog.Header>

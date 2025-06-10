@@ -3,14 +3,14 @@ import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ fetch }) => {
 	try {
-		const resTasks = await fetch('/api/tasks');
-		const tasks: Task[] = await resTasks.json();
+		const res = await fetch('/api/tasks?latest=true');
+		const latestTasks = await res.json();
 
 		const resCases = await fetch('/api/cases');
 		const cases = await resCases.json();
 
 		return {
-			tasks,
+			latestTasks,
 			cases
 		};
 	} catch {
