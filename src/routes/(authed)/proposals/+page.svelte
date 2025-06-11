@@ -51,9 +51,9 @@
 						<Table.Cell>
 							<div class="flex items-center">
 								<ArrowBigUpIcon class="mr-2 size-4" />
-								<p class="mr-8">0</p>
+								<p class="mr-8">{proposal.edits[0].upvotes.length}</p>
 								<ArrowBigDownIcon class="mr-2 size-4" />
-								<p>0</p>
+								<p>{proposal.edits[0].downvotes.length}</p>
 							</div>
 						</Table.Cell>
 					</Table.Row>

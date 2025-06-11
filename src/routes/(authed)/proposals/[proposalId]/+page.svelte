@@ -13,9 +13,12 @@
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import * as Table from '$lib/components/ui/table/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
+	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -41,6 +44,7 @@
 	}
 
 	onMount(() => {
+		// Set manual testing sheet width
 		updateSheetWidth();
 		window.addEventListener('resize', updateSheetWidth);
 		return () => window.removeEventListener('resize', updateSheetWidth);
@@ -57,8 +61,8 @@
 		</div>
 		<Separator />
 	</div>
-	<div class="grid flex-auto md:grid-cols-5">
-		<div class="border-r p-2 md:col-span-2">
+	<div class="grid h-full flex-auto md:grid-cols-5">
+		<div class="overflow-auto border-r p-2 md:col-span-2">
 			<div class="mb-2 p-2">
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1">
@@ -81,22 +85,22 @@
 				<p class="text-muted-foreground mb-1">3 people have joined the discussion</p>
 				<p>Summary: {data.proposal.discussionSummary}</p>
 			</div>
-			<div class="p-2">
+			<div class="mb-2 p-2">
 				<h3>Proposed Edit</h3>
 				<p class="text-muted-foreground">
 					X people have collaboratively proposed the following edits to these tasks:
 				</p>
 
 				{#each data.tasks as task (task.id)}
-					{#if task.name !== data.proposal.proposedTasks[task.id].name || task.trigger !== data.proposal.proposedTasks[task.id].trigger || task.action !== data.proposal.proposedTasks[task.id].action}
-						<div class="pt-4">
-							<TaskSection
-								name={data.proposal.proposedTasks[task.id].name}
-								trigger={data.proposal.proposedTasks[task.id].trigger}
-								action={data.proposal.proposedTasks[task.id].action}
-							/>
-						</div>
-						<div class="pt-4">
+					<!-- {#if task.name !== data.proposal.proposedTasks[task.id].name || task.trigger !== data.proposal.proposedTasks[task.id].trigger || task.action !== data.proposal.proposedTasks[task.id].action} -->
+					<div class="pt-4">
+						<TaskSection
+							name={data.proposal.proposedTasks[task.id].name}
+							trigger={data.proposal.proposedTasks[task.id].trigger}
+							action={data.proposal.proposedTasks[task.id].action}
+						/>
+					</div>
+					<!-- <div class="pt-4">
 							<TaskDiffSection
 								oldName={task.name}
 								oldTrigger={task.trigger}
@@ -105,9 +109,42 @@
 								newTrigger={data.proposal.proposedTasks[task.id].trigger}
 								newAction={data.proposal.proposedTasks[task.id].action}
 							/>
-						</div>
-					{/if}
+						</div> -->
+					<!-- {/if} -->
 				{/each}
+			</div>
+			<div class="mb-2 p-2">
+				<h3>Edit History</h3>
+				<Table.Root>
+					{#if data.proposal.edits.length === 0}
+						<Table.Caption>No edits have been made yet.</Table.Caption>
+					{/if}
+					<Table.Header>
+						<Table.Row class="hover:bg-trasparent">
+							<Table.Head><h4>Edit</h4></Table.Head>
+							<Table.Head><h4>Editor</h4></Table.Head>
+							<Table.Head><h4>Test Cases</h4></Table.Head>
+							<Table.Head><h4>Voting</h4></Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
+						{#each data.proposal.edits as edit (edit.id)}
+							<Table.Row>
+								<Table.Cell>view</Table.Cell>
+								<Table.Cell>{edit.editor}</Table.Cell>
+								<Table.Cell>xxx</Table.Cell>
+								<Table.Cell>
+									<div class="flex items-center">
+										<ArrowBigUpIcon class="mr-2 size-4" />
+										<p class="mr-8">{edit.upvotes.length}</p>
+										<ArrowBigDownIcon class="mr-2 size-4" />
+										<p>{edit.downvotes.length}</p>
+									</div>
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					</Table.Body>
+				</Table.Root>
 			</div>
 		</div>
 		<div class="flex h-full flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
@@ -117,8 +154,8 @@
 						<div>
 							<h3>Check test cases</h3>
 							<p class="text-muted-foreground mb-1">
-								{data.testCases.length}
-								{data.testCases.length === 1 ? 'case' : 'cases'} in total
+								{data.testCases.length} test
+								{data.testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
 							</p>
 						</div>
 						<ToggleGroup.Root
@@ -164,7 +201,7 @@
 						class="mx-auto w-4/5 max-w-screen md:w-5/6"
 					>
 						<Carousel.Content>
-							{#each Array(5) as _, i (i)}
+							<!-- {#each Array(5) as _, i (i)}
 								<Carousel.Item class="xl:basis-1/2">
 									<div class="p-1">
 										<CaseCard
@@ -176,7 +213,7 @@
 										/>
 									</div>
 								</Carousel.Item>
-							{/each}
+							{/each} -->
 						</Carousel.Content>
 						<Carousel.Previous />
 						<Carousel.Next />

@@ -32,6 +32,8 @@
 	} = $props();
 
 	let loadingBotResponse = $state(true);
+	let thumbsUp = $state([]);
+	let thumbsDown = $state([]);
 
 	const textLengthCap = 95;
 
@@ -50,6 +52,8 @@
 		const botResponses = data.botResponses;
 		triggeredTask = botResponses[0].triggeredTask;
 		botResponse = botResponses[0].botResponse;
+		thumbsUp = botResponses[0].thumbsUp;
+		thumbsDown = botResponses[0].thumbsDown;
 		loadingBotResponse = false;
 	});
 </script>
@@ -124,11 +128,11 @@
 					<div class="flex w-full items-center justify-around">
 						<div class="flex items-center">
 							<ThumbsUpIcon class="mr-2 size-5" />
-							<p>1</p>
+							<p>{thumbsUp.length}</p>
 						</div>
 						<div class="flex items-center">
 							<ThumbsDownIcon class="mr-2 size-5" />
-							<p>1</p>
+							<p>{thumbsDown.length}</p>
 						</div>
 					</div>
 				</Card.Footer>
