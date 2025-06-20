@@ -18,6 +18,9 @@
 	// import svelte features
 	import { onMount } from 'svelte';
 
+	// import svelte stores
+	import { page } from '$app/state';
+
 	let {
 		id = '',
 		botResponse = '',
@@ -38,23 +41,26 @@
 	const textLengthCap = 95;
 
 	onMount(async () => {
-		const res = await fetch(`/api/cases/${id}?botResponses=true`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json'
+		if (page.url.pathname === '/cases') {
+			// Fetch the latest bot response for the case when the component mounts on the cases page
+			const res = await fetch(`/api/cases/${id}/botResponses?latest=true`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			if (!res.ok) {
+				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
+				return;
 			}
-		});
-		if (!res.ok) {
-			console.error(`Failed to fetch the bot response of case #${id}`, res.statusText);
-			return;
+			const data = await res.json();
+			const botResponses = data.botResponses;
+			triggeredTask = botResponses[0].triggeredTask;
+			botResponse = botResponses[0].botResponse;
+			thumbsUp = botResponses[0].thumbsUp;
+			thumbsDown = botResponses[0].thumbsDown;
+			loadingBotResponse = false;
 		}
-		const data = await res.json();
-		const botResponses = data.botResponses;
-		triggeredTask = botResponses[0].triggeredTask;
-		botResponse = botResponses[0].botResponse;
-		thumbsUp = botResponses[0].thumbsUp;
-		thumbsDown = botResponses[0].thumbsDown;
-		loadingBotResponse = false;
 	});
 </script>
 

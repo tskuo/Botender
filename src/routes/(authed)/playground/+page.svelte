@@ -9,10 +9,10 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 
 	// import lucide icons
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
@@ -24,6 +24,7 @@
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	// import form-related things
 	import { playgroundCreateCaseSchema, type PlaygroundCreateCaseSchema } from '$lib/schema';
@@ -254,11 +255,26 @@
 							{:else}
 								<Form.Button
 									disabled={running || !showCase || disalbeCreateCaseButton || savedCase}
+									class="mb-2"
 								>
 									Save this case
 								</Form.Button>
 							{/if}
 						</form>
+						<Dialog.Root>
+							<Dialog.Trigger class={buttonVariants({ variant: 'default' })}
+								>Create Proposal</Dialog.Trigger
+							>
+							<Dialog.Content>
+								<Dialog.Header>
+									<Dialog.Title>Are you sure absolutely sure?</Dialog.Title>
+									<Dialog.Description>
+										This action cannot be undone. This will permanently delete your account and
+										remove your data from our servers.
+									</Dialog.Description>
+								</Dialog.Header>
+							</Dialog.Content>
+						</Dialog.Root>
 					{:else}
 						<div></div>
 					{/if}

@@ -41,6 +41,7 @@ export const POST = async ({ request }) => {
 			proposalEditId: (form.data.source === 'proposal' ? form.data.proposalEditId : '') || '',
 			proposalId: (form.data.source === 'proposal' ? form.data.proposalId : '') || '',
 			taskHistoryId: form.data.taskHistoryId ?? '',
+			isProposal: form.data.isProposal,
 			thumbsDown: [],
 			thumbsUp: [],
 			triggeredTask: form.data.triggeredTaskId
