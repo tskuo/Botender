@@ -24,6 +24,7 @@
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
+	import BotOffIcon from '@lucide/svelte/icons/bot-off';
 	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
 	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
@@ -163,7 +164,7 @@
 				</div>
 			</ScrollArea>
 		</div>
-		<div class="p-2 md:col-span-3">
+		<div class="p-3 md:col-span-3">
 			<div class="flex h-full flex-col justify-between">
 				<div>
 					{#if showCase}
@@ -195,173 +196,168 @@
 										: 'No Task is Triggered'}
 								</h4>
 							</div>
-							<div class="flex items-center">
-								{#if triggeredTaskId !== '0'}
-									<BotIcon class="mr-2 size-4" />
-									<h4 class="font-semibold">Bot's Response</h4>
+							{#if triggeredTaskId !== '0'}
+								{#if displayedBotResponse === ''}
+									<div class="mb-3 flex items-center">
+										<BotOffIcon class="mr-2 size-4 flex-none" />
+										<p>The bot chose not to respond.</p>
+									</div>
+								{:else}
+									<div class="flex items-center">
+										<BotIcon class="mr-2 size-4" />
+										<h4 class="font-semibold">Bot's Response</h4>
+									</div>
+									<p class="mb-3 pl-6">{displayedBotResponse}</p>
 								{/if}
-							</div>
-							<p class="mb-3 pl-6">{displayedBotResponse}</p>
-						{/if}
-						<form method="POST" use:enhance action="?/createCase">
-							<Form.Field {form} name="channel">
-								<Form.Control>
-									{#snippet children({ props })}
-										<!-- <Form.Label>Channel</Form.Label> -->
-										<Input type="hidden" {...props} value={displayedChannel} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="userMessage">
-								<Form.Control>
-									{#snippet children({ props })}
-										<!-- <Form.Label>User Message</Form.Label> -->
-										<Input type="hidden" {...props} bind:value={displayedUserMessage} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="realUserMessage">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Checkbox class="hidden" {...props} checked={false} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="taskHistoryId">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Input type="hidden" {...props} value={data.latestTasks.id} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="triggeredTaskId">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Input type="hidden" {...props} bind:value={triggeredTaskId} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="botResponse">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Input type="hidden" {...props} bind:value={displayedBotResponse} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field {form} name="source">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Input type="hidden" {...props} value="playground" />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							{#if savedCase}
-								<Alert.Root>
-									<CircleCheckIcon class="size-4" />
-									<Alert.Title>Success!</Alert.Title>
-									<Alert.Description>This case is saved in the database.</Alert.Description>
-								</Alert.Root>
-							{:else}
-								<Form.Button
-									disabled={running || !showCase || disalbeCreateCaseButton || savedCase}
-									class="mb-2"
-								>
-									Save this case
-								</Form.Button>
 							{/if}
-						</form>
-						<Dialog.Root>
-							<Dialog.Trigger class={buttonVariants({ variant: 'default' })}
-								>Initiate Proposal based on this Case</Dialog.Trigger
-							>
-							<Dialog.Content>
-								<Dialog.Header>
-									<Dialog.Title>Are you sure absolutely sure?</Dialog.Title>
-									<Dialog.Description>
-										This action cannot be undone. This will permanently delete your account and
-										remove your data from our servers.
-									</Dialog.Description>
-								</Dialog.Header>
-							</Dialog.Content>
-						</Dialog.Root>
-					{:else}
-						<div></div>
+
+							<div class="flex items-center gap-2">
+								<form method="POST" use:enhance action="?/createCase">
+									<Form.Field {form} name="channel">
+										<Form.Control>
+											{#snippet children({ props })}
+												<!-- <Form.Label>Channel</Form.Label> -->
+												<Input type="hidden" {...props} value={displayedChannel} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="userMessage">
+										<Form.Control>
+											{#snippet children({ props })}
+												<!-- <Form.Label>User Message</Form.Label> -->
+												<Input type="hidden" {...props} bind:value={displayedUserMessage} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="realUserMessage">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Checkbox class="hidden" {...props} checked={false} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="taskHistoryId">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} value={data.latestTasks.id} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="triggeredTaskId">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} bind:value={triggeredTaskId} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="botResponse">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} bind:value={displayedBotResponse} />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="source">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} value="playground" />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									{#if savedCase}
+										<Alert.Root>
+											<CircleCheckIcon class="size-4" />
+											<Alert.Title>Success!</Alert.Title>
+											<Alert.Description>This case is saved in the database.</Alert.Description>
+										</Alert.Root>
+									{:else}
+										<Form.Button
+											disabled={running || !showCase || disalbeCreateCaseButton || savedCase}
+											class="mb-2"
+										>
+											Save this case
+										</Form.Button>
+									{/if}
+								</form>
+								<Dialog.Root>
+									<Dialog.Trigger class={buttonVariants({ variant: 'default' })}>
+										<LightbulbIcon class="size-4" />
+										New Proposal
+									</Dialog.Trigger>
+									<Dialog.Content>
+										<Dialog.Header>
+											<Dialog.Title>Initiate a new proposal</Dialog.Title>
+											<Dialog.Description>
+												Initiate a proposal based on the case you just entered and ran
+											</Dialog.Description>
+										</Dialog.Header>
+										<form method="POST" use:enhanceProposal action="?/createProposal">
+											<Form.Field form={formProposal} name="title">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label>Proposal Title</Form.Label>
+														<Input {...props} bind:value={$formDataProposal.title} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="initiator">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label>Initiator</Form.Label>
+														<Input {...props} value={data.user?.userName} readonly />
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="description">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label>Description</Form.Label>
+														<Textarea
+															{...props}
+															bind:value={$formDataProposal.description}
+															placeholder="Describe the issue you've noticed and/or suggest any changes you'd like to propose for the bot."
+														/>
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="taskHistoryId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={data.latestTasks.id} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Button>Submit</Form.Button>
+										</form>
+									</Dialog.Content>
+								</Dialog.Root>
+							</div>
+						{/if}
 					{/if}
 				</div>
-				<Dialog.Root>
-					<Dialog.Trigger class={buttonVariants({ variant: 'default' })}>
-						<LightbulbIcon class="size-4" />
-						New Proposal
-					</Dialog.Trigger>
-					<Dialog.Content>
-						<Dialog.Header>
-							<Dialog.Title>Initiate a new proposal</Dialog.Title>
-							<Dialog.Description>
-								Initiate a proposal based on the case you just entered and ran
-							</Dialog.Description>
-						</Dialog.Header>
-						<form method="POST" use:enhanceProposal action="?/createProposal">
-							<Form.Field form={formProposal} name="title">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Proposal Title</Form.Label>
-										<Input {...props} bind:value={$formDataProposal.title} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description></Form.Description>
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field form={formProposal} name="initiator">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Initiator</Form.Label>
-										<Input {...props} value={data.user?.userName} readonly />
-									{/snippet}
-								</Form.Control>
-								<Form.Description></Form.Description>
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field form={formProposal} name="description">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Description</Form.Label>
-										<Textarea
-											{...props}
-											bind:value={$formDataProposal.description}
-											placeholder="Describe the issue you've noticed and/or suggest any changes you'd like to propose for the bot."
-										/>
-									{/snippet}
-								</Form.Control>
-								<Form.Description></Form.Description>
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Field form={formProposal} name="taskHistoryId">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Input type="hidden" {...props} value={data.latestTasks.id} />
-									{/snippet}
-								</Form.Control>
-								<Form.Description />
-								<Form.FieldErrors />
-							</Form.Field>
-							<Form.Button>Submit</Form.Button>
-						</form>
-					</Dialog.Content>
-				</Dialog.Root>
+
 				<div class="flex flex-col gap-2">
 					<Select.Root type="single" bind:value={selectedChannel}>
 						<Select.Trigger class="w-[180px]">
