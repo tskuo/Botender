@@ -41,24 +41,35 @@
 	let { data }: PageProps = $props();
 
 	// initialize create case form
+	let disableCreateCaseButton = $state(true);
 	const form = superForm(data.form, {
 		validators: zodClient(playgroundCreateCaseSchema),
 		onSubmit() {
-			disalbeCreateCaseButton = true;
+			disableCreateCaseButton = true;
 		},
 		onError() {
-			disalbeCreateCaseButton = false;
+			disableCreateCaseButton = false;
 		},
 		onUpdated() {
-			disalbeCreateCaseButton = true;
+			disableCreateCaseButton = true;
 			savedCase = true;
 		}
 	});
 	const { form: formData, enhance } = form;
 
 	// initialize create proposal form
+	let disableCreateProposalBtn = $state(true);
 	const formProposal = superForm(data.formProposal, {
-		validators: zodClient(playgroundCreateProposalSchema)
+		validators: zodClient(playgroundCreateProposalSchema),
+		onSubmit() {
+			disableCreateProposalBtn = true;
+		},
+		onError() {
+			disableCreateProposalBtn = false;
+		},
+		onUpdated() {
+			disableCreateProposalBtn = true;
+		}
 	});
 	const { form: formDataProposal, enhance: enhanceProposal } = formProposal;
 
@@ -76,7 +87,6 @@
 	let triggeredTaskId = $state('');
 	let running = $state(false);
 	let showCase = $state(false);
-	let disalbeCreateCaseButton = $state(true);
 	let savedCase = $state(false);
 
 	const scopes = [
@@ -212,11 +222,10 @@
 							{/if}
 
 							<div class="flex items-center gap-2">
-								<form method="POST" use:enhance action="?/createCase">
+								<form method="POST" use:enhance action="?/createCase" class="hidden">
 									<Form.Field {form} name="channel">
 										<Form.Control>
 											{#snippet children({ props })}
-												<!-- <Form.Label>Channel</Form.Label> -->
 												<Input type="hidden" {...props} value={displayedChannel} />
 											{/snippet}
 										</Form.Control>
@@ -226,7 +235,6 @@
 									<Form.Field {form} name="userMessage">
 										<Form.Control>
 											{#snippet children({ props })}
-												<!-- <Form.Label>User Message</Form.Label> -->
 												<Input type="hidden" {...props} bind:value={displayedUserMessage} />
 											{/snippet}
 										</Form.Control>
@@ -286,7 +294,7 @@
 										</Alert.Root>
 									{:else}
 										<Form.Button
-											disabled={running || !showCase || disalbeCreateCaseButton || savedCase}
+											disabled={running || !showCase || disableCreateCaseButton || savedCase}
 											class="mb-2"
 										>
 											Save this case
@@ -349,7 +357,12 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Button>Submit</Form.Button>
+											<Form.Button disabled={disableCreateProposalBtn}>
+												{#if disableCreateProposalBtn}
+													<LoaderCircleIcon class="size-4 animate-spin" />
+												{/if}
+												Submit
+											</Form.Button>
 										</form>
 									</Dialog.Content>
 								</Dialog.Root>
@@ -395,7 +408,8 @@
 							triggeredTaskId = taskId;
 							displayedBotResponse = botResponse;
 							running = false;
-							disalbeCreateCaseButton = false;
+							disableCreateCaseButton = false;
+							disableCreateProposalBtn = false;
 							savedCase = false;
 							enteredUserMessage = '';
 						}}

@@ -44,18 +44,6 @@ export const POST = async ({ request }) => {
 			title: formProposal.data.title
 		});
 
-		// await addDoc(collection(db, 'proposals', docRef.id, 'edits'), {
-		// 	createAt: serverTimestamp(),
-		// 	botResponse: form.data.botResponse,
-		// 	proposalEditId: (form.data.source === 'proposal' ? form.data.proposalEditId : '') || '',
-		// 	proposalId: (form.data.source === 'proposal' ? form.data.proposalId : '') || '',
-		// 	taskHistoryId: form.data.taskHistoryId ?? '',
-		// 	isProposal: form.data.isProposal,
-		// 	thumbsDown: [],
-		// 	thumbsUp: [],
-		// 	triggeredTask: form.data.triggeredTaskId
-		// });
-
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
 		throw error(400, 'Fail to create a new proposal in the database.');

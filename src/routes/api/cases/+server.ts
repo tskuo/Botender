@@ -26,25 +26,25 @@ export const GET = async () => {
 
 export const POST = async ({ request }) => {
 	try {
-		const { form } = await request.json();
+		const { formCase } = await request.json();
 
 		const docRef = await addDoc(collection(db, 'cases'), {
+			channel: formCase.data.channel,
 			createAt: serverTimestamp(),
-			channel: form.data.channel,
-			userMessage: form.data.userMessage,
-			realUserMessage: form.data.realUserMessage
+			realUserMessage: formCase.data.realUserMessage,
+			userMessage: formCase.data.userMessage
 		});
 
 		await addDoc(collection(db, 'cases', docRef.id, 'botResponses'), {
+			botResponse: formCase.data.botResponse,
 			createAt: serverTimestamp(),
-			botResponse: form.data.botResponse,
-			proposalEditId: (form.data.source === 'proposal' ? form.data.proposalEditId : '') || '',
-			proposalId: (form.data.source === 'proposal' ? form.data.proposalId : '') || '',
-			taskHistoryId: form.data.taskHistoryId ?? '',
-			isProposal: form.data.isProposal,
+			proposalEditId:
+				(formCase.data.source === 'proposal' ? formCase.data.proposalEditId : '') || '',
+			proposalId: (formCase.data.source === 'proposal' ? formCase.data.proposalId : '') || '',
+			taskHistoryId: formCase.data.taskHistoryId ?? '',
 			thumbsDown: [],
 			thumbsUp: [],
-			triggeredTask: form.data.triggeredTaskId
+			triggeredTask: formCase.data.triggeredTaskId
 		});
 
 		return json({ id: docRef.id }, { status: 201 });

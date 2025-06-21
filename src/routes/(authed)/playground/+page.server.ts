@@ -23,26 +23,26 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 
 export const actions: Actions = {
 	createCase: async (event) => {
-		const form = await superValidate(event, zod(playgroundCreateCaseSchema));
+		const formCase = await superValidate(event, zod(playgroundCreateCaseSchema));
 
-		if (!form.valid) {
-			return fail(400, { form });
+		if (!formCase.valid) {
+			return fail(400, { formCase });
 		}
 
 		const resCase = await event.fetch('/api/cases', {
 			method: 'POST',
-			body: JSON.stringify({ form }),
+			body: JSON.stringify({ formCase }),
 			headers: {
 				'Content-Type': 'appplication/json'
 			}
 		});
 
 		if (!resCase.ok) {
-			return fail(400, { form });
+			return fail(400, { formCase });
 		}
 
 		return {
-			form
+			formCase
 		};
 	},
 	createProposal: async (event) => {
