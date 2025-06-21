@@ -9,6 +9,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return new Response(null, { status: 204 });
 	}
 
+	event.locals.user = {
+		userId: 'sophialiu',
+		userName: 'Sophia'
+	};
+
 	// Stage 2
 	const response = await resolve(event);
 

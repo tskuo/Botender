@@ -15,5 +15,14 @@ export const playgroundCreateCaseSchema = z.object({
 	source: z.string()
 });
 
+export const playgroundCreateProposalSchema = z.object({
+	description: z.string(),
+	initiator: z.string(),
+	taskHistoryId: z.string(),
+	testCases: z.string().array(),
+	title: z.string()
+});
+
 export type PlaygroundRunFormSchema = typeof playgroundRunFormSchema;
 export type PlaygroundCreateCaseSchema = typeof playgroundCreateCaseSchema;
+export type PlaygroundCreateProposalSchema = typeof playgroundCreateProposalSchema;

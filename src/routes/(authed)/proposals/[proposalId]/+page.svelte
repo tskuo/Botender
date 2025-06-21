@@ -25,12 +25,10 @@
 
 	// import svelte features
 	import { onMount } from 'svelte';
+	import { joi } from 'sveltekit-superforms/adapters';
 
 	// data props
 	let { data }: PageProps = $props();
-
-	// currently deployed, latest proposed, and user edited tasks
-	let editedTasks = $state(data.proposal.proposedTasks);
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -82,42 +80,37 @@
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Discussion</h3>
-				<p class="text-muted-foreground mb-1">3 people have joined the discussion</p>
-				<p>Summary: {data.proposal.discussionSummary}</p>
+				<!-- <p class="text-muted-foreground mb-1">X people have joined the discussion</p> -->
+				{#if data.proposal.discussionSummary === ''}
+					<p class="text-muted-foreground">No one has joined the discussion yet.</p>
+				{:else}
+					<p>Summary: {data.proposal.discussionSummary}</p>
+				{/if}
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Proposed Edit</h3>
-				<p class="text-muted-foreground">
-					X people have collaboratively proposed the following edits to these tasks:
-				</p>
-
-				{#each data.tasks as task (task.id)}
-					<!-- {#if task.name !== data.proposal.proposedTasks[task.id].name || task.trigger !== data.proposal.proposedTasks[task.id].trigger || task.action !== data.proposal.proposedTasks[task.id].action} -->
-					<div class="pt-4">
-						<TaskSection
-							name={data.proposal.proposedTasks[task.id].name}
-							trigger={data.proposal.proposedTasks[task.id].trigger}
-							action={data.proposal.proposedTasks[task.id].action}
-						/>
-					</div>
-					<!-- <div class="pt-4">
-							<TaskDiffSection
-								oldName={task.name}
-								oldTrigger={task.trigger}
-								oldAction={task.action}
-								newName={data.proposal.proposedTasks[task.id].name}
-								newTrigger={data.proposal.proposedTasks[task.id].trigger}
-								newAction={data.proposal.proposedTasks[task.id].action}
-							/>
-						</div> -->
-					<!-- {/if} -->
-				{/each}
+				{#if data.proposal.edits.length === 0}
+					<p class="text-muted-foreground">No edits have been proposed yet.</p>
+				{:else}
+					<p class="text-muted-foreground">
+						{#if data.proposal.edits.length === 1}
+							1 person has proposed the following edit
+						{:else}
+							{data.proposal.edits.length} people have collaboratively proposed the following edits
+						{/if}
+					</p>
+					{#each Object.entries(data.proposal.edits[0].tasks) as [taskId, task] (taskId)}
+						<div class="pt-4">
+							<TaskSection name={task.name} trigger={task.trigger} action={task.action} />
+						</div>
+					{/each}
+				{/if}
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Edit History</h3>
 				<Table.Root>
 					{#if data.proposal.edits.length === 0}
-						<Table.Caption>No edits have been made yet.</Table.Caption>
+						<Table.Caption>No edits have been proposed yet.</Table.Caption>
 					{/if}
 					<Table.Header>
 						<Table.Row class="hover:bg-trasparent">
@@ -169,24 +162,30 @@
 							<ToggleGroup.Item value="tbd" class="px-8 text-lg">1 tbd</ToggleGroup.Item>
 						</ToggleGroup.Root>
 					</div>
-					<Carousel.Root
-						opts={{
-							align: 'start'
-						}}
-						class="mx-auto w-4/5 max-w-screen md:w-5/6"
-					>
-						<Carousel.Content>
-							{#each data.testCases as testCase (testCase.id)}
-								<Carousel.Item class="xl:basis-1/2">
-									<div class="p-1">
-										<CaseCard {...testCase} testCaseBadge={true} tasks={data.tasks} />
-									</div>
-								</Carousel.Item>
-							{/each}
-						</Carousel.Content>
-						<Carousel.Previous />
-						<Carousel.Next />
-					</Carousel.Root>
+					{#if data.testCases.length === 0}
+						<div class="flex h-full items-center justify-center">
+							<p class="text-muted-foreground">No cases have been added to the test suite yet.</p>
+						</div>
+					{:else}
+						<Carousel.Root
+							opts={{
+								align: 'start'
+							}}
+							class="mx-auto w-4/5 max-w-screen md:w-5/6"
+						>
+							<Carousel.Content>
+								{#each data.testCases as testCase (testCase.id)}
+									<Carousel.Item class="xl:basis-1/2">
+										<div class="p-1">
+											<CaseCard {...testCase} testCaseBadge={true} tasks={data.tasks} />
+										</div>
+									</Carousel.Item>
+								{/each}
+							</Carousel.Content>
+							<Carousel.Previous />
+							<Carousel.Next />
+						</Carousel.Root>
+					{/if}
 				</div>
 				<Separator />
 				<div class="p-4 md:h-1/2">
