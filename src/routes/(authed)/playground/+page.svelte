@@ -235,7 +235,7 @@
 									<Form.Field {form} name="userMessage">
 										<Form.Control>
 											{#snippet children({ props })}
-												<Input type="hidden" {...props} bind:value={displayedUserMessage} />
+												<Input type="hidden" {...props} value={displayedUserMessage} />
 											{/snippet}
 										</Form.Control>
 										<Form.Description />
@@ -262,7 +262,7 @@
 									<Form.Field {form} name="triggeredTaskId">
 										<Form.Control>
 											{#snippet children({ props })}
-												<Input type="hidden" {...props} bind:value={triggeredTaskId} />
+												<Input type="hidden" {...props} value={triggeredTaskId} />
 											{/snippet}
 										</Form.Control>
 										<Form.Description />
@@ -271,7 +271,7 @@
 									<Form.Field {form} name="botResponse">
 										<Form.Control>
 											{#snippet children({ props })}
-												<Input type="hidden" {...props} bind:value={displayedBotResponse} />
+												<Input type="hidden" {...props} value={displayedBotResponse} />
 											{/snippet}
 										</Form.Control>
 										<Form.Description />
@@ -352,6 +352,61 @@
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value={data.latestTasks.id} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<!-- Form Field for Create Case -->
+											<Form.Field {form} name="channel">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedChannel} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="userMessage">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedUserMessage} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="realUserMessage">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Checkbox class="hidden" {...props} checked={false} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="triggeredTaskId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={triggeredTaskId} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="botResponse">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedBotResponse} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="source">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="playground" />
 													{/snippet}
 												</Form.Control>
 												<Form.Description />

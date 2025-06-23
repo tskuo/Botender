@@ -29,6 +29,7 @@
 		realUserMessage = false,
 		triggeredTask = '0',
 		userMessage = '',
+		taskHistoryId = '',
 		tasks = {},
 		testCaseBadge = false,
 		checkingBadge = false
@@ -41,9 +42,9 @@
 	const textLengthCap = 95;
 
 	onMount(async () => {
+		let data;
 		if (page.url.pathname === '/cases') {
-			// Fetch the latest bot response for the case when the component mounts on the cases page
-			const res = await fetch(`/api/cases/${id}/botResponses?latest=true`, {
+			const res = await fetch(`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'
@@ -53,14 +54,30 @@
 				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
 				return;
 			}
-			const data = await res.json();
-			const botResponses = data.botResponses;
-			triggeredTask = botResponses[0].triggeredTask;
-			botResponse = botResponses[0].botResponse;
-			thumbsUp = botResponses[0].thumbsUp;
-			thumbsDown = botResponses[0].thumbsDown;
-			loadingBotResponse = false;
+			data = await res.json();
+		} else if (page.url.pathname.startsWith('/proposals/')) {
+			const proposalId = page.params.proposalId;
+			const res = await fetch(
+				`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}&proposalId=${proposalId}`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}
+			);
+			if (!res.ok) {
+				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
+				return;
+			}
+			data = await res.json();
 		}
+		const botResponses = data.botResponses;
+		triggeredTask = botResponses[0].triggeredTask;
+		botResponse = botResponses[0].botResponse;
+		thumbsUp = botResponses[0].thumbsUp;
+		thumbsDown = botResponses[0].thumbsDown;
+		loadingBotResponse = false;
 	});
 </script>
 

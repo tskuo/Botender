@@ -32,6 +32,7 @@ export const POST = async ({ request }) => {
 			channel: formCase.data.channel,
 			createAt: serverTimestamp(),
 			realUserMessage: formCase.data.realUserMessage,
+			source: formCase.data.source,
 			userMessage: formCase.data.userMessage
 		});
 

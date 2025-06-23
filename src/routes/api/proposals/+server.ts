@@ -31,7 +31,7 @@ export const GET = async () => {
 
 export const POST = async ({ request }) => {
 	try {
-		const { formProposal } = await request.json();
+		const { formProposal, caseId } = await request.json();
 
 		const docRef = await addDoc(collection(db, 'proposals'), {
 			createAt: serverTimestamp(),
@@ -40,7 +40,7 @@ export const POST = async ({ request }) => {
 			initiator: formProposal.data.initiator,
 			open: true,
 			taskHistoryId: formProposal.data.taskHistoryId,
-			testCases: [],
+			testCases: caseId ? [caseId] : [],
 			title: formProposal.data.title
 		});
 

@@ -4,6 +4,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { playgroundCreateCaseSchema, playgroundCreateProposalSchema } from '$lib/schema.js';
 
 import { zod } from 'sveltekit-superforms/adapters';
+import { user } from 'firebase-functions/v1/auth';
 
 export const load: PageServerLoad = async ({ fetch, locals }) => {
 	try {
@@ -52,9 +53,31 @@ export const actions: Actions = {
 			return fail(400, { formProposal });
 		}
 
+		const resCase = await event.fetch('/api/cases', {
+			method: 'POST',
+			body: JSON.stringify({
+				formCase: {
+					data: {
+						channel: formProposal.data.channel,
+						realUserMessage: formProposal.data.realUserMessage,
+						userMessage: formProposal.data.userMessage,
+						botResponse: formProposal.data.botResponse,
+						taskHistoryId: formProposal.data.taskHistoryId,
+						triggeredTaskId: formProposal.data.triggeredTaskId,
+						source: formProposal.data.source
+					}
+				}
+			}),
+			headers: {
+				'Content-Type': 'appplication/json'
+			}
+		});
+
+		const dataCase = await resCase.json();
+
 		const resProposal = await event.fetch('/api/proposals', {
 			method: 'POST',
-			body: JSON.stringify({ formProposal }),
+			body: JSON.stringify({ formProposal, caseId: dataCase.id }),
 			headers: {
 				'Content-Type': 'appplication/json'
 			}
@@ -63,7 +86,7 @@ export const actions: Actions = {
 			return fail(400, { formProposal });
 		}
 		// Redirect to the newly created proposal
-		const data = await resProposal.json();
-		throw redirect(303, `/proposals/${data.id}`);
+		const dataProposal = await resProposal.json();
+		throw redirect(303, `/proposals/${dataProposal.id}`);
 	}
 };

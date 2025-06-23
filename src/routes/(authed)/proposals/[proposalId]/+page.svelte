@@ -177,7 +177,12 @@
 								{#each data.testCases as testCase (testCase.id)}
 									<Carousel.Item class="xl:basis-1/2">
 										<div class="p-1">
-											<CaseCard {...testCase} testCaseBadge={true} tasks={data.tasks} />
+											<CaseCard
+												{...testCase}
+												testCaseBadge={true}
+												tasks={data.tasks}
+												taskHistoryId={data.proposal.taskHistoryId}
+											/>
 										</div>
 									</Carousel.Item>
 								{/each}

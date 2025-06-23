@@ -18,7 +18,7 @@
 
 	<div class="grid auto-rows-fr gap-2 p-4 md:grid-cols-2 lg:grid-cols-3">
 		{#each data.cases as c (c.id)}
-			<CaseCard {...c} tasks={data.latestTasks.tasks} />
+			<CaseCard {...c} tasks={data.latestTasks.tasks} taskHistoryId={data.latestTasks.id} />
 		{/each}
 	</div>
 </div>

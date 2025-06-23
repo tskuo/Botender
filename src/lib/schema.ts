@@ -20,7 +20,14 @@ export const playgroundCreateProposalSchema = z.object({
 	initiator: z.string(),
 	taskHistoryId: z.string(),
 	testCases: z.string().array(),
-	title: z.string()
+	title: z.string(),
+	// the following fields are used for case creation
+	botResponse: z.string(),
+	channel: z.string(),
+	realUserMessage: z.boolean(),
+	triggeredTaskId: z.string(),
+	userMessage: z.string(),
+	source: z.string()
 });
 
 export type PlaygroundRunFormSchema = typeof playgroundRunFormSchema;
