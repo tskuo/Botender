@@ -23,6 +23,10 @@ declare global {
 		trigger: string;
 	};
 
+	type Tasks = {
+		[key: string]: Task;
+	};
+
 	type EditedTask = {
 		action: string;
 		name: string;

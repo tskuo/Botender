@@ -29,17 +29,16 @@
 
 	let {
 		id = '',
-		botResponse = '',
 		channel = '',
 		createdAt = new Date(),
 		realUserMessage = false,
-		triggeredTask = '0',
 		userMessage = '',
 		taskHistoryId = '',
 		edits = [],
 		tasks = {},
 		testCaseBadge = false,
-		checkingBadge = false
+		checkingBadge = false,
+		user
 	} = $props();
 
 	let loadingBotResponse = $state(true);
@@ -49,7 +48,7 @@
 
 	const textLengthCap = 95;
 
-	onMount(async () => {
+	const loadBotResponses = async () => {
 		let data;
 		if (page.url.pathname === '/cases') {
 			const res = await fetch(`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`, {
@@ -82,13 +81,55 @@
 		}
 		botResponses = data.botResponses;
 		loadingBotResponse = false;
-	});
+	};
 
-	// const generateResponse = async () => {};
+	const generateBotResponse = async (
+		tasks: Tasks,
+		proposalEditId = '',
+		proposalId = '',
+		taskHistoryId = ''
+	) => {
+		loadingBotResponse = true;
+		const resBot = await fetch('/api/bot', {
+			method: 'POST',
+			body: JSON.stringify({
+				channel: channel,
+				userMessage: userMessage,
+				tasks: tasks,
+				soures: 'proposal'
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		const { taskId, botResponse } = await resBot.json();
+
+		const resBotResponse = await fetch(`/api/cases/${id}/botResponses`, {
+			method: 'POST',
+			body: JSON.stringify({
+				botResponse: botResponse,
+				proposalEditId: proposalEditId,
+				proposalId: proposalId,
+				taskHistoryId: taskHistoryId,
+				triggeredTaskId: taskId
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (resBotResponse.ok) {
+			loadBotResponses();
+		}
+	};
+
+	onMount(async () => {
+		loadBotResponses();
+	});
 </script>
 
 {#snippet botResponseSection(botResponse: BotResponse, lengthCap = 0)}
-	<div class="mb-2 flex items-center">
+	<div class="mb-2 flex w-full items-center">
 		<WrenchIcon class="mr-2 size-4" />
 		<h4 class="font-medium">
 			{botResponse.triggeredTask in tasks
@@ -96,7 +137,7 @@
 				: 'No Task is Triggered'}
 		</h4>
 	</div>
-	<div class="flex">
+	<div class="flex w-full">
 		{#if botResponse.botResponse !== ''}
 			<BotIcon class="mt-1 mr-2 size-4 flex-none" />
 			{#if lengthCap !== 0}
@@ -112,6 +153,58 @@
 			<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
 			<p>The bot chose not to respond.</p>
 		{/if}
+	</div>
+{/snippet}
+
+{#snippet thumbsUpDownButtons(botResponse: BotResponse)}
+	<ToggleGroup.Root
+		type="single"
+		class="mt-6 w-full"
+		variant="outline"
+		value={botResponse.thumbsUp.includes(user.userId)
+			? 'thumbsUp'
+			: botResponse.thumbsDown.includes(user.userId)
+				? 'thumbsDown'
+				: undefined}
+		onValueChange={async (value) => {
+			const resBotResponse = await fetch(`/api/cases/${id}/botResponses/${botResponse.id}`, {
+				method: 'PATCH',
+				body: JSON.stringify({
+					value: value
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (resBotResponse.ok) {
+				loadBotResponses();
+			}
+		}}
+	>
+		<ToggleGroup.Item value="thumbsUp" class="data-[state=on]:bg-my-green">
+			<ThumbsUpIcon class="size-4" />good response
+		</ToggleGroup.Item>
+		<ToggleGroup.Item value="thumbsDown" class="data-[state=on]:bg-my-pink">
+			<ThumbsDownIcon class="size-4" />bad response
+		</ToggleGroup.Item>
+	</ToggleGroup.Root>
+{/snippet}
+
+{#snippet thumbsUpDownIcons(botResponse: BotResponse)}
+	<div class="flex w-full items-center justify-around">
+		<div
+			class="flex items-center {botResponse.thumbsUp.includes(user.userId) ? 'text-my-green' : ''}"
+		>
+			<ThumbsUpIcon class="mr-2 size-5" />
+			<p>{botResponse.thumbsUp.length}</p>
+		</div>
+		<div
+			class="flex items-center {botResponse.thumbsDown.includes(user.userId) ? 'text-my-pink' : ''}"
+		>
+			<ThumbsDownIcon class="mr-2 size-5" />
+			<p>{botResponse.thumbsDown.length}</p>
+		</div>
 	</div>
 {/snippet}
 
@@ -203,16 +296,31 @@
 			</Card.Content>
 			{#if !loadingBotResponse}
 				<Card.Footer class="mt-auto">
-					<div class="flex w-full items-center justify-around">
-						<div class="flex items-center">
-							<ThumbsUpIcon class="mr-2 size-5" />
-							<p>{thumbsUp.length}</p>
-						</div>
-						<div class="flex items-center">
-							<ThumbsDownIcon class="mr-2 size-5" />
-							<p>{thumbsDown.length}</p>
-						</div>
-					</div>
+					{#if page.url.pathname === '/cases'}
+						{@const response = botResponses.find(
+							(r: BotResponse) => r.taskHistoryId === taskHistoryId
+						)}
+						{#if response !== undefined}
+							{@render thumbsUpDownIcons(response)}
+						{/if}
+					{/if}
+					{#if page.url.pathname.startsWith('/proposals/')}
+						{#if edits.length > 0}
+							{@const response = botResponses.find(
+								(r: BotResponse) => r.proposalEditId === edits[0].id
+							)}
+							{#if response !== undefined}
+								{@render thumbsUpDownIcons(response)}
+							{/if}
+						{:else}
+							{@const response = botResponses.find(
+								(r: BotResponse) => r.taskHistoryId === taskHistoryId
+							)}
+							{#if response !== undefined}
+								{@render thumbsUpDownIcons(response)}
+							{/if}
+						{/if}
+					{/if}
 				</Card.Footer>
 			{/if}
 		</Card.Root>
@@ -260,6 +368,7 @@
 							</Alert.Root>
 						{:else}
 							{@render botResponseSection(response)}
+							{@render thumbsUpDownButtons(response)}
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
@@ -268,13 +377,21 @@
 								(r: BotResponse) => r.proposalEditId === edits[0].id
 							)}
 							{#if response === undefined}
-								<Alert.Root>
-									<Alert.Description>
-										No response has been generated based on the most recent edit to the bot.
-									</Alert.Description>
-								</Alert.Root>
+								<Button
+									class="w-full"
+									onclick={async () =>
+										await generateBotResponse(
+											edits[0].tasks,
+											edits[0].id,
+											page.params.proposalId,
+											''
+										)}
+								>
+									<PlayIcon class="size-4" />Generate Bot Response
+								</Button>
 							{:else}
 								{@render botResponseSection(response)}
+								{@render thumbsUpDownButtons(response)}
 							{/if}
 						{:else}
 							{@const response = botResponses.find(
@@ -288,20 +405,13 @@
 								</Alert.Root>
 							{:else}
 								{@render botResponseSection(response)}
+								{@render thumbsUpDownButtons(response)}
 							{/if}
 						{/if}
 					{/if}
 				{/if}
-				<ToggleGroup.Root type="single" class="my-6 w-full" variant="outline">
-					<ToggleGroup.Item value="good">
-						<ThumbsUpIcon class="size-4" />good response
-					</ToggleGroup.Item>
-					<ToggleGroup.Item value="bad">
-						<ThumbsDownIcon class="size-4" />bad response
-					</ToggleGroup.Item>
-				</ToggleGroup.Root>
 				{#if page.url.pathname.startsWith('/proposals/')}
-					<h4>Bot responses from all edits and the initial prompt:</h4>
+					<h4 class="mt-6">Bot responses from all edits and the initial prompt:</h4>
 					<Accordion.Root type="single" class="w-full">
 						{#each edits as edit, i (edit.id)}
 							<Accordion.Item value="edit-{edit.id}">

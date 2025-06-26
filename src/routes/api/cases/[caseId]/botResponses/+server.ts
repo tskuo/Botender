@@ -1,5 +1,15 @@
 import { json, error } from '@sveltejs/kit';
-import { collection, getDocs, query, orderBy, limit, where, or } from 'firebase/firestore';
+import {
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	limit,
+	where,
+	or,
+	addDoc,
+	serverTimestamp
+} from 'firebase/firestore';
 
 import { db } from '$lib/firebase';
 
@@ -80,4 +90,30 @@ export const GET = async ({ params, url }) => {
 		});
 	}
 	throw error(404, `Case #${params.caseId} not found.`);
+};
+
+export const POST = async ({ request, params }) => {
+	try {
+		const {
+			botResponse,
+			proposalEditId = '',
+			proposalId = '',
+			taskHistoryId = '',
+			triggeredTaskId
+		} = await request.json();
+
+		const docRef = await addDoc(collection(db, 'cases', params.caseId, 'botResponses'), {
+			botResponse: botResponse,
+			createAt: serverTimestamp(),
+			proposalEditId: proposalEditId,
+			proposalId: proposalId,
+			taskHistoryId: taskHistoryId,
+			thumbsDown: [],
+			thumbsUp: [],
+			triggeredTask: triggeredTaskId
+		});
+		return json({ id: docRef.id }, { status: 201 });
+	} catch {
+		throw error(400, 'Fail to save a new edit in the database.');
+	}
 };

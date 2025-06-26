@@ -294,9 +294,15 @@
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
 
-	--color-discord-yellow: oklch(0.907 0.1585 104.04);
+	--color-discord-yellow: oklch(0.9124 0.1092 89.32);
+	--color-my-green: oklch(0.7466 0.1283 191.55);
+	--color-my-pink: oklch(0.7767 0.096 14.62);
+
 	--color-discord-green: oklch(0.8335 0.2088 151.18);
 	--color-discord-pink: oklch(0.7106 0.2509 339.8);
+
+	--color-discord-darkgreen: oklch(0.2506 0.047657 174.0547);
+	--color-discord-darkpink: oklch(0.2772 0.0438 347.85);
 }
 
 @layer base {

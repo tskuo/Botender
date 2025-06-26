@@ -5,7 +5,6 @@
 	// import my components
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
-	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -270,9 +269,9 @@
 							type="single"
 							class="mx-auto self-start md:mr-0"
 						>
-							<ToggleGroup.Item value="good" class="px-8 text-lg">2 good</ToggleGroup.Item>
-							<ToggleGroup.Item value="bad" class="px-8 text-lg">2 bad</ToggleGroup.Item>
-							<ToggleGroup.Item value="tbd" class="px-8 text-lg">1 tbd</ToggleGroup.Item>
+							<ToggleGroup.Item value="good" class="px-8 text-lg">- good</ToggleGroup.Item>
+							<ToggleGroup.Item value="bad" class="px-8 text-lg">- bad</ToggleGroup.Item>
+							<ToggleGroup.Item value="tbd" class="px-8 text-lg">- tbd</ToggleGroup.Item>
 						</ToggleGroup.Root>
 					</div>
 					{#if data.testCases.length === 0}
@@ -296,6 +295,7 @@
 												tasks={data.originalTasks.tasks}
 												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
+												user={data.user}
 											/>
 										</div>
 									</Carousel.Item>

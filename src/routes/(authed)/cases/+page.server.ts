@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch, locals }) => {
 	try {
 		const res = await fetch('/api/tasks?latest=true');
 		const latestTasks = await res.json();
@@ -11,9 +11,10 @@ export const load: PageServerLoad = async ({ fetch }) => {
 
 		return {
 			latestTasks,
-			cases
+			cases,
+			user: locals.user
 		};
 	} catch {
-		throw error(404, 'Fail to fetch tasks.');
+		throw error(404, 'Fail to fetch cases.');
 	}
 };
