@@ -17,6 +17,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -31,14 +32,13 @@
 
 	// import svelte features
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	// data props
 	let { data }: PageProps = $props();
 
 	// state for the proposal
-	let editedTasks = $state(
-		data.proposal.edits.length > 0 ? data.proposal.edits[0].tasks : data.originalTasks.tasks
-	);
+	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -98,16 +98,16 @@
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Proposed Edit</h3>
-				{#if data.proposal.edits.length === 0}
+				{#if data.edits.length === 0}
 					<p class="text-muted-foreground text-sm">
 						No edits have been proposed yet. The following are the original task prompts.
 					</p>
 				{:else}
 					<p class="text-muted-foreground">
-						{#if data.proposal.edits.length === 1}
+						{#if data.edits.length === 1}
 							1 person has proposed the following edit
 						{:else}
-							{data.proposal.edits.length} people have collaboratively proposed the following edits
+							{data.edits.length} people have collaboratively proposed the following edits
 						{/if}
 					</p>
 				{/if}
@@ -125,8 +125,8 @@
 				</p>
 				<div class="mt-2 flex items-center justify-between">
 					<Button
-						disabled={data.proposal.edits.length > 0
-							? _.isEqual(editedTasks, data.proposal.edits[0].tasks)
+						disabled={data.edits.length > 0
+							? _.isEqual(editedTasks, data.edits[0].tasks)
 							: _.isEqual(editedTasks, data.originalTasks.tasks)}
 					>
 						<PlayIcon class="size-4" />Test
@@ -134,12 +134,12 @@
 					<div class="flex items-center gap-2">
 						<Button
 							variant="secondary"
-							disabled={data.proposal.edits.length > 0
-								? _.isEqual(editedTasks, data.proposal.edits[0].tasks)
+							disabled={data.edits.length > 0
+								? _.isEqual(editedTasks, data.edits[0].tasks)
 								: _.isEqual(editedTasks, data.originalTasks.tasks)}
 							onclick={() => {
-								if (data.proposal.edits.length > 0) {
-									editedTasks = data.proposal.edits[0].tasks;
+								if (data.edits.length > 0) {
+									editedTasks = data.edits[0].tasks;
 								} else {
 									editedTasks = data.originalTasks.tasks;
 								}
@@ -147,7 +147,27 @@
 						>
 							<UndoIcon class="size-4" />Reset
 						</Button>
-						<Button variant="secondary" disabled>
+						<Button
+							variant="secondary"
+							disabled={data.edits.length > 0
+								? _.isEqual(editedTasks, data.edits[0].tasks)
+								: _.isEqual(editedTasks, data.originalTasks.tasks)}
+							onclick={async () => {
+								const response = await fetch(`/api/proposals/${data.proposal.id}/edits`, {
+									method: 'POST',
+									body: JSON.stringify({
+										tasks: editedTasks,
+										editor: data.user?.userId
+									}),
+									headers: {
+										'Content-Type': 'application/json'
+									}
+								});
+								if (response.ok) {
+									invalidateAll();
+								}
+							}}
+						>
 							<SaveIcon class="size-4" />Save
 						</Button>
 					</div>
@@ -156,23 +176,69 @@
 			<div class="mb-2 p-2">
 				<h3>Edit History</h3>
 				<Table.Root>
-					{#if data.proposal.edits.length === 0}
+					{#if data.edits.length === 0}
 						<Table.Caption>No edits have been proposed yet.</Table.Caption>
 					{/if}
 					<Table.Header>
 						<Table.Row class="hover:bg-trasparent">
 							<Table.Head><h4>Edit</h4></Table.Head>
 							<Table.Head><h4>Editor</h4></Table.Head>
-							<Table.Head><h4>Test Cases</h4></Table.Head>
+							<Table.Head><h4>Time</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each data.proposal.edits as edit (edit.id)}
-							<Table.Row>
-								<Table.Cell>view</Table.Cell>
+						{#each data.edits as edit, i (edit.id)}
+							<Table.Row class="hover:bg-trasparent">
+								{#if i === 0}
+									<Table.Cell>current</Table.Cell>
+								{:else}
+									<Table.Cell>
+										<Dialog.Root>
+											<Dialog.Trigger class="hover:cursor-pointer hover:underline">
+												view
+											</Dialog.Trigger>
+											<Dialog.Content>
+												<Dialog.Header>
+													<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
+													<Dialog.Description>
+														<p>
+															{new Date(edit.createAt).toLocaleString([], {
+																year: 'numeric',
+																month: 'numeric',
+																day: 'numeric',
+																hour: '2-digit',
+																minute: '2-digit',
+																hour12: false
+															})}
+														</p>
+														{#each Object.entries(edit.tasks) as [taskId, task] (taskId)}
+															<div class="pt-4">
+																<TaskSection
+																	name={edit.tasks[taskId].name}
+																	trigger={edit.tasks[taskId].trigger}
+																	action={edit.tasks[taskId].action}
+																	readonly={true}
+																/>
+															</div>
+														{/each}
+													</Dialog.Description>
+												</Dialog.Header>
+											</Dialog.Content>
+										</Dialog.Root>
+									</Table.Cell>
+								{/if}
 								<Table.Cell>{edit.editor}</Table.Cell>
-								<Table.Cell>xxx</Table.Cell>
+								<Table.Cell>
+									{new Date(edit.createAt).toLocaleString([], {
+										year: 'numeric',
+										month: 'numeric',
+										day: 'numeric',
+										hour: '2-digit',
+										minute: '2-digit',
+										hour12: false
+									})}
+								</Table.Cell>
 								<Table.Cell>
 									<div class="flex items-center">
 										<ArrowBigUpIcon class="mr-2 size-4" />
@@ -228,7 +294,7 @@
 												{...testCase}
 												testCaseBadge={true}
 												tasks={data.originalTasks.tasks}
-												edits={data.proposal.edits}
+												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 											/>
 										</div>
@@ -244,16 +310,16 @@
 				<div class="p-4 md:h-1/2">
 					<h3>Check other cases for possible side effects from the proposed edit</h3>
 					<p class="text-muted-foreground mb-1">
-						5 cases have been suggested. You may add (+) relevant cases to the test cases.
+						0 cases have been suggested. You may add (+) relevant cases to the test cases.
 					</p>
-					<Carousel.Root
+					<!-- <Carousel.Root
 						opts={{
 							align: 'start'
 						}}
 						class="mx-auto w-4/5 max-w-screen md:w-5/6"
 					>
 						<Carousel.Content>
-							<!-- {#each Array(5) as _, i (i)}
+							{#each Array(5) as _, i (i)}
 								<Carousel.Item class="xl:basis-1/2">
 									<div class="p-1">
 										<CaseCard
@@ -265,11 +331,11 @@
 										/>
 									</div>
 								</Carousel.Item>
-							{/each} -->
+							{/each}
 						</Carousel.Content>
 						<Carousel.Previous />
 						<Carousel.Next />
-					</Carousel.Root>
+					</Carousel.Root> -->
 				</div>
 			</div>
 			<div class="w-full shrink-0">
