@@ -1,4 +1,7 @@
 <script lang="ts">
+	// import lodash for object comparison
+	import _ from 'lodash';
+
 	// import my components
 	import TaskSection from '$lib/components/TaskSection.svelte';
 
@@ -75,9 +78,7 @@
 
 	// initialize states
 	let playgroundTasks = $state(data.latestTasks.tasks);
-	let isTaskChanged = $derived(
-		JSON.stringify(playgroundTasks) !== JSON.stringify(data.latestTasks.tasks)
-	);
+	let isTaskChanged = $derived(!_.isEqual(playgroundTasks, data.latestTasks.tasks));
 	let scope = $state('overall');
 	let selectedChannel = $state('');
 	let displayedChannel = $state('');
@@ -103,26 +104,15 @@
 	<div class="sticky top-0 z-10 bg-white">
 		<div class="flex items-center justify-between p-3">
 			<h2 class=" text-xl font-bold">Playground</h2>
-			<div class="flex gap-2">
-				<Button
-					variant="secondary"
-					onclick={() => {
-						playgroundTasks = data.latestTasks.tasks;
-					}}
-				>
-					<UndoIcon class="size-4" />
-					Reset
-				</Button>
-				<Button
-					variant="secondary"
-					onclick={() => {
-						showCase = false;
-					}}
-				>
-					<PaintbrushIcon class="size-4" />
-					Clear
-				</Button>
-			</div>
+			<!-- <Button
+				variant="secondary"
+				onclick={() => {
+					showCase = false;
+				}}
+			>
+				<PaintbrushIcon class="size-4" />
+				Clear
+			</Button> -->
 		</div>
 		<Separator />
 	</div>
@@ -172,6 +162,17 @@
 						{/if}
 					{/each}
 				</div>
+				<Button
+					class="m-2"
+					variant="secondary"
+					disabled={!isTaskChanged}
+					onclick={() => {
+						playgroundTasks = data.latestTasks.tasks;
+					}}
+				>
+					<UndoIcon class="size-4" />
+					Reset
+				</Button>
 			</ScrollArea>
 		</div>
 		<div class="p-3 md:col-span-3">

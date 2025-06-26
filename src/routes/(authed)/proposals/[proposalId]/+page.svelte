@@ -1,4 +1,7 @@
 <script lang="ts">
+	// import lodash for object comparison
+	import _ from 'lodash';
+
 	// import my components
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
@@ -19,16 +22,23 @@
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
+	import PlayIcon from '@lucide/svelte/icons/play';
+	import UndoIcon from '@lucide/svelte/icons/undo';
+	import SaveIcon from '@lucide/svelte/icons/save';
 
 	// import types
 	import type { PageProps } from './$types';
 
 	// import svelte features
 	import { onMount } from 'svelte';
-	import { joi } from 'sveltekit-superforms/adapters';
 
 	// data props
 	let { data }: PageProps = $props();
+
+	// state for the proposal
+	let editedTasks = $state(
+		data.proposal.edits.length > 0 ? data.proposal.edits[0].tasks : data.originalTasks.tasks
+	);
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -63,7 +73,7 @@
 		<div class="overflow-auto border-r p-2 md:col-span-2">
 			<div class="mb-2 p-2">
 				<h3>Description</h3>
-				<p class="text-muted-foreground mb-1">
+				<p class="text-muted-foreground mb-1 text-sm">
 					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
 						[],
 						{
@@ -80,9 +90,8 @@
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Discussion</h3>
-				<!-- <p class="text-muted-foreground mb-1">X people have joined the discussion</p> -->
 				{#if data.proposal.discussionSummary === ''}
-					<p class="text-muted-foreground">No one has joined the discussion yet.</p>
+					<p class="text-muted-foreground text-sm">No one has joined the discussion yet.</p>
 				{:else}
 					<p>Summary: {data.proposal.discussionSummary}</p>
 				{/if}
@@ -90,7 +99,9 @@
 			<div class="mb-2 p-2">
 				<h3>Proposed Edit</h3>
 				{#if data.proposal.edits.length === 0}
-					<p class="text-muted-foreground">No edits have been proposed yet.</p>
+					<p class="text-muted-foreground text-sm">
+						No edits have been proposed yet. The following are the original task prompts.
+					</p>
 				{:else}
 					<p class="text-muted-foreground">
 						{#if data.proposal.edits.length === 1}
@@ -99,12 +110,48 @@
 							{data.proposal.edits.length} people have collaboratively proposed the following edits
 						{/if}
 					</p>
-					{#each Object.entries(data.proposal.edits[0].tasks) as [taskId, task] (taskId)}
-						<div class="pt-4">
-							<TaskSection name={task.name} trigger={task.trigger} action={task.action} />
-						</div>
-					{/each}
 				{/if}
+				{#each Object.entries(editedTasks) as [taskId, task] (taskId)}
+					<div class="pt-4">
+						<TaskSection
+							bind:name={editedTasks[taskId].name}
+							bind:trigger={editedTasks[taskId].trigger}
+							bind:action={editedTasks[taskId].action}
+						/>
+					</div>
+				{/each}
+				<p class="text-muted-foreground my-1 text-sm">
+					To save new edits, you must first run tests to check the updated bot responses.
+				</p>
+				<div class="mt-2 flex items-center justify-between">
+					<Button
+						disabled={data.proposal.edits.length > 0
+							? _.isEqual(editedTasks, data.proposal.edits[0].tasks)
+							: _.isEqual(editedTasks, data.originalTasks.tasks)}
+					>
+						<PlayIcon class="size-4" />Test
+					</Button>
+					<div class="flex items-center gap-2">
+						<Button
+							variant="secondary"
+							disabled={data.proposal.edits.length > 0
+								? _.isEqual(editedTasks, data.proposal.edits[0].tasks)
+								: _.isEqual(editedTasks, data.originalTasks.tasks)}
+							onclick={() => {
+								if (data.proposal.edits.length > 0) {
+									editedTasks = data.proposal.edits[0].tasks;
+								} else {
+									editedTasks = data.originalTasks.tasks;
+								}
+							}}
+						>
+							<UndoIcon class="size-4" />Reset
+						</Button>
+						<Button variant="secondary" disabled>
+							<SaveIcon class="size-4" />Save
+						</Button>
+					</div>
+				</div>
 			</div>
 			<div class="mb-2 p-2">
 				<h3>Edit History</h3>
@@ -180,7 +227,8 @@
 											<CaseCard
 												{...testCase}
 												testCaseBadge={true}
-												tasks={data.tasks}
+												tasks={data.originalTasks.tasks}
+												edits={data.proposal.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 											/>
 										</div>

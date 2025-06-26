@@ -6,8 +6,8 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 		const resProposal = await fetch(`/api/proposals/${params.proposalId}`);
 		const proposal = await resProposal.json();
 
-		const resTasks = await fetch('/api/tasks');
-		const tasks: Task[] = await resTasks.json();
+		const resOriginalTasks = await fetch(`/api/taskHistory/${proposal.taskHistoryId}`);
+		const originalTasks = await resOriginalTasks.json();
 
 		const testCases = [];
 
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 
 		return {
 			proposal,
-			tasks,
+			originalTasks,
 			testCases
 		};
 	} catch {

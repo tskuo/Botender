@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, or } from 'firebase/firestore';
 
 import { db } from '$lib/firebase';
 
@@ -25,7 +25,30 @@ export const GET = async ({ params, url }) => {
 	// 		throw error(404, `Case #${params.caseId} bot responses not found.`);
 	// 	}
 	// } else
-	if (url.searchParams.get('taskHistoryId')) {
+	if (url.searchParams.get('taskHistoryId') && url.searchParams.get('proposalId')) {
+		const subColRef = collection(db, 'cases', params.caseId, 'botResponses');
+		const querySnapshot = await getDocs(
+			query(
+				subColRef,
+				or(
+					where('taskHistoryId', '==', url.searchParams.get('taskHistoryId')),
+					where('proposalId', '==', url.searchParams.get('proposalId'))
+				)
+			)
+		);
+		if (!querySnapshot.empty) {
+			const botResponsesData = querySnapshot.docs.map((doc) => ({
+				id: doc.id,
+				...doc.data(),
+				createAt: doc.data().createAt.toDate()
+			}));
+			return json({
+				botResponses: botResponsesData
+			});
+		} else {
+			throw error(404, `Case #${params.caseId} bot responses not found.`);
+		}
+	} else if (url.searchParams.get('taskHistoryId')) {
 		const subColRef = collection(db, 'cases', params.caseId, 'botResponses');
 		const querySnapshot = await getDocs(
 			query(
