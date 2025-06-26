@@ -38,6 +38,18 @@ declare global {
 		triggeredTask: string;
 		userMessage: string;
 	};
+
+	type BotResponse = {
+		id: string;
+		botResponse: string;
+		createAt: date;
+		proposalEditId: string;
+		proposalId: string;
+		taskHistoryId: string;
+		thumbsDown: string[];
+		thumbsUp: string[];
+		triggeredTask: string;
+	};
 }
 
 export {};
