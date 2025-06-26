@@ -43,8 +43,6 @@
 
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);
-	let thumbsUp = $state([]);
-	let thumbsDown = $state([]);
 
 	const textLengthCap = 95;
 
