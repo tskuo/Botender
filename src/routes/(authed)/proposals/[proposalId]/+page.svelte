@@ -38,6 +38,7 @@
 
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
+	let testCases = $state(data.testCases);
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -56,6 +57,23 @@
 		window.addEventListener('resize', updateSheetWidth);
 		return () => window.removeEventListener('resize', updateSheetWidth);
 	});
+
+	let removeCaseFuntion = async (caseId: string) => {
+		const res = await fetch(`/api/proposals/${data.proposal.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				action: 'removeCase',
+				caseId: caseId
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (res.ok) {
+			testCases = testCases.filter((c: Case) => c.id !== caseId);
+		}
+	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -259,8 +277,8 @@
 						<div>
 							<h3>Check test cases</h3>
 							<p class="text-muted-foreground mb-1">
-								{data.testCases.length} test
-								{data.testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
+								{testCases.length} test
+								{testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
 							</p>
 						</div>
 						<ToggleGroup.Root
@@ -274,7 +292,7 @@
 							<ToggleGroup.Item value="tbd" class="px-8 text-lg">- tbd</ToggleGroup.Item>
 						</ToggleGroup.Root>
 					</div>
-					{#if data.testCases.length === 0}
+					{#if testCases.length === 0}
 						<div class="flex h-full items-center justify-center">
 							<p class="text-muted-foreground">No cases have been added to the test suite yet.</p>
 						</div>
@@ -286,7 +304,7 @@
 							class="mx-auto w-4/5 max-w-screen md:w-5/6"
 						>
 							<Carousel.Content>
-								{#each data.testCases as testCase (testCase.id)}
+								{#each testCases as testCase (testCase.id)}
 									<Carousel.Item class="xl:basis-1/2">
 										<div class="p-1">
 											<CaseCard
@@ -296,6 +314,7 @@
 												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 												user={data.user}
+												{removeCaseFuntion}
 											/>
 										</div>
 									</Carousel.Item>

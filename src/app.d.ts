@@ -35,11 +35,10 @@ declare global {
 
 	type Case = {
 		id: string;
-		botResponse: string;
 		channel: string;
 		createAt: date;
 		realUserMessage: boolean;
-		triggeredTask: string;
+		source: string;
 		userMessage: string;
 	};
 

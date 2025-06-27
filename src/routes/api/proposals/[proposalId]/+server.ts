@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 
 import { db } from '$lib/firebase';
 
@@ -15,4 +15,22 @@ export const GET = async ({ params }) => {
 		});
 	}
 	throw error(404, `Proposal #${params.proposalId} not found.`);
+};
+
+export const PATCH = async ({ params, request }) => {
+	try {
+		const { action = '', caseId } = await request.json();
+		if (action === 'removeCase') {
+			await updateDoc(doc(db, 'proposals', params.proposalId), {
+				testCases: arrayRemove(caseId)
+			});
+		} else if (action === 'addCase') {
+			await updateDoc(doc(db, 'proposals', params.proposalId), {
+				testCases: arrayUnion(caseId)
+			});
+		}
+		return json({ status: 201 });
+	} catch {
+		throw error(400, 'Fail to update user vote.');
+	}
 };

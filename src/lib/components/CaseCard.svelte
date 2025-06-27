@@ -20,12 +20,14 @@
 	import LoaderIcon from '@lucide/svelte/icons/loader';
 	import PlayIcon from '@lucide/svelte/icons/play';
 	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 
 	// import svelte features
 	import { onMount } from 'svelte';
 
 	// import svelte stores
 	import { page } from '$app/state';
+	import { invalidate, invalidateAll } from '$app/navigation';
 
 	let {
 		id = '',
@@ -38,11 +40,13 @@
 		tasks = {},
 		testCaseBadge = false,
 		checkingBadge = false,
-		user
+		user,
+		removeCaseFuntion = () => {}
 	} = $props();
 
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);
+	let removing = $state(false);
 
 	const textLengthCap = 95;
 
@@ -458,10 +462,24 @@
 							</Accordion.Content>
 						</Accordion.Item>
 					</Accordion.Root>
-					<Button variant="secondary" class="mt-4 w-full">
-						<TriangleAlertIcon class="size-4" />
-						remove this case from the test suite
-					</Button>
+					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/')}
+						<Button
+							disabled={removing}
+							variant="secondary"
+							class="mt-4 w-full"
+							onclick={async () => {
+								removing = true;
+								removeCaseFuntion(id);
+							}}
+						>
+							{#if removing}
+								<LoaderCircleIcon class="size-4 animate-spin" />
+							{:else}
+								<TriangleAlertIcon class="size-4" />
+							{/if}
+							remove this case from the test suite
+						</Button>
+					{/if}
 				{/if}
 				<!-- <p class="mx-auto mt-2">Case ID: {id}</p> -->
 			</Dialog.Description>

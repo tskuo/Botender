@@ -19,7 +19,6 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	// import lucide icons
-	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import UndoIcon from '@lucide/svelte/icons/undo';
 	import PlayIcon from '@lucide/svelte/icons/play';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
