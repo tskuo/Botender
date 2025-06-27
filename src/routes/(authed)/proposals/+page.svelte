@@ -43,11 +43,7 @@
 						<Table.Cell class="font-medium">{proposal.title}</Table.Cell>
 						<Table.Cell>{proposal.initiator}</Table.Cell>
 						<Table.Cell>placeholder</Table.Cell>
-						<Table.Cell>
-							<span class="text-discord-green mr-2">1</span> /
-							<span class="text-discord-pink mx-2">1</span> /
-							<span class=" ml-2">1</span>
-						</Table.Cell>
+						<Table.Cell>{proposal.testCases.length}</Table.Cell>
 						<Table.Cell>
 							<div class="flex items-center">
 								<ArrowBigUpIcon class="mr-2 size-4" />
