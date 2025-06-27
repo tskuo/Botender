@@ -18,16 +18,15 @@
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
 	import LoaderIcon from '@lucide/svelte/icons/loader';
-	import PlayIcon from '@lucide/svelte/icons/play';
 	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
 
 	// import svelte features
 	import { onMount } from 'svelte';
 
 	// import svelte stores
 	import { page } from '$app/state';
-	import { invalidate, invalidateAll } from '$app/navigation';
 
 	let {
 		id = '',
@@ -389,7 +388,7 @@
 											''
 										)}
 								>
-									<PlayIcon class="size-4" />Generate Bot Response
+									<BotMessageSquareIcon class="size-4" />Generate Response
 								</Button>
 							{:else}
 								{@render botResponseSection(response)}
@@ -481,7 +480,7 @@
 						</Button>
 					{/if}
 				{/if}
-				<!-- <p class="mx-auto mt-2">Case ID: {id}</p> -->
+				<p class="mx-auto mt-4">Case ID: {id}</p>
 			</Dialog.Description>
 		</Dialog.Header>
 	</Dialog.Content>

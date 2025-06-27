@@ -20,7 +20,7 @@
 
 	// import lucide icons
 	import UndoIcon from '@lucide/svelte/icons/undo';
-	import PlayIcon from '@lucide/svelte/icons/play';
+	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import HashIcon from '@lucide/svelte/icons/hash';
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
@@ -472,9 +472,9 @@
 						{#if running}
 							<LoaderCircleIcon class="size-4 animate-spin" />
 						{:else}
-							<PlayIcon class="size-4" />
+							<BotMessageSquareIcon class="size-4" />
 						{/if}
-						Run
+						Generate Response
 					</Button>
 				</div>
 			</div>

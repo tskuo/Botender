@@ -12,19 +12,24 @@
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
-	import { buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import * as Select from '$lib/components/ui/select/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+
+	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
 	import PlayIcon from '@lucide/svelte/icons/play';
+	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
 	import UndoIcon from '@lucide/svelte/icons/undo';
 	import SaveIcon from '@lucide/svelte/icons/save';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -39,6 +44,13 @@
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
 	let testCases = $state(data.testCases);
+
+	// state for checking cases manually
+	let enteredCaseId = $state('');
+	let selectedChannel = $state('');
+	let enteredUserMessage = $state('');
+	let checkingCaseManually = $state(false);
+	let showCaseNotExistError = $state(false);
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -359,8 +371,11 @@
 			</div>
 			<div class="w-full shrink-0">
 				<Sheet.Root>
-					<Sheet.Trigger class="w-full border-t py-2 pl-4 text-left">
+					<Sheet.Trigger
+						class="flex w-full items-center justify-between border-t py-2 pl-4 text-left hover:cursor-pointer"
+					>
 						<h3>Check other cases manually</h3>
+						<ChevronUpIcon class="mr-4 size-4" />
 					</Sheet.Trigger>
 					<Sheet.Content
 						class="ml-auto"
@@ -368,23 +383,82 @@
 						style="width: {sheetWidth}px; max-width: 100vw;"
 					>
 						<Sheet.Header>
-							<Sheet.Title>Edit profile</Sheet.Title>
+							<Sheet.Title>Check other cases manually</Sheet.Title>
 							<Sheet.Description>
-								Make changes to your profile here. Click save when you're done.
+								The system will search for an existing case using the entered case ID when it is not
+								empty. Leave the case ID field empty when trying a new case.
 							</Sheet.Description>
 						</Sheet.Header>
-						<div class="grid flex-1 auto-rows-min gap-6 px-4">
-							<div class="grid gap-3">
-								<Label for="name" class="text-right">Name</Label>
-								<Input id="name" value="Pedro Duarte" />
+
+						<div class="grid flex-1 auto-rows-min gap-3 px-4">
+							<Label class="text-right">Check an existing case</Label>
+							<Input
+								id="name"
+								placeholder="Case ID"
+								bind:value={enteredCaseId}
+								onkeydown={() => {
+									showCaseNotExistError = false;
+								}}
+							/>
+							{#if showCaseNotExistError}
+								<Label class="text-destructive text-right">
+									The case with ID {enteredCaseId} does not exist.
+								</Label>
+							{/if}
+							<div class="flex items-center justify-between py-4">
+								<Separator class="flex-[0.48]" />
+								<p>OR</p>
+								<Separator class="flex-[0.48]" />
 							</div>
-							<div class="grid gap-3">
-								<Label for="username" class="text-right">Username</Label>
-								<Input id="username" value="@peduarte" />
-							</div>
+							<Label class="text-right">Check a new case</Label>
+							<Select.Root type="single" bind:value={selectedChannel}>
+								<Select.Trigger class="w-[180px]">
+									{selectedChannel === '' ? 'Select a channel' : selectedChannel}
+								</Select.Trigger>
+								<Select.Content>
+									<Select.Item value="#introducion" label="#introducion" />
+									<Select.Item value="#random" label="#random" />
+									<Select.Item value="#faq" label="#faq" />
+								</Select.Content>
+							</Select.Root>
+							<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
 						</div>
 						<Sheet.Footer>
-							<Sheet.Close class={buttonVariants({ variant: 'outline' })}>Save changes</Sheet.Close>
+							<Button
+								disabled={checkingCaseManually}
+								onclick={async () => {
+									checkingCaseManually = true;
+									showCaseNotExistError = false;
+									if (enteredCaseId) {
+										try {
+											const res = await fetch(`/api/cases/${enteredCaseId}`);
+											if (res.ok) {
+												// case exist
+												const fetchCase = await res.json();
+												// case is not in the test suite yet
+												if (!testCases.find((c) => c.id === enteredCaseId)) {
+													testCases.push(fetchCase);
+												} else {
+													console.log('case is already in the test suite');
+												}
+											} else {
+												showCaseNotExistError = true;
+											}
+										} catch (e) {
+											showCaseNotExistError = true;
+										}
+									}
+									checkingCaseManually = false;
+								}}
+							>
+								{#if checkingCaseManually}
+									<LoaderCircleIcon class="size-4 animate-spin" />
+								{:else}
+									<BotMessageSquareIcon class="size-4" />
+								{/if}
+								Generate Response
+							</Button>
+							<!-- <Sheet.Close class={buttonVariants({ variant: 'outline' })}>Save changes</Sheet.Close> -->
 						</Sheet.Footer>
 					</Sheet.Content>
 				</Sheet.Root>
