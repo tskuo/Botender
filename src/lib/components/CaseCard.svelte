@@ -476,7 +476,7 @@
 							{:else}
 								<TriangleAlertIcon class="size-4" />
 							{/if}
-							remove this case from the test suite
+							remove from the test suite
 						</Button>
 					{/if}
 				{/if}

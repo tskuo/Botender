@@ -18,10 +18,10 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
+	import * as Alert from '$lib/components/ui/alert/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
-
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
@@ -30,6 +30,15 @@
 	import UndoIcon from '@lucide/svelte/icons/undo';
 	import SaveIcon from '@lucide/svelte/icons/save';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
+	import HashIcon from '@lucide/svelte/icons/hash';
+	import UserRoundIcon from '@lucide/svelte/icons/user-round';
+	import WrenchIcon from '@lucide/svelte/icons/wrench';
+	import BotIcon from '@lucide/svelte/icons/bot';
+	import BotOffIcon from '@lucide/svelte/icons/bot-off';
+	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
+	import FolderCheckIcon from '@lucide/svelte/icons/folder-check';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -50,7 +59,34 @@
 	let selectedChannel = $state('');
 	let enteredUserMessage = $state('');
 	let checkingCaseManually = $state(false);
-	let showCaseNotExistError = $state(false);
+	let showCaseError = $state(false);
+	let showCaseErrorMessage = $state('');
+	let showCase = $state(false);
+	let fetchCase: Case | undefined;
+	let fetchCaseBotResponse: BotResponse | undefined;
+	let displayedChannel = $state('');
+	let displayedUserMessage = $state('');
+	let displayedBotResponse = $state('');
+	let displayedTaskId = $state('');
+	let showAddCaseSuccess = $state(false);
+	let addingCase = $state(false);
+
+	let clearManualCasePanel = () => {
+		enteredCaseId = '';
+		selectedChannel = '';
+		enteredUserMessage = '';
+		checkingCaseManually = false;
+		showCaseError = false;
+		showCaseErrorMessage = '';
+		showCase = false;
+		fetchCase = undefined;
+		fetchCaseBotResponse = undefined;
+		displayedChannel = '';
+		displayedUserMessage = '';
+		displayedBotResponse = '';
+		displayedTaskId = '';
+		showAddCaseSuccess = false;
+	};
 
 	// sync the sheet
 	let rightCol: HTMLDivElement | null = null;
@@ -383,81 +419,212 @@
 						style="width: {sheetWidth}px; max-width: 100vw;"
 					>
 						<Sheet.Header>
-							<Sheet.Title>Check other cases manually</Sheet.Title>
+							<Sheet.Title><h3>Check other cases manually</h3></Sheet.Title>
 							<Sheet.Description>
-								The system will search for an existing case using the entered case ID when it is not
-								empty. Leave the case ID field empty when trying a new case.
+								{#if !showCase}
+									The system will search for an existing case using the entered case ID when it is
+									not empty. Leave the case ID field empty when trying a new case.
+								{/if}
+								{#if showCaseError}
+									<Alert.Root variant="destructive" class="border-destructive mt-2">
+										<TriangleAlertIcon class="size-4" />
+										<Alert.Title>Error</Alert.Title>
+										<Alert.Description>{showCaseErrorMessage}</Alert.Description>
+									</Alert.Root>
+								{/if}
+								{#if showAddCaseSuccess}
+									<Alert.Root class="text-primary border-primary mt-2">
+										<FolderCheckIcon class="size-4" />
+										<Alert.Title>Success! The case has been added to the test suite.</Alert.Title>
+										<Alert.Description class="text-primary">
+											Click clear to check another case or close the sheet.
+										</Alert.Description>
+									</Alert.Root>
+								{/if}
 							</Sheet.Description>
 						</Sheet.Header>
-
-						<div class="grid flex-1 auto-rows-min gap-3 px-4">
-							<Label class="text-right">Check an existing case</Label>
-							<Input
-								id="name"
-								placeholder="Case ID"
-								bind:value={enteredCaseId}
-								onkeydown={() => {
-									showCaseNotExistError = false;
-								}}
-							/>
-							{#if showCaseNotExistError}
-								<Label class="text-destructive text-right">
-									The case with ID {enteredCaseId} does not exist.
-								</Label>
-							{/if}
-							<div class="flex items-center justify-between py-4">
-								<Separator class="flex-[0.48]" />
-								<p>OR</p>
-								<Separator class="flex-[0.48]" />
+						{#if !showCase}
+							<div class="grid flex-1 auto-rows-min gap-3 px-4">
+								<Label class="text-right">Check an existing case</Label>
+								<Input
+									id="caseId"
+									placeholder="Case ID"
+									bind:value={enteredCaseId}
+									onkeydown={() => {
+										showCaseError = false;
+									}}
+								/>
+								<div class="flex items-center justify-between py-4">
+									<Separator class="flex-[0.48]" />
+									<p>OR</p>
+									<Separator class="flex-[0.48]" />
+								</div>
+								<Label class="text-right">Check a new case</Label>
+								<Select.Root type="single" bind:value={selectedChannel}>
+									<Select.Trigger class="w-[180px]">
+										{selectedChannel === '' ? 'Select a channel' : selectedChannel}
+									</Select.Trigger>
+									<Select.Content>
+										<Select.Item value="#introducion" label="#introducion" />
+										<Select.Item value="#random" label="#random" />
+										<Select.Item value="#faq" label="#faq" />
+									</Select.Content>
+								</Select.Root>
+								<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
 							</div>
-							<Label class="text-right">Check a new case</Label>
-							<Select.Root type="single" bind:value={selectedChannel}>
-								<Select.Trigger class="w-[180px]">
-									{selectedChannel === '' ? 'Select a channel' : selectedChannel}
-								</Select.Trigger>
-								<Select.Content>
-									<Select.Item value="#introducion" label="#introducion" />
-									<Select.Item value="#random" label="#random" />
-									<Select.Item value="#faq" label="#faq" />
-								</Select.Content>
-							</Select.Root>
-							<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
-						</div>
-						<Sheet.Footer>
-							<Button
-								disabled={checkingCaseManually}
-								onclick={async () => {
-									checkingCaseManually = true;
-									showCaseNotExistError = false;
-									if (enteredCaseId) {
-										try {
-											const res = await fetch(`/api/cases/${enteredCaseId}`);
-											if (res.ok) {
-												// case exist
-												const fetchCase = await res.json();
-												// case is not in the test suite yet
-												if (!testCases.find((c) => c.id === enteredCaseId)) {
-													testCases.push(fetchCase);
-												} else {
-													console.log('case is already in the test suite');
-												}
-											} else {
-												showCaseNotExistError = true;
-											}
-										} catch (e) {
-											showCaseNotExistError = true;
-										}
-									}
-									checkingCaseManually = false;
-								}}
-							>
-								{#if checkingCaseManually}
-									<LoaderCircleIcon class="size-4 animate-spin" />
-								{:else}
-									<BotMessageSquareIcon class="size-4" />
+						{:else}
+							<div class="px-4">
+								<div class="mb-1 flex items-center">
+									<HashIcon class="mr-2 size-4" />
+									<h4>Channel: {displayedChannel}</h4>
+								</div>
+								<div class="flex items-center">
+									<UserRoundIcon class="mr-2 size-4" />
+									<h4>User Message</h4>
+								</div>
+								<p class="mb-3 pl-6">{displayedUserMessage}</p>
+								<div class="mb-1 flex items-center">
+									<WrenchIcon class="mr-2 size-4" />
+									<h4>Triggered Task:</h4>
+
+									<h4 class="ml-1">
+										{displayedTaskId in data.originalTasks.tasks
+											? data.originalTasks.tasks[displayedTaskId].name
+											: 'No Task is Triggered'}
+									</h4>
+								</div>
+								{#if displayedTaskId !== '0'}
+									{#if displayedBotResponse === ''}
+										<div class="mb-3 flex items-center">
+											<BotOffIcon class="mr-2 size-4 flex-none" />
+											<p>The bot chose not to respond.</p>
+										</div>
+									{:else}
+										<div class="flex items-center">
+											<BotIcon class="mr-2 size-4" />
+											<h4>Bot's Response</h4>
+										</div>
+										<p class="mb-3 pl-6">{displayedBotResponse}</p>
+									{/if}
 								{/if}
-								Generate Response
-							</Button>
+							</div>
+						{/if}
+						<Sheet.Footer>
+							<div class="flex items-center justify-between">
+								<Button
+									disabled={showCase || checkingCaseManually}
+									onclick={async () => {
+										checkingCaseManually = true;
+										showCaseError = false;
+										enteredCaseId = enteredCaseId.trim();
+										if (enteredCaseId) {
+											if (testCases.find((c) => c.id === enteredCaseId)) {
+												showCaseError = true;
+												showCaseErrorMessage = `The case with ID ${enteredCaseId} is already included in the test suite.`;
+											} else {
+												try {
+													const res = await fetch(`/api/cases/${enteredCaseId}`);
+
+													if (res.ok) {
+														fetchCase = await res.json();
+														let botResponses = [];
+														try {
+															const resBotResponses = await fetch(
+																`/api/cases/${fetchCase.id}/botResponses?taskHistoryId=${data.proposal.taskHistoryId}&proposalId=${data.proposal.id}`,
+																{
+																	method: 'GET',
+																	headers: {
+																		'Content-Type': 'application/json'
+																	}
+																}
+															);
+															const resData = await resBotResponses.json();
+															botResponses = resData.botResponses;
+														} catch (e) {
+															showCaseError = true;
+															showCaseErrorMessage = 'An error occurred. Please try again.';
+														}
+
+														if (data.edits.length > 0) {
+															fetchCaseBotResponse = botResponses.find(
+																(b: BotResponse) =>
+																	b.proposalEditId === data.edits[0].id &&
+																	b.proposalId === data.proposal.id
+															);
+														} else {
+															fetchCaseBotResponse = botResponses.find(
+																(b: BotResponse) => b.taskHistoryId === data.proposal.taskHistoryId
+															);
+														}
+														if (fetchCaseBotResponse) {
+															// botResposne already exists
+															displayedChannel = fetchCase.channel;
+															displayedUserMessage = fetchCase.userMessage;
+															displayedTaskId = fetchCaseBotResponse.triggeredTask;
+															displayedBotResponse = fetchCaseBotResponse.botResponse;
+															showCase = true;
+														} else {
+															// generate bot response
+															console.log('TODO: fetch bot resonse');
+														}
+													} else {
+														showCaseError = true;
+														showCaseErrorMessage = `The case with ID ${enteredCaseId} doesn't exist.`;
+													}
+												} catch (e) {
+													showCaseError = true;
+													showCaseErrorMessage = 'An error occurred. Please try again.';
+												}
+											}
+										}
+										checkingCaseManually = false;
+									}}
+								>
+									{#if checkingCaseManually}
+										<LoaderCircleIcon class="size-4 animate-spin" />
+									{:else}
+										<BotMessageSquareIcon class="size-4" />
+									{/if}
+									Generate Response
+								</Button>
+								<div>
+									<Button
+										variant="secondary"
+										disabled={checkingCaseManually}
+										onclick={() => {
+											clearManualCasePanel();
+										}}
+									>
+										<PaintbrushIcon class="size-4" />
+										Clear
+									</Button>
+									<Button
+										variant="secondary"
+										disabled={!showCase || checkingCaseManually || showAddCaseSuccess || addingCase}
+										onclick={async () => {
+											addingCase = true;
+											const res = await fetch(`/api/proposals/${data.proposal.id}`, {
+												method: 'PATCH',
+												body: JSON.stringify({
+													action: 'addCase',
+													caseId: enteredCaseId
+												}),
+												headers: {
+													'Content-Type': 'application/json'
+												}
+											});
+											if (res.ok) {
+												testCases.push(fetchCase);
+												showAddCaseSuccess = true;
+											}
+											addingCase = false;
+										}}
+									>
+										<FolderPlusIcon class="size-4" />
+										Add to Test Suite
+									</Button>
+								</div>
+							</div>
 							<!-- <Sheet.Close class={buttonVariants({ variant: 'outline' })}>Save changes</Sheet.Close> -->
 						</Sheet.Footer>
 					</Sheet.Content>

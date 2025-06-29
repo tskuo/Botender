@@ -31,6 +31,6 @@ export const PATCH = async ({ params, request }) => {
 		}
 		return json({ status: 201 });
 	} catch {
-		throw error(400, 'Fail to update user vote.');
+		throw error(400, 'Fail to update the test suite');
 	}
 };
