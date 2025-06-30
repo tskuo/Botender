@@ -2,7 +2,6 @@
 	import { diffWords } from 'diff';
 
 	import { Label } from '$lib/components/ui/label/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 
 	let {
 		oldName = '',
@@ -22,9 +21,7 @@
 	<div class="pl-3">
 		<h4 class="font-medium">
 			Task: {#each diffName as n}
-				<span
-					class={n.added ? 'text-discord-green' : n.removed ? 'text-discord-pink line-through' : ''}
-				>
+				<span class={n.added ? 'text-my-green' : n.removed ? 'text-my-pink line-through' : ''}>
 					{n.value}
 				</span>
 			{/each}
@@ -33,13 +30,7 @@
 			<Label for="trigger">Trigger</Label>
 			<div>
 				{#each diffTrigger as t}
-					<span
-						class={t.added
-							? 'text-discord-green'
-							: t.removed
-								? 'text-discord-pink line-through'
-								: ''}
-					>
+					<span class={t.added ? 'text-my-green' : t.removed ? 'text-my-pink line-through' : ''}>
 						{t.value}
 					</span>
 				{/each}
@@ -49,13 +40,7 @@
 			<Label for="action">Action</Label>
 			<div>
 				{#each diffAction as a}
-					<span
-						class={a.added
-							? 'text-discord-green'
-							: a.removed
-								? 'text-discord-pink line-through'
-								: ''}
-					>
+					<span class={a.added ? 'text-my-green' : a.removed ? 'text-my-pink line-through' : ''}>
 						{a.value}
 					</span>
 				{/each}

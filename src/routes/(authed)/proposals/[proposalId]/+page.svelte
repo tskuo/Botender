@@ -5,6 +5,7 @@
 	// import my components
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
+	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -288,13 +289,15 @@
 																hour12: false
 															})}
 														</p>
-														{#each Object.entries(edit.tasks) as [taskId, task] (taskId)}
+														{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
 															<div class="pt-4">
-																<TaskSection
-																	name={edit.tasks[taskId].name}
-																	trigger={edit.tasks[taskId].trigger}
-																	action={edit.tasks[taskId].action}
-																	readonly={true}
+																<TaskDiffSection
+																	oldName={data.originalTasks.tasks[taskId].name}
+																	oldTrigger={data.originalTasks.tasks[taskId].trigger}
+																	oldAction={data.originalTasks.tasks[taskId].action}
+																	newName={edit.tasks[taskId].name}
+																	newTrigger={edit.tasks[taskId].trigger}
+																	newAction={edit.tasks[taskId].action}
 																/>
 															</div>
 														{/each}
