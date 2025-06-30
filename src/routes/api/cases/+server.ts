@@ -39,10 +39,9 @@ export const POST = async ({ request }) => {
 		await addDoc(collection(db, 'cases', docRef.id, 'botResponses'), {
 			botResponse: formCase.data.botResponse,
 			createAt: serverTimestamp(),
-			proposalEditId:
-				(formCase.data.source === 'proposal' ? formCase.data.proposalEditId : '') || '',
-			proposalId: (formCase.data.source === 'proposal' ? formCase.data.proposalId : '') || '',
-			taskHistoryId: formCase.data.taskHistoryId ?? '',
+			proposalEditId: formCase.data.proposalEditId,
+			proposalId: formCase.data.proposalId,
+			taskHistoryId: formCase.data.taskHistoryId,
 			thumbsDown: [],
 			thumbsUp: [],
 			triggeredTask: formCase.data.triggeredTaskId

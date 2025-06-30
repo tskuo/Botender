@@ -426,6 +426,10 @@
 									The system will search for an existing case using the entered case ID when it is
 									not empty. Leave the case ID field empty when trying a new case.
 								{/if}
+								{#if showCase && !showAddCaseSuccess}
+									The response is generated based on the most recent proposed edit of the proposal.
+									If no proposed edit has been made, it is based on the initial prompt.
+								{/if}
 								{#if showCaseError}
 									<Alert.Root variant="destructive" class="border-destructive mt-2">
 										<TriangleAlertIcon class="size-4" />
@@ -514,11 +518,14 @@
 						<Sheet.Footer>
 							<div class="flex items-center justify-between">
 								<Button
-									disabled={showCase || checkingCaseManually}
+									disabled={showCase ||
+										checkingCaseManually ||
+										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel)}
 									onclick={async () => {
 										checkingCaseManually = true;
 										showCaseError = false;
 										enteredCaseId = enteredCaseId.trim();
+										enteredUserMessage = enteredUserMessage.trim();
 										if (enteredCaseId) {
 											if (testCases.find((c) => c.id === enteredCaseId)) {
 												showCaseError = true;
@@ -619,6 +626,38 @@
 													showCaseErrorMessage = 'An error occurred. Please try again.';
 												}
 											}
+										} else {
+											if (!enteredUserMessage) {
+												showCaseError = true;
+												showCaseErrorMessage =
+													'If you are not entering an existing case ID, please enter the user message you would like to check.';
+											} else if (!selectedChannel) {
+												showCaseError = true;
+												showCaseErrorMessage =
+													'If you are not entering an existing case ID, please select a channel you would like to check.';
+											} else {
+												const resBot = await fetch('/api/bot', {
+													method: 'POST',
+													body: JSON.stringify({
+														channel: selectedChannel,
+														userMessage: enteredUserMessage,
+														tasks:
+															data.edits.length > 0
+																? data.edits[0].tasks
+																: data.originalTasks.tasks,
+														soures: 'proposal'
+													}),
+													headers: {
+														'Content-Type': 'application/json'
+													}
+												});
+												const { taskId, botResponse } = await resBot.json();
+												displayedChannel = selectedChannel;
+												displayedUserMessage = enteredUserMessage;
+												displayedTaskId = taskId;
+												displayedBotResponse = botResponse;
+												showCase = true;
+											}
 										}
 										checkingCaseManually = false;
 									}}
@@ -633,7 +672,7 @@
 								<div>
 									<Button
 										variant="secondary"
-										disabled={checkingCaseManually}
+										disabled={checkingCaseManually || addingCase}
 										onclick={() => {
 											clearManualCasePanel();
 										}}
@@ -646,24 +685,72 @@
 										disabled={!showCase || checkingCaseManually || showAddCaseSuccess || addingCase}
 										onclick={async () => {
 											addingCase = true;
-											const res = await fetch(`/api/proposals/${data.proposal.id}`, {
-												method: 'PATCH',
-												body: JSON.stringify({
-													action: 'addCase',
-													caseId: enteredCaseId
-												}),
-												headers: {
-													'Content-Type': 'application/json'
+
+											if (!fetchCase) {
+												// create case first if no existing case
+												const resCase = await fetch('/api/cases', {
+													method: 'POST',
+													body: JSON.stringify({
+														formCase: {
+															data: {
+																channel: displayedChannel,
+																realUserMessage: false,
+																userMessage: displayedUserMessage,
+																botResponse: displayedBotResponse,
+																proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
+																proposalId: data.edits.length > 0 ? data.proposal.id : '',
+																taskHistoryId:
+																	data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
+																triggeredTaskId: displayedTaskId,
+																source: 'proposal'
+															}
+														}
+													}),
+													headers: {
+														'Content-Type': 'appplication/json'
+													}
+												});
+												const resCaseData = await resCase.json();
+												const resNewCase = await fetch(`/api/cases/${resCaseData.id}`);
+												const newCase = await resNewCase.json();
+												const res = await fetch(`/api/proposals/${data.proposal.id}`, {
+													method: 'PATCH',
+													body: JSON.stringify({
+														action: 'addCase',
+														caseId: newCase.id
+													}),
+													headers: {
+														'Content-Type': 'application/json'
+													}
+												});
+												if (res.ok) {
+													testCases.push(newCase);
+													showAddCaseSuccess = true;
 												}
-											});
-											if (res.ok) {
-												testCases.push(fetchCase);
-												showAddCaseSuccess = true;
+											} else {
+												const res = await fetch(`/api/proposals/${data.proposal.id}`, {
+													method: 'PATCH',
+													body: JSON.stringify({
+														action: 'addCase',
+														caseId: fetchCase.id
+													}),
+													headers: {
+														'Content-Type': 'application/json'
+													}
+												});
+												if (res.ok) {
+													testCases.push(fetchCase);
+													showAddCaseSuccess = true;
+												}
 											}
 											addingCase = false;
 										}}
 									>
-										<FolderPlusIcon class="size-4" />
+										{#if addingCase}
+											<LoaderCircleIcon class="size-4 animate-spin" />
+										{:else}
+											<FolderPlusIcon class="size-4" />
+										{/if}
 										Add to Test Suite
 									</Button>
 								</div>

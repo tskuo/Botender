@@ -5,14 +5,16 @@ export const playgroundRunFormSchema = z.object({
 	userMessage: z.string()
 });
 
-export const playgroundCreateCaseSchema = z.object({
+export const createCaseSchema = z.object({
 	botResponse: z.string(),
 	channel: z.string(),
 	realUserMessage: z.boolean(),
 	taskHistoryId: z.string(),
 	triggeredTaskId: z.string(),
 	userMessage: z.string(),
-	source: z.string()
+	source: z.string(),
+	proposalEditId: z.string(),
+	proposalId: z.string()
 });
 
 export const playgroundCreateProposalSchema = z.object({
@@ -27,9 +29,11 @@ export const playgroundCreateProposalSchema = z.object({
 	realUserMessage: z.boolean(),
 	triggeredTaskId: z.string(),
 	userMessage: z.string(),
-	source: z.string()
+	source: z.string(),
+	proposalEditId: z.string(),
+	proposalId: z.string()
 });
 
 export type PlaygroundRunFormSchema = typeof playgroundRunFormSchema;
-export type PlaygroundCreateCaseSchema = typeof playgroundCreateCaseSchema;
+export type CreateCaseSchema = typeof createCaseSchema;
 export type PlaygroundCreateProposalSchema = typeof playgroundCreateProposalSchema;

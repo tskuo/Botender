@@ -56,7 +56,9 @@ export const GET = async ({ params, url }) => {
 				botResponses: botResponsesData
 			});
 		} else {
-			throw error(404, `Case #${params.caseId} bot responses not found.`);
+			return json({
+				botResponses: []
+			});
 		}
 	} else if (url.searchParams.get('taskHistoryId')) {
 		const subColRef = collection(db, 'cases', params.caseId, 'botResponses');

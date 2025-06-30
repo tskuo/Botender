@@ -32,7 +32,7 @@
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 
 	// import form-related things
-	import { playgroundCreateCaseSchema, playgroundCreateProposalSchema } from '$lib/schema';
+	import { createCaseSchema, playgroundCreateProposalSchema } from '$lib/schema';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 
@@ -45,7 +45,7 @@
 	// initialize create case form
 	let disableCreateCaseButton = $state(true);
 	const form = superForm(data.form, {
-		validators: zodClient(playgroundCreateCaseSchema),
+		validators: zodClient(createCaseSchema),
 		onSubmit() {
 			disableCreateCaseButton = true;
 		},
@@ -286,6 +286,24 @@
 										<Form.Description />
 										<Form.FieldErrors />
 									</Form.Field>
+									<Form.Field {form} name="proposalEditId">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} value="" />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
+									<Form.Field {form} name="proposalId">
+										<Form.Control>
+											{#snippet children({ props })}
+												<Input type="hidden" {...props} value="" />
+											{/snippet}
+										</Form.Control>
+										<Form.Description />
+										<Form.FieldErrors />
+									</Form.Field>
 									{#if savedCase}
 										<Alert.Root>
 											<CircleCheckIcon class="size-4" />
@@ -407,6 +425,24 @@
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value="playground" />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="proposalEditId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="" />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field {form} name="proposalId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="" />
 													{/snippet}
 												</Form.Control>
 												<Form.Description />
