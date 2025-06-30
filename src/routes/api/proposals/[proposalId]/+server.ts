@@ -17,9 +17,12 @@ export const GET = async ({ params }) => {
 	throw error(404, `Proposal #${params.proposalId} not found.`);
 };
 
-export const PATCH = async ({ params, request }) => {
+export const PATCH = async ({ params, request, locals }) => {
+	if (!locals.user) {
+		throw error(400, 'User authentication error.');
+	}
 	try {
-		const { action = '', caseId } = await request.json();
+		const { action = '', caseId, vote, proposalEditId } = await request.json();
 		if (action === 'removeCase') {
 			await updateDoc(doc(db, 'proposals', params.proposalId), {
 				testCases: arrayRemove(caseId)
@@ -28,6 +31,24 @@ export const PATCH = async ({ params, request }) => {
 			await updateDoc(doc(db, 'proposals', params.proposalId), {
 				testCases: arrayUnion(caseId)
 			});
+		} else if (action === 'voteProposal') {
+			const userId = locals.user.userId;
+			if (vote === 'upvote') {
+				await updateDoc(doc(db, 'proposals', params.proposalId, 'edits', proposalEditId), {
+					upvotes: arrayUnion(userId),
+					downvotes: arrayRemove(userId)
+				});
+			} else if (vote === 'downvote') {
+				await updateDoc(doc(db, 'proposals', params.proposalId, 'edits', proposalEditId), {
+					upvotes: arrayRemove(userId),
+					downvotes: arrayUnion(userId)
+				});
+			} else {
+				await updateDoc(doc(db, 'proposals', params.proposalId, 'edits', proposalEditId), {
+					upvotes: arrayRemove(userId),
+					downvotes: arrayRemove(userId)
+				});
+			}
 		}
 		return json({ status: 201 });
 	} catch {

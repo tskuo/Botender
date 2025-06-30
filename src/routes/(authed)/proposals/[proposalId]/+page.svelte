@@ -54,6 +54,15 @@
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
 	let testCases = $state(data.testCases);
+	let upvotes = $state(data.edits.length > 0 ? data.edits[0].upvotes : []);
+	let downvotes = $state(data.edits.length > 0 ? data.edits[0].downvotes : []);
+
+	let reloadProposalState = () => {
+		editedTasks = data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks;
+		testCases = data.testCases;
+		upvotes = data.edits.length > 0 ? data.edits[0].upvotes : [];
+		downvotes = data.edits.length > 0 ? data.edits[0].downvotes : [];
+	};
 
 	// state for checking cases manually
 	let enteredCaseId = $state('');
@@ -230,7 +239,8 @@
 									}
 								});
 								if (response.ok) {
-									invalidateAll();
+									await invalidateAll();
+									reloadProposalState();
 								}
 							}}
 						>
@@ -305,14 +315,83 @@
 										hour12: false
 									})}
 								</Table.Cell>
-								<Table.Cell>
-									<div class="flex items-center">
-										<ArrowBigUpIcon class="mr-2 size-4" />
-										<p class="mr-8">{edit.upvotes.length}</p>
-										<ArrowBigDownIcon class="mr-2 size-4" />
-										<p>{edit.downvotes.length}</p>
-									</div>
-								</Table.Cell>
+								{#if i === 0}
+									<Table.Cell>
+										<ToggleGroup.Root
+											type="single"
+											value={upvotes.includes(data.user?.userId)
+												? 'upvote'
+												: downvotes.includes(data.user?.userId)
+													? 'downvote'
+													: undefined}
+											onValueChange={async (value) => {
+												const resVote = await fetch(`/api/proposals/${data.proposal.id}`, {
+													method: 'PATCH',
+													body: JSON.stringify({
+														action: 'voteProposal',
+														vote: value,
+														proposalEditId: edit.id
+													}),
+													headers: {
+														'Content-Type': 'application/json'
+													}
+												});
+												if (resVote.ok) {
+													if (value === 'upvote') {
+														upvotes.push(data.user?.userId);
+														downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+													} else if (value === 'downvote') {
+														downvotes.push(data.user?.userId);
+														upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+													} else {
+														upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+														downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+													}
+												}
+											}}
+										>
+											<ToggleGroup.Item
+												value="upvote"
+												class="data-[state=on]:text-primary mr-4 rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
+											>
+												<ArrowBigUpIcon
+													class="size-4 {upvotes.includes(data.user?.userId)
+														? 'fill-primary border-primary'
+														: ''}"
+												/>
+												<p>{upvotes.length}</p>
+											</ToggleGroup.Item>
+											<ToggleGroup.Item
+												value="downvote"
+												class="data-[state=on]:text-primary rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
+											>
+												<ArrowBigDownIcon
+													class="size-4 {downvotes.includes(data.user?.userId)
+														? 'fill-primary border-primary'
+														: ''}"
+												/>
+												<p>{downvotes.length}</p>
+											</ToggleGroup.Item>
+										</ToggleGroup.Root>
+									</Table.Cell>
+								{:else}
+									<Table.Cell>
+										<div class="text-muted-foreground mx-2 flex items-center">
+											<ArrowBigUpIcon
+												class="mr-2 size-4 {edit.upvotes.includes(data.user?.userId)
+													? 'fill-current'
+													: ''}"
+											/>
+											<p class="mr-8">{edit.upvotes.length}</p>
+											<ArrowBigDownIcon
+												class="mr-2 size-4 {edit.downvotes.includes(data.user?.userId)
+													? 'fill-current'
+													: ''}"
+											/>
+											<p>{edit.downvotes.length}</p>
+										</div>
+									</Table.Cell>
+								{/if}
 							</Table.Row>
 						{/each}
 					</Table.Body>

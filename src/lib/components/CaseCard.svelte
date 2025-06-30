@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 
 	// import lucide icons
 	import HashIcon from '@lucide/svelte/icons/hash';
@@ -413,11 +414,35 @@
 				{/if}
 				{#if page.url.pathname.startsWith('/proposals/')}
 					<h4 class="mt-6">Bot responses from all edits and the initial prompt:</h4>
-					<Accordion.Root type="single" class="w-full">
-						{#each edits as edit, i (edit.id)}
-							<Accordion.Item value="edit-{edit.id}">
+					<ScrollArea class="h-64 w-full">
+						<Accordion.Root type="single" class="w-full">
+							{#each edits as edit, i (edit.id)}
+								<Accordion.Item value="edit-{edit.id}">
+									<Accordion.Trigger>
+										{edit.editor}'s edit {#if i === 0}(current){/if}
+									</Accordion.Trigger>
+									<Accordion.Content class="flex flex-col gap-4 text-balance">
+										{#if loadingBotResponse}
+											<div class="mb-2 flex items-center">
+												<LoaderIcon class="mr-2 size-4 animate-spin" />
+												<p>Loading bot response...</p>
+											</div>
+										{:else}
+											{@const response = botResponses.find(
+												(r: BotResponse) => r.proposalEditId === edit.id
+											)}
+											{#if response === undefined}
+												<p>No response has been generated based on this edit to the bot.</p>
+											{:else}
+												{@render botResponseSection(response)}
+											{/if}
+										{/if}
+									</Accordion.Content>
+								</Accordion.Item>
+							{/each}
+							<Accordion.Item value="task-{taskHistoryId}">
 								<Accordion.Trigger>
-									{edit.editor}'s edit {#if i === 0}(current){/if}
+									initial prompt {#if edits.length === 0}(current){/if}
 								</Accordion.Trigger>
 								<Accordion.Content class="flex flex-col gap-4 text-balance">
 									{#if loadingBotResponse}
@@ -427,40 +452,18 @@
 										</div>
 									{:else}
 										{@const response = botResponses.find(
-											(r: BotResponse) => r.proposalEditId === edit.id
+											(r: BotResponse) => r.taskHistoryId === taskHistoryId
 										)}
 										{#if response === undefined}
-											<p>No response has been generated based on this edit to the bot.</p>
+											<p>No response has been generated based on the initial version of the bot.</p>
 										{:else}
 											{@render botResponseSection(response)}
 										{/if}
 									{/if}
 								</Accordion.Content>
 							</Accordion.Item>
-						{/each}
-						<Accordion.Item value="task-{taskHistoryId}">
-							<Accordion.Trigger>
-								initial prompt {#if edits.length === 0}(current){/if}
-							</Accordion.Trigger>
-							<Accordion.Content class="flex flex-col gap-4 text-balance">
-								{#if loadingBotResponse}
-									<div class="mb-2 flex items-center">
-										<LoaderIcon class="mr-2 size-4 animate-spin" />
-										<p>Loading bot response...</p>
-									</div>
-								{:else}
-									{@const response = botResponses.find(
-										(r: BotResponse) => r.taskHistoryId === taskHistoryId
-									)}
-									{#if response === undefined}
-										<p>No response has been generated based on the initial version of the bot.</p>
-									{:else}
-										{@render botResponseSection(response)}
-									{/if}
-								{/if}
-							</Accordion.Content>
-						</Accordion.Item>
-					</Accordion.Root>
+						</Accordion.Root>
+					</ScrollArea>
 					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/')}
 						<Button
 							disabled={removing}
