@@ -32,13 +32,14 @@
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
 	import HashIcon from '@lucide/svelte/icons/hash';
-	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
 	import BotIcon from '@lucide/svelte/icons/bot';
 	import BotOffIcon from '@lucide/svelte/icons/bot-off';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
 	import FolderCheckIcon from '@lucide/svelte/icons/folder-check';
+	import UserIcon from '@lucide/svelte/icons/user';
+	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -474,39 +475,40 @@
 							</div>
 						{:else}
 							<div class="px-4">
-								<div class="mb-1 flex items-center">
+								<div class="mb-2 flex items-center">
 									<HashIcon class="mr-2 size-4" />
-									<h4>Channel: {displayedChannel}</h4>
+									<h4 class="font-medium">
+										{displayedChannel.startsWith('#')
+											? displayedChannel.slice(1)
+											: displayedChannel}
+									</h4>
 								</div>
-								<div class="flex items-center">
-									<UserRoundIcon class="mr-2 size-4" />
-									<h4>User Message</h4>
+								<div class="mb-4 flex">
+									<!-- {#if realUserMessage}
+										<UserCheckIcon class="mt-1 mr-2 size-4 flex-none" />
+									{:else} -->
+									<UserIcon class="mt-1 mr-2 size-4 flex-none" />
+									<!-- {/if} -->
+									<p>{displayedUserMessage}</p>
 								</div>
-								<p class="mb-3 pl-6">{displayedUserMessage}</p>
-								<div class="mb-1 flex items-center">
+								<div class="mb-2 flex w-full items-center">
 									<WrenchIcon class="mr-2 size-4" />
-									<h4>Triggered Task:</h4>
-
-									<h4 class="ml-1">
+									<h4 class="font-medium">
 										{displayedTaskId in data.originalTasks.tasks
 											? data.originalTasks.tasks[displayedTaskId].name
 											: 'No Task is Triggered'}
 									</h4>
 								</div>
-								{#if displayedTaskId !== '0'}
-									{#if displayedBotResponse === ''}
-										<div class="mb-3 flex items-center">
-											<BotOffIcon class="mr-2 size-4 flex-none" />
-											<p>The bot chose not to respond.</p>
-										</div>
-									{:else}
-										<div class="flex items-center">
-											<BotIcon class="mr-2 size-4" />
-											<h4>Bot's Response</h4>
-										</div>
-										<p class="mb-3 pl-6">{displayedBotResponse}</p>
+								<div class="flex w-full">
+									{#if displayedBotResponse !== ''}
+										<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+
+										<p>{displayedBotResponse}</p>
+									{:else if displayedBotResponse === '' && displayedTaskId !== '0'}
+										<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
+										<p>The bot chose not to respond.</p>
 									{/if}
-								{/if}
+								</div>
 							</div>
 						{/if}
 						<Sheet.Footer>
@@ -527,45 +529,86 @@
 
 													if (res.ok) {
 														fetchCase = await res.json();
-														let botResponses = [];
-														try {
-															const resBotResponses = await fetch(
-																`/api/cases/${fetchCase.id}/botResponses?taskHistoryId=${data.proposal.taskHistoryId}&proposalId=${data.proposal.id}`,
-																{
-																	method: 'GET',
+														if (fetchCase) {
+															let botResponses = [];
+															try {
+																const resBotResponses = await fetch(
+																	`/api/cases/${fetchCase.id}/botResponses?taskHistoryId=${data.proposal.taskHistoryId}&proposalId=${data.proposal.id}`,
+																	{
+																		method: 'GET',
+																		headers: {
+																			'Content-Type': 'application/json'
+																		}
+																	}
+																);
+																const resData = await resBotResponses.json();
+																botResponses = resData.botResponses;
+															} catch (e) {
+																showCaseError = true;
+																showCaseErrorMessage = 'An error occurred. Please try again.';
+															}
+
+															if (data.edits.length > 0) {
+																fetchCaseBotResponse = botResponses.find(
+																	(b: BotResponse) =>
+																		b.proposalEditId === data.edits[0].id &&
+																		b.proposalId === data.proposal.id
+																);
+															} else {
+																fetchCaseBotResponse = botResponses.find(
+																	(b: BotResponse) =>
+																		b.taskHistoryId === data.proposal.taskHistoryId
+																);
+															}
+															if (fetchCaseBotResponse) {
+																// botResposne already exists
+																displayedChannel = fetchCase.channel;
+																displayedUserMessage = fetchCase.userMessage;
+																displayedTaskId = fetchCaseBotResponse.triggeredTask;
+																displayedBotResponse = fetchCaseBotResponse.botResponse;
+																showCase = true;
+															} else {
+																// generate bot response
+																const resBot = await fetch('/api/bot', {
+																	method: 'POST',
+																	body: JSON.stringify({
+																		channel: fetchCase.channel,
+																		userMessage: fetchCase.userMessage,
+																		tasks:
+																			data.edits.length > 0
+																				? data.edits[0].tasks
+																				: data.originalTasks.tasks,
+																		soures: 'proposal'
+																	}),
 																	headers: {
 																		'Content-Type': 'application/json'
 																	}
-																}
-															);
-															const resData = await resBotResponses.json();
-															botResponses = resData.botResponses;
-														} catch (e) {
-															showCaseError = true;
-															showCaseErrorMessage = 'An error occurred. Please try again.';
-														}
+																});
+																const { taskId, botResponse } = await resBot.json();
 
-														if (data.edits.length > 0) {
-															fetchCaseBotResponse = botResponses.find(
-																(b: BotResponse) =>
-																	b.proposalEditId === data.edits[0].id &&
-																	b.proposalId === data.proposal.id
-															);
-														} else {
-															fetchCaseBotResponse = botResponses.find(
-																(b: BotResponse) => b.taskHistoryId === data.proposal.taskHistoryId
-															);
-														}
-														if (fetchCaseBotResponse) {
-															// botResposne already exists
-															displayedChannel = fetchCase.channel;
-															displayedUserMessage = fetchCase.userMessage;
-															displayedTaskId = fetchCaseBotResponse.triggeredTask;
-															displayedBotResponse = fetchCaseBotResponse.botResponse;
-															showCase = true;
-														} else {
-															// generate bot response
-															console.log('TODO: fetch bot resonse');
+																const resBotResponse = await fetch(
+																	`/api/cases/${fetchCase.id}/botResponses`,
+																	{
+																		method: 'POST',
+																		body: JSON.stringify({
+																			botResponse: botResponse,
+																			proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
+																			proposalId: data.edits.length > 0 ? data.proposal.id : '',
+																			taskHistoryId:
+																				data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
+																			triggeredTaskId: taskId
+																		}),
+																		headers: {
+																			'Content-Type': 'application/json'
+																		}
+																	}
+																);
+																displayedChannel = fetchCase.channel;
+																displayedUserMessage = fetchCase.userMessage;
+																displayedTaskId = taskId;
+																displayedBotResponse = botResponse;
+																showCase = true;
+															}
 														}
 													} else {
 														showCaseError = true;
