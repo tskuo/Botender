@@ -2,6 +2,7 @@
 	// import ui components
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
 
 	// import lucide icons
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
@@ -10,6 +11,9 @@
 	import FoldersIcon from '@lucide/svelte/icons/folders';
 	import WebhookIcon from '@lucide/svelte/icons/webhook';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+
+	// import logo
+	import logo from '$lib/img/botender_logo.png';
 
 	const items = [
 		{
@@ -44,14 +48,13 @@
 	<Sidebar.Header>
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
-				<!-- <div class="flex items-center">
-					<Avatar.Root class="mr-4 ml-2">
-						<Avatar.Image src="https://github.com/shadcn.png" alt="@shadcn" />
-						<Avatar.Fallback>CN</Avatar.Fallback>
+				<div class="flex items-center px-2 pt-1">
+					<Avatar.Root class="mr-4">
+						<Avatar.Image class="rounded-none" src={logo} alt="Botender logo" />
 					</Avatar.Root>
 					<h1 class="text-2xl font-bold">Botender</h1>
-				</div> -->
-				<h1 class="p-2 text-2xl font-bold">Botender</h1>
+				</div>
+				<!-- <h1 class="p-2 text-2xl font-bold">Botender</h1> -->
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 	</Sidebar.Header>
@@ -86,7 +89,7 @@
 								{...props}
 								class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
-								Username
+								tzusheng
 								<ChevronUpIcon class="ml-auto" />
 							</Sidebar.MenuButton>
 						{/snippet}
