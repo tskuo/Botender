@@ -56,6 +56,7 @@
 
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
+	let testedTasks = $state<Tasks | null>(null);
 	let testCases = $state(data.testCases);
 	let upvotes = $state(data.edits.length > 0 ? data.edits[0].upvotes : []);
 	let downvotes = $state(data.edits.length > 0 ? data.edits[0].downvotes : []);
@@ -139,11 +140,14 @@
 
 	// Run Tests
 	let testCaseRefs = $state<any[]>([]);
+	let runningTest = $state(false);
 	let runTest = async () => {
-		console.log('Run Test!');
-		console.log('Length of case refs: ', testCaseRefs.length);
-		testCaseRefs.forEach((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
-		// console.log($state.snapshot(editedTasks));
+		runningTest = true;
+		testedTasks = $state.snapshot(editedTasks);
+		// testCaseRefs.forEach(async (ref) => await ref.runTestForCase($state.snapshot(editedTasks)));
+		const promises = testCaseRefs.map((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
+		await Promise.all(promises);
+		runningTest = false;
 	};
 </script>
 
@@ -156,7 +160,13 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button class="mr-1">Deploy</Button>
+			<Button
+				class="mr-1"
+				onclick={() => {
+					console.log($state.snapshot(testedTasks));
+					console.log($state.snapshot(editedTasks));
+				}}>Deploy</Button
+			>
 		</div>
 		<Separator />
 	</div>
@@ -201,12 +211,7 @@
 					</p>
 				{:else}
 					<p class="text-muted-foreground text-sm">
-						<!-- {#if data.edits.length === 1}
-							1 person has proposed the following edit
-						{:else}
-							{data.edits.length} people have collaboratively proposed the following edits
-						{/if} -->
-						Click the plus button if you want to add more tasks for editing.
+						Last edited by {data.edits[0].editor}
 					</p>
 				{/if}
 				{#each Object.entries(editedTasks) as [taskId, task] (taskId)}
@@ -221,42 +226,58 @@
 					{/if}
 				{/each}
 				<Button class="my-2 w-full" variant="secondary"><PlusIcon class="size-4" /></Button>
-				<p class="text-muted-foreground my-1 text-sm">
-					To save new edits, you must first run tests to check the updated bot responses.
-				</p>
+				{#if (_.isNull(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNull(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
+					<div class="text-primary my-1 flex items-center text-sm">
+						<TriangleAlertIcon class="mr-2 size-4" />
+						<p>To save new edits, you must first run tests to check the updated bot responses.</p>
+					</div>
+				{/if}
 				<div class="mt-2 flex items-center justify-between">
+					<!-- Test Button -->
 					<Button
-						disabled={data.edits.length > 0
+						disabled={(data.edits.length > 0
 							? _.isEqual(editedTasks, data.edits[0].tasks)
-							: _.isEqual(editedTasks, data.originalTasks.tasks)}
+							: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+							_.isEqual(editedTasks, testedTasks) ||
+							runningTest}
 						onclick={async () => {
 							await runTest();
-							console.log('Finish Run Test!');
 						}}
 					>
-						<PlayIcon class="size-4" />Test
+						{#if runningTest}
+							<LoaderCircleIcon class="size-4 animate-spin" />Testing
+						{:else}
+							<PlayIcon class="size-4" />Test
+						{/if}
 					</Button>
 					<div class="flex items-center gap-2">
+						<!-- Reset Button -->
 						<Button
 							variant="secondary"
-							disabled={data.edits.length > 0
+							disabled={(data.edits.length > 0
 								? _.isEqual(editedTasks, data.edits[0].tasks)
-								: _.isEqual(editedTasks, data.originalTasks.tasks)}
+								: _.isEqual(editedTasks, data.originalTasks.tasks)) || runningTest}
 							onclick={() => {
 								if (data.edits.length > 0) {
 									editedTasks = data.edits[0].tasks;
 								} else {
 									editedTasks = data.originalTasks.tasks;
 								}
+								testCaseRefs.forEach((ref) => ref.resetTestForCase());
+								testedTasks = null;
 							}}
 						>
 							<UndoIcon class="size-4" />Reset
 						</Button>
+						<!-- Save Button -->
 						<Button
 							variant="secondary"
-							disabled={data.edits.length > 0
+							disabled={(data.edits.length > 0
 								? _.isEqual(editedTasks, data.edits[0].tasks)
-								: _.isEqual(editedTasks, data.originalTasks.tasks)}
+								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+								_.isNull(testedTasks) ||
+								!_.isEqual(testedTasks, editedTasks) ||
+								runningTest}
 							onclick={async () => {
 								const response = await fetch(`/api/proposals/${data.proposal.id}/edits`, {
 									method: 'POST',
@@ -436,17 +457,18 @@
 					<div class="mb-2 md:mb-0 md:flex md:justify-between">
 						<div>
 							<h3>Check test cases</h3>
-							{#if data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)}
+							{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
 								<p class="text-muted-foreground mb-1 text-sm">
 									{testCases.length} test
 									{testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
 								</p>
 							{:else}
 								<div class="text-primary mb-1 flex items-center text-sm">
-									<TriangleAlertIcon class="mr-2 size-4" />Run tests to see the bot's updated
-									response after your edits for {testCases.length} test {testCases.length === 1
-										? 'case'
-										: 'cases'}
+									<TriangleAlertIcon class="mr-2 size-4" />
+									<p>
+										Run tests to see the bot's updated response after your edits for {testCases.length}
+										test {testCases.length === 1 ? 'case' : 'cases'}
+									</p>
 								</div>
 							{/if}
 						</div>
@@ -504,14 +526,14 @@
 				<Separator />
 				<div class="p-4 md:h-1/2">
 					<h3>Check other cases for possible side effects from the proposed edit</h3>
-					{#if data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)}
+					{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
 						<p class="text-muted-foreground mb-1 text-sm">
 							0 cases have been suggested. You may add (+) relevant cases to the test cases.
 						</p>
 					{:else}
 						<div class="text-primary mb-1 flex items-center text-sm">
-							<TriangleAlertIcon class="mr-2 size-4" />Run tests to see new case suggestions based
-							on your edit
+							<TriangleAlertIcon class="mr-2 size-4" />
+							<p>Run tests to see new case suggestions based on your edit</p>
 						</div>
 					{/if}
 
