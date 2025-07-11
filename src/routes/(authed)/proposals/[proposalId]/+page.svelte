@@ -41,6 +41,8 @@
 	import FolderCheckIcon from '@lucide/svelte/icons/folder-check';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
+	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+	import PlusIcon from '@lucide/svelte/icons/plus';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -131,17 +133,30 @@
 
 		if (res.ok) {
 			testCases = testCases.filter((c: Case) => c.id !== caseId);
+			testCaseRefs = testCaseRefs.slice(0, testCases.length);
 		}
+	};
+
+	// Run Tests
+	let testCaseRefs = $state<any[]>([]);
+	let runTest = async () => {
+		console.log('Run Test!');
+		console.log('Length of case refs: ', testCaseRefs.length);
+		testCaseRefs.forEach((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
+		// console.log($state.snapshot(editedTasks));
 	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<div class="flex items-center p-3">
-			<Button href="/proposals" variant="ghost" size="icon">
-				<ChevronLeftIcon />
-			</Button>
-			<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
+		<div class="flex items-center justify-between p-3">
+			<div class="flex items-center">
+				<Button href="/proposals" variant="ghost" size="icon">
+					<ChevronLeftIcon />
+				</Button>
+				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
+			</div>
+			<Button class="mr-1">Deploy</Button>
 		</div>
 		<Separator />
 	</div>
@@ -165,10 +180,16 @@
 				<p>{data.proposal.description}</p>
 			</div>
 			<div class="mb-2 p-2">
-				<h3>Discussion</h3>
-				{#if data.proposal.discussionSummary === ''}
-					<p class="text-muted-foreground text-sm">No one has joined the discussion yet.</p>
-				{:else}
+				<div class="flex items-center justify-between">
+					<div>
+						<h3>Discussion</h3>
+						{#if data.proposal.discussionSummary === ''}
+							<p class="text-muted-foreground text-sm">No one has joined the discussion yet.</p>
+						{/if}
+					</div>
+					<Button variant="secondary"><ExternalLinkIcon class="size-4" />Discuss</Button>
+				</div>
+				{#if data.proposal.discussionSummary}
 					<p>Summary: {data.proposal.discussionSummary}</p>
 				{/if}
 			</div>
@@ -179,23 +200,27 @@
 						No edits have been proposed yet. The following are the original task prompts.
 					</p>
 				{:else}
-					<p class="text-muted-foreground">
-						{#if data.edits.length === 1}
+					<p class="text-muted-foreground text-sm">
+						<!-- {#if data.edits.length === 1}
 							1 person has proposed the following edit
 						{:else}
 							{data.edits.length} people have collaboratively proposed the following edits
-						{/if}
+						{/if} -->
+						Click the plus button if you want to add more tasks for editing.
 					</p>
 				{/if}
 				{#each Object.entries(editedTasks) as [taskId, task] (taskId)}
-					<div class="pt-4">
-						<TaskSection
-							bind:name={editedTasks[taskId].name}
-							bind:trigger={editedTasks[taskId].trigger}
-							bind:action={editedTasks[taskId].action}
-						/>
-					</div>
+					{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
+						<div class="pt-4">
+							<TaskSection
+								bind:name={editedTasks[taskId].name}
+								bind:trigger={editedTasks[taskId].trigger}
+								bind:action={editedTasks[taskId].action}
+							/>
+						</div>
+					{/if}
 				{/each}
+				<Button class="my-2 w-full" variant="secondary"><PlusIcon class="size-4" /></Button>
 				<p class="text-muted-foreground my-1 text-sm">
 					To save new edits, you must first run tests to check the updated bot responses.
 				</p>
@@ -204,6 +229,10 @@
 						disabled={data.edits.length > 0
 							? _.isEqual(editedTasks, data.edits[0].tasks)
 							: _.isEqual(editedTasks, data.originalTasks.tasks)}
+						onclick={async () => {
+							await runTest();
+							console.log('Finish Run Test!');
+						}}
 					>
 						<PlayIcon class="size-4" />Test
 					</Button>
@@ -407,21 +436,36 @@
 					<div class="mb-2 md:mb-0 md:flex md:justify-between">
 						<div>
 							<h3>Check test cases</h3>
-							<p class="text-muted-foreground mb-1">
-								{testCases.length} test
-								{testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
-							</p>
+							{#if data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)}
+								<p class="text-muted-foreground mb-1 text-sm">
+									{testCases.length} test
+									{testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
+								</p>
+							{:else}
+								<div class="text-primary mb-1 flex items-center text-sm">
+									<TriangleAlertIcon class="mr-2 size-4" />Run tests to see the bot's updated
+									response after your edits for {testCases.length} test {testCases.length === 1
+										? 'case'
+										: 'cases'}
+								</div>
+							{/if}
 						</div>
-						<ToggleGroup.Root
+						<!-- <ToggleGroup.Root
 							size="lg"
 							variant="outline"
 							type="single"
 							class="mx-auto self-start md:mr-0"
 						>
-							<ToggleGroup.Item value="good" class="px-8 text-lg">- good</ToggleGroup.Item>
-							<ToggleGroup.Item value="bad" class="px-8 text-lg">- bad</ToggleGroup.Item>
-							<ToggleGroup.Item value="tbd" class="px-8 text-lg">- tbd</ToggleGroup.Item>
-						</ToggleGroup.Root>
+							<ToggleGroup.Item value="good" class="text-my-green px-8 text-lg"
+								>4 good</ToggleGroup.Item
+							>
+							<ToggleGroup.Item value="bad" class="text-my-pink px-8 text-lg"
+								>0 bad</ToggleGroup.Item
+							>
+							<ToggleGroup.Item value="tbd" class="text-muted-foreground px-8 text-lg"
+								>0 tbd</ToggleGroup.Item
+							>
+						</ToggleGroup.Root> -->
 					</div>
 					{#if testCases.length === 0}
 						<div class="flex h-full items-center justify-center">
@@ -435,10 +479,11 @@
 							class="mx-auto w-4/5 max-w-screen md:w-5/6"
 						>
 							<Carousel.Content>
-								{#each testCases as testCase (testCase.id)}
+								{#each testCases as testCase, i (testCase.id)}
 									<Carousel.Item class="xl:basis-1/2">
 										<div class="p-1">
 											<CaseCard
+												bind:this={testCaseRefs[i]}
 												{...testCase}
 												testCaseBadge={true}
 												tasks={data.originalTasks.tasks}
@@ -459,9 +504,17 @@
 				<Separator />
 				<div class="p-4 md:h-1/2">
 					<h3>Check other cases for possible side effects from the proposed edit</h3>
-					<p class="text-muted-foreground mb-1">
-						0 cases have been suggested. You may add (+) relevant cases to the test cases.
-					</p>
+					{#if data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)}
+						<p class="text-muted-foreground mb-1 text-sm">
+							0 cases have been suggested. You may add (+) relevant cases to the test cases.
+						</p>
+					{:else}
+						<div class="text-primary mb-1 flex items-center text-sm">
+							<TriangleAlertIcon class="mr-2 size-4" />Run tests to see new case suggestions based
+							on your edit
+						</div>
+					{/if}
+
 					<!-- <Carousel.Root
 						opts={{
 							align: 'start'
@@ -553,6 +606,7 @@
 									</Select.Trigger>
 									<Select.Content>
 										<Select.Item value="#introducion" label="#introducion" />
+										<Select.Item value="general" label="general" />
 										<Select.Item value="#random" label="#random" />
 										<Select.Item value="#faq" label="#faq" />
 									</Select.Content>

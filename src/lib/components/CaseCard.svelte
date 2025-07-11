@@ -1,4 +1,7 @@
 <script lang="ts">
+	// import lodash for object comparison
+	import _ from 'lodash';
+
 	// import ui components
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -28,6 +31,7 @@
 
 	// import svelte stores
 	import { page } from '$app/state';
+	import ThumbsDown from '@lucide/svelte/icons/thumbs-down';
 
 	let {
 		id = '',
@@ -43,6 +47,40 @@
 		user,
 		removeCaseFuntion = () => {}
 	} = $props();
+
+	export async function runTestForCase(editedTasks: Tasks) {
+		loadingBotResponse = true;
+		console.log('Running test for case #', id);
+		console.log(editedTasks);
+		const resBot = await fetch('/api/bot', {
+			method: 'POST',
+			body: JSON.stringify({
+				channel: channel,
+				userMessage: userMessage,
+				tasks: editedTasks,
+				soures: 'proposal'
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		const { taskId, botResponse } = await resBot.json();
+		tmpBotResponse = {
+			id: 'tmp',
+			botResponse: botResponse,
+			createAt: '',
+			proposalEditId: 'tmp',
+			proposalId: page.params.proposalId,
+			taskHistoryId: '',
+			thumbsDown: [],
+			thumbsUp: [],
+			triggeredTask: taskId
+		};
+		loadingBotResponse = false;
+	}
+
+	// temporary bot response based on unsaved edits
+	let tmpBotResponse = $state<BotResponse | null>(null);
 
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);
@@ -169,18 +207,31 @@
 				? 'thumbsDown'
 				: undefined}
 		onValueChange={async (value) => {
-			const resBotResponse = await fetch(`/api/cases/${id}/botResponses/${botResponse.id}`, {
-				method: 'PATCH',
-				body: JSON.stringify({
-					value: value
-				}),
-				headers: {
-					'Content-Type': 'application/json'
+			if (botResponse.id === 'tmp') {
+				if (value === 'thumbsUp') {
+					botResponse.thumbsUp = [user.userId];
+					botResponse.thumbsDown = [];
+				} else if (value === 'thumbsDown') {
+					botResponse.thumbsUp = [];
+					botResponse.thumbsDown = [user.userId];
+				} else {
+					botResponse.thumbsUp = [];
+					botResponse.thumbsDown = [];
 				}
-			});
+			} else {
+				const resBotResponse = await fetch(`/api/cases/${id}/botResponses/${botResponse.id}`, {
+					method: 'PATCH',
+					body: JSON.stringify({
+						value: value
+					}),
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				});
 
-			if (resBotResponse.ok) {
-				loadBotResponses();
+				if (resBotResponse.ok) {
+					loadBotResponses();
+				}
 			}
 		}}
 	>
@@ -266,7 +317,9 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if edits.length > 0}
+						{#if tmpBotResponse !== null}
+							{@render botResponseSection(tmpBotResponse, textLengthCap)}
+						{:else if edits.length > 0}
 							{@const response = botResponses.find(
 								(r: BotResponse) => r.proposalEditId === edits[0].id
 							)}
@@ -307,7 +360,9 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if edits.length > 0}
+						{#if tmpBotResponse !== null}
+							{@render thumbsUpDownIcons(tmpBotResponse)}
+						{:else if edits.length > 0}
 							{@const response = botResponses.find(
 								(r: BotResponse) => r.proposalEditId === edits[0].id
 							)}
@@ -374,7 +429,10 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if edits.length > 0}
+						{#if tmpBotResponse !== null}
+							{@render botResponseSection(tmpBotResponse)}
+							{@render thumbsUpDownButtons(tmpBotResponse)}
+						{:else if edits.length > 0}
 							{@const response = botResponses.find(
 								(r: BotResponse) => r.proposalEditId === edits[0].id
 							)}
@@ -416,10 +474,25 @@
 					<h4 class="mt-6">Bot responses from all edits and the initial prompt:</h4>
 					<ScrollArea class="h-64 w-full">
 						<Accordion.Root type="single" class="w-full">
+							{#if tmpBotResponse !== null}
+								<Accordion.Item value="edit-tmp">
+									<Accordion.Trigger>Your unsaved edit (current)</Accordion.Trigger>
+									<Accordion.Content class="flex flex-col gap-4 text-balance">
+										{#if loadingBotResponse}
+											<div class="mb-2 flex items-center">
+												<LoaderIcon class="mr-2 size-4 animate-spin" />
+												<p>Loading bot response...</p>
+											</div>
+										{:else}
+											{@render botResponseSection(tmpBotResponse)}
+										{/if}
+									</Accordion.Content>
+								</Accordion.Item>
+							{/if}
 							{#each edits as edit, i (edit.id)}
 								<Accordion.Item value="edit-{edit.id}">
 									<Accordion.Trigger>
-										{edit.editor}'s edit {#if i === 0}(current){/if}
+										{edit.editor}'s edit {#if i === 0 && tmpBotResponse === null}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}

@@ -469,6 +469,7 @@
 						</Select.Trigger>
 						<Select.Content>
 							<Select.Item value="#introducion" label="#introducion" />
+							<Select.Item value="#general" label="#general" />
 							<Select.Item value="#random" label="#random" />
 							<Select.Item value="#faq" label="#faq" />
 						</Select.Content>
