@@ -77,11 +77,11 @@
 	}
 
 	export function resetTestForCase() {
-		tmpBotResponse = null;
+		tmpBotResponse = undefined;
 	}
 
 	// temporary bot response based on unsaved edits
-	let tmpBotResponse = $state<BotResponse | null>(null);
+	let tmpBotResponse = $state<BotResponse | undefined>(undefined);
 
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);
@@ -318,7 +318,7 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if !_.isNull(tmpBotResponse)}
+						{#if !_.isNil(tmpBotResponse)}
 							{@render botResponseSection(tmpBotResponse, textLengthCap)}
 						{:else if edits.length > 0}
 							{@const response = botResponses.find(
@@ -361,7 +361,7 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if !_.isNull(tmpBotResponse)}
+						{#if !_.isNil(tmpBotResponse)}
 							{@render thumbsUpDownIcons(tmpBotResponse)}
 						{:else if edits.length > 0}
 							{@const response = botResponses.find(
@@ -430,7 +430,7 @@
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if !_.isNull(tmpBotResponse)}
+						{#if !_.isNil(tmpBotResponse)}
 							{@render botResponseSection(tmpBotResponse)}
 							{@render thumbsUpDownButtons(tmpBotResponse)}
 						{:else if edits.length > 0}
@@ -475,7 +475,7 @@
 					<h4 class="mt-6">Bot responses from all edits and the initial prompt:</h4>
 					<ScrollArea class="h-64 w-full">
 						<Accordion.Root type="single" class="w-full">
-							{#if !_.isNull(tmpBotResponse)}
+							{#if !_.isNil(tmpBotResponse)}
 								<Accordion.Item value="edit-tmp">
 									<Accordion.Trigger>Your unsaved edit (current)</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
@@ -493,7 +493,7 @@
 							{#each edits as edit, i (edit.id)}
 								<Accordion.Item value="edit-{edit.id}">
 									<Accordion.Trigger>
-										{edit.editor}'s edit {#if i === 0 && _.isNull(tmpBotResponse)}(current){/if}
+										{edit.editor}'s edit {#if i === 0 && _.isNil(tmpBotResponse)}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}

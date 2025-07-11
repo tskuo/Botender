@@ -56,7 +56,7 @@
 
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
-	let testedTasks = $state<Tasks | null>(null);
+	let testedTasks = $state<Tasks | undefined>(undefined);
 	let testCases = $state(data.testCases);
 	let upvotes = $state(data.edits.length > 0 ? data.edits[0].upvotes : []);
 	let downvotes = $state(data.edits.length > 0 ? data.edits[0].downvotes : []);
@@ -226,7 +226,7 @@
 					{/if}
 				{/each}
 				<Button class="my-2 w-full" variant="secondary"><PlusIcon class="size-4" /></Button>
-				{#if (_.isNull(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNull(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
+				{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
 					<div class="text-primary my-1 flex items-center text-sm">
 						<TriangleAlertIcon class="mr-2 size-4" />
 						<p>To save new edits, you must first run tests to check the updated bot responses.</p>
@@ -264,7 +264,7 @@
 									editedTasks = data.originalTasks.tasks;
 								}
 								testCaseRefs.forEach((ref) => ref.resetTestForCase());
-								testedTasks = null;
+								testedTasks = undefined;
 							}}
 						>
 							<UndoIcon class="size-4" />Reset
@@ -275,7 +275,7 @@
 							disabled={(data.edits.length > 0
 								? _.isEqual(editedTasks, data.edits[0].tasks)
 								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-								_.isNull(testedTasks) ||
+								_.isNil(testedTasks) ||
 								!_.isEqual(testedTasks, editedTasks) ||
 								runningTest}
 							onclick={async () => {
@@ -691,7 +691,6 @@
 											} else {
 												try {
 													const res = await fetch(`/api/cases/${enteredCaseId}`);
-
 													if (res.ok) {
 														fetchCase = await res.json();
 														if (fetchCase) {
@@ -725,6 +724,7 @@
 																		b.taskHistoryId === data.proposal.taskHistoryId
 																);
 															}
+
 															if (fetchCaseBotResponse) {
 																// botResposne already exists
 																displayedChannel = fetchCase.channel;
