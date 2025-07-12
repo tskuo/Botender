@@ -38,7 +38,6 @@ declare global {
 		channel: string;
 		createAt: date;
 		realUserMessage: boolean;
-		source: string;
 		userMessage: string;
 	};
 

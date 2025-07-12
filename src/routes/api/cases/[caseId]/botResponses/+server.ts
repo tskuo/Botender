@@ -101,6 +101,8 @@ export const POST = async ({ request, params }) => {
 			proposalEditId = '',
 			proposalId = '',
 			taskHistoryId = '',
+			thumbsDown = [],
+			thumbsUp = [],
 			triggeredTaskId
 		} = await request.json();
 
@@ -110,8 +112,8 @@ export const POST = async ({ request, params }) => {
 			proposalEditId: proposalEditId,
 			proposalId: proposalId,
 			taskHistoryId: taskHistoryId,
-			thumbsDown: [],
-			thumbsUp: [],
+			thumbsDown: thumbsDown,
+			thumbsUp: thumbsUp,
 			triggeredTask: triggeredTaskId
 		});
 		return json({ id: docRef.id }, { status: 201 });

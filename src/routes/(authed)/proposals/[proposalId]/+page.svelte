@@ -85,6 +85,9 @@
 	let displayedTaskId = $state('');
 	let showAddCaseSuccess = $state(false);
 	let addingCase = $state(false);
+	let testCaseRefs = $state<any[]>([]);
+	let runningTest = $state(false);
+	let savingEdit = $state(false);
 
 	let clearManualCasePanel = () => {
 		enteredCaseId = '';
@@ -140,15 +143,37 @@
 	};
 
 	// Run Tests
-	let testCaseRefs = $state<any[]>([]);
-	let runningTest = $state(false);
 	let runTest = async () => {
 		runningTest = true;
 		testedTasks = $state.snapshot(editedTasks);
-		// testCaseRefs.forEach(async (ref) => await ref.runTestForCase($state.snapshot(editedTasks)));
 		const promises = testCaseRefs.map((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
 		await Promise.all(promises);
 		runningTest = false;
+	};
+
+	// Save Proposal
+	let saveProposal = async () => {
+		savingEdit = true;
+		const resEdit = await fetch(`/api/proposals/${data.proposal.id}/edits`, {
+			method: 'POST',
+			body: JSON.stringify({
+				tasks: editedTasks,
+				editor: data.user?.userId
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		if (resEdit.ok) {
+			const resEditData = await resEdit.json();
+			const promises = testCaseRefs.map((ref) =>
+				ref.saveTmpBotResponse(data.proposal.id, resEditData.id)
+			);
+			await Promise.all(promises);
+			await invalidateAll();
+			reloadProposalState();
+		}
+		savingEdit = false;
 	};
 </script>
 
@@ -234,13 +259,14 @@
 							? _.isEqual(editedTasks, data.edits[0].tasks)
 							: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
 							_.isEqual(editedTasks, testedTasks) ||
-							runningTest}
+							runningTest ||
+							savingEdit}
 						onclick={async () => {
 							await runTest();
 						}}
 					>
 						{#if runningTest}
-							<LoaderCircleIcon class="size-4 animate-spin" />Testing
+							<LoaderCircleIcon class="size-4 animate-spin" />Test
 						{:else}
 							<PlayIcon class="size-4" />Test
 						{/if}
@@ -251,7 +277,9 @@
 							variant="secondary"
 							disabled={(data.edits.length > 0
 								? _.isEqual(editedTasks, data.edits[0].tasks)
-								: _.isEqual(editedTasks, data.originalTasks.tasks)) || runningTest}
+								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+								runningTest ||
+								savingEdit}
 							onclick={() => {
 								if (data.edits.length > 0) {
 									editedTasks = data.edits[0].tasks;
@@ -272,25 +300,17 @@
 								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
 								_.isNil(testedTasks) ||
 								!_.isEqual(testedTasks, editedTasks) ||
-								runningTest}
+								runningTest ||
+								savingEdit}
 							onclick={async () => {
-								const response = await fetch(`/api/proposals/${data.proposal.id}/edits`, {
-									method: 'POST',
-									body: JSON.stringify({
-										tasks: editedTasks,
-										editor: data.user?.userId
-									}),
-									headers: {
-										'Content-Type': 'application/json'
-									}
-								});
-								if (response.ok) {
-									await invalidateAll();
-									reloadProposalState();
-								}
+								await saveProposal();
 							}}
 						>
-							<SaveIcon class="size-4" />Save
+							{#if savingEdit}
+								<LoaderCircleIcon class="size-4 animate-spin" />Save
+							{:else}
+								<SaveIcon class="size-4" />Save
+							{/if}
 						</Button>
 					</div>
 				</div>
@@ -496,7 +516,7 @@
 							class="mx-auto w-4/5 max-w-screen md:w-5/6"
 						>
 							<Carousel.Content>
-								{#each testCases as testCase, i (testCase.id)}
+								{#each testCases as testCase, i (`${testCase.id}-${data.edits.length}`)}
 									<Carousel.Item class="xl:basis-1/2">
 										<div class="p-1">
 											<CaseCard
@@ -677,7 +697,9 @@
 								<Button
 									disabled={showCase ||
 										checkingCaseManually ||
-										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel)}
+										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel) ||
+										runningTest ||
+										savingEdit}
 									onclick={async () => {
 										checkingCaseManually = true;
 										showCaseError = false;

@@ -99,6 +99,27 @@
 		};
 	}
 
+	export async function saveTmpBotResponse(proposalId: string, proposalEditId: string) {
+		if (tmpBotResponse) {
+			const resBotResponse = await fetch(`/api/cases/${id}/botResponses`, {
+				method: 'POST',
+				body: JSON.stringify({
+					botResponse: tmpBotResponse.botResponse,
+					proposalEditId: proposalEditId,
+					proposalId: proposalId,
+					taskHistoryId: '',
+					thumbsDown: tmpBotResponse.thumbsDown,
+					thumbsUp: tmpBotResponse.thumbsUp,
+					triggeredTaskId: tmpBotResponse.triggeredTask
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			resetTestForCase();
+		}
+	}
+
 	// temporary bot response based on unsaved edits
 	let tmpBotResponse = $state<BotResponse | undefined>(undefined);
 	let tmpTasks = $state<Tasks | undefined>(undefined);
