@@ -26,7 +26,7 @@ export const GET = async () => {
 
 export const POST = async ({ request }) => {
 	try {
-		const { formCase } = await request.json();
+		const { formCase, caseOnly = false } = await request.json();
 
 		const docRef = await addDoc(collection(db, 'cases'), {
 			channel: formCase.data.channel,
@@ -36,16 +36,18 @@ export const POST = async ({ request }) => {
 			userMessage: formCase.data.userMessage
 		});
 
-		await addDoc(collection(db, 'cases', docRef.id, 'botResponses'), {
-			botResponse: formCase.data.botResponse,
-			createAt: serverTimestamp(),
-			proposalEditId: formCase.data.proposalEditId,
-			proposalId: formCase.data.proposalId,
-			taskHistoryId: formCase.data.taskHistoryId,
-			thumbsDown: [],
-			thumbsUp: [],
-			triggeredTask: formCase.data.triggeredTaskId
-		});
+		if (!caseOnly) {
+			await addDoc(collection(db, 'cases', docRef.id, 'botResponses'), {
+				botResponse: formCase.data.botResponse,
+				createAt: serverTimestamp(),
+				proposalEditId: formCase.data.proposalEditId,
+				proposalId: formCase.data.proposalId,
+				taskHistoryId: formCase.data.taskHistoryId,
+				thumbsDown: [],
+				thumbsUp: [],
+				triggeredTask: formCase.data.triggeredTaskId
+			});
+		}
 
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {

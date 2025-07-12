@@ -49,19 +49,43 @@
 
 	export async function runTestForCase(editedTasks: Tasks) {
 		loadingBotResponse = true;
-		const resBot = await fetch('/api/bot', {
-			method: 'POST',
-			body: JSON.stringify({
-				channel: channel,
-				userMessage: userMessage,
-				tasks: editedTasks,
-				soures: 'proposal'
-			}),
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
-		const { taskId, botResponse } = await resBot.json();
+		if (!_.isEqual(editedTasks, tmpTasks)) {
+			const resBot = await fetch('/api/bot', {
+				method: 'POST',
+				body: JSON.stringify({
+					channel: channel,
+					userMessage: userMessage,
+					tasks: editedTasks,
+					soures: 'proposal'
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			const { taskId, botResponse } = await resBot.json();
+			tmpTasks = editedTasks;
+			tmpBotResponse = {
+				id: 'tmp',
+				botResponse: botResponse,
+				createAt: '',
+				proposalEditId: 'tmp',
+				proposalId: page.params.proposalId,
+				taskHistoryId: '',
+				thumbsDown: [],
+				thumbsUp: [],
+				triggeredTask: taskId
+			};
+		}
+		loadingBotResponse = false;
+	}
+
+	export function resetTestForCase() {
+		tmpTasks = undefined;
+		tmpBotResponse = undefined;
+	}
+
+	export function setTmpBotResponse(editedTasks: Tasks, taskId: string, botResponse: string) {
+		tmpTasks = editedTasks;
 		tmpBotResponse = {
 			id: 'tmp',
 			botResponse: botResponse,
@@ -73,15 +97,11 @@
 			thumbsUp: [],
 			triggeredTask: taskId
 		};
-		loadingBotResponse = false;
-	}
-
-	export function resetTestForCase() {
-		tmpBotResponse = undefined;
 	}
 
 	// temporary bot response based on unsaved edits
 	let tmpBotResponse = $state<BotResponse | undefined>(undefined);
+	let tmpTasks = $state<Tasks | undefined>(undefined);
 
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);

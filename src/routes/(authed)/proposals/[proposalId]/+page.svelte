@@ -49,6 +49,7 @@
 
 	// import svelte features
 	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 
 	// data props
@@ -160,13 +161,7 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button
-				class="mr-1"
-				onclick={() => {
-					console.log($state.snapshot(testedTasks));
-					console.log($state.snapshot(editedTasks));
-				}}>Deploy</Button
-			>
+			<Button class="mr-1">Deploy</Button>
 		</div>
 		<Separator />
 	</div>
@@ -564,7 +559,11 @@
 				</div>
 			</div>
 			<div class="w-full shrink-0">
-				<Sheet.Root>
+				<Sheet.Root
+					onOpenChangeComplete={(openSheet) => {
+						if (!openSheet) clearManualCasePanel();
+					}}
+				>
 					<Sheet.Trigger
 						class="flex w-full items-center justify-between border-t py-2 pl-4 text-left hover:cursor-pointer"
 					>
@@ -628,7 +627,7 @@
 									</Select.Trigger>
 									<Select.Content>
 										<Select.Item value="#introducion" label="#introducion" />
-										<Select.Item value="general" label="general" />
+										<Select.Item value="#general" label="#general" />
 										<Select.Item value="#random" label="#random" />
 										<Select.Item value="#faq" label="#faq" />
 									</Select.Content>
@@ -694,44 +693,92 @@
 													if (res.ok) {
 														fetchCase = await res.json();
 														if (fetchCase) {
-															let botResponses = [];
-															try {
-																const resBotResponses = await fetch(
-																	`/api/cases/${fetchCase.id}/botResponses?taskHistoryId=${data.proposal.taskHistoryId}&proposalId=${data.proposal.id}`,
-																	{
-																		method: 'GET',
+															if (
+																data.edits.length > 0
+																	? _.isEqual(editedTasks, data.edits[0].tasks)
+																	: _.isEqual(editedTasks, data.originalTasks.tasks)
+															) {
+																let botResponses = [];
+																try {
+																	const resBotResponses = await fetch(
+																		`/api/cases/${fetchCase.id}/botResponses?taskHistoryId=${data.proposal.taskHistoryId}&proposalId=${data.proposal.id}`,
+																		{
+																			method: 'GET',
+																			headers: {
+																				'Content-Type': 'application/json'
+																			}
+																		}
+																	);
+																	const resData = await resBotResponses.json();
+																	botResponses = resData.botResponses;
+																} catch (e) {
+																	showCaseError = true;
+																	showCaseErrorMessage = 'An error occurred. Please try again.';
+																}
+
+																if (data.edits.length > 0) {
+																	fetchCaseBotResponse = botResponses.find(
+																		(b: BotResponse) =>
+																			b.proposalEditId === data.edits[0].id &&
+																			b.proposalId === data.proposal.id
+																	);
+																} else {
+																	fetchCaseBotResponse = botResponses.find(
+																		(b: BotResponse) =>
+																			b.taskHistoryId === data.proposal.taskHistoryId
+																	);
+																}
+
+																if (fetchCaseBotResponse) {
+																	// botResposne already exists
+																	displayedChannel = fetchCase.channel;
+																	displayedUserMessage = fetchCase.userMessage;
+																	displayedTaskId = fetchCaseBotResponse.triggeredTask;
+																	displayedBotResponse = fetchCaseBotResponse.botResponse;
+																	showCase = true;
+																} else {
+																	// generate bot response
+																	const resBot = await fetch('/api/bot', {
+																		method: 'POST',
+																		body: JSON.stringify({
+																			channel: fetchCase.channel,
+																			userMessage: fetchCase.userMessage,
+																			tasks:
+																				data.edits.length > 0
+																					? data.edits[0].tasks
+																					: data.originalTasks.tasks,
+																			soures: 'proposal'
+																		}),
 																		headers: {
 																			'Content-Type': 'application/json'
 																		}
-																	}
-																);
-																const resData = await resBotResponses.json();
-																botResponses = resData.botResponses;
-															} catch (e) {
-																showCaseError = true;
-																showCaseErrorMessage = 'An error occurred. Please try again.';
-															}
+																	});
+																	const { taskId, botResponse } = await resBot.json();
 
-															if (data.edits.length > 0) {
-																fetchCaseBotResponse = botResponses.find(
-																	(b: BotResponse) =>
-																		b.proposalEditId === data.edits[0].id &&
-																		b.proposalId === data.proposal.id
-																);
-															} else {
-																fetchCaseBotResponse = botResponses.find(
-																	(b: BotResponse) =>
-																		b.taskHistoryId === data.proposal.taskHistoryId
-																);
-															}
-
-															if (fetchCaseBotResponse) {
-																// botResposne already exists
-																displayedChannel = fetchCase.channel;
-																displayedUserMessage = fetchCase.userMessage;
-																displayedTaskId = fetchCaseBotResponse.triggeredTask;
-																displayedBotResponse = fetchCaseBotResponse.botResponse;
-																showCase = true;
+																	const resBotResponse = await fetch(
+																		`/api/cases/${fetchCase.id}/botResponses`,
+																		{
+																			method: 'POST',
+																			body: JSON.stringify({
+																				botResponse: botResponse,
+																				proposalEditId:
+																					data.edits.length > 0 ? data.edits[0].id : '',
+																				proposalId: data.edits.length > 0 ? data.proposal.id : '',
+																				taskHistoryId:
+																					data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
+																				triggeredTaskId: taskId
+																			}),
+																			headers: {
+																				'Content-Type': 'application/json'
+																			}
+																		}
+																	);
+																	displayedChannel = fetchCase.channel;
+																	displayedUserMessage = fetchCase.userMessage;
+																	displayedTaskId = taskId;
+																	displayedBotResponse = botResponse;
+																	showCase = true;
+																}
 															} else {
 																// generate bot response
 																const resBot = await fetch('/api/bot', {
@@ -739,10 +786,7 @@
 																	body: JSON.stringify({
 																		channel: fetchCase.channel,
 																		userMessage: fetchCase.userMessage,
-																		tasks:
-																			data.edits.length > 0
-																				? data.edits[0].tasks
-																				: data.originalTasks.tasks,
+																		tasks: editedTasks,
 																		soures: 'proposal'
 																	}),
 																	headers: {
@@ -750,24 +794,6 @@
 																	}
 																});
 																const { taskId, botResponse } = await resBot.json();
-
-																const resBotResponse = await fetch(
-																	`/api/cases/${fetchCase.id}/botResponses`,
-																	{
-																		method: 'POST',
-																		body: JSON.stringify({
-																			botResponse: botResponse,
-																			proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
-																			proposalId: data.edits.length > 0 ? data.proposal.id : '',
-																			taskHistoryId:
-																				data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
-																			triggeredTaskId: taskId
-																		}),
-																		headers: {
-																			'Content-Type': 'application/json'
-																		}
-																	}
-																);
 																displayedChannel = fetchCase.channel;
 																displayedUserMessage = fetchCase.userMessage;
 																displayedTaskId = taskId;
@@ -794,15 +820,24 @@
 												showCaseErrorMessage =
 													'If you are not entering an existing case ID, please select a channel you would like to check.';
 											} else {
+												let tmpTasks;
+												if (
+													data.edits.length > 0
+														? _.isEqual(editedTasks, data.edits[0].tasks)
+														: _.isEqual(editedTasks, data.originalTasks.tasks)
+												) {
+													tmpTasks =
+														data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks;
+												} else {
+													tmpTasks = editedTasks;
+												}
+
 												const resBot = await fetch('/api/bot', {
 													method: 'POST',
 													body: JSON.stringify({
 														channel: selectedChannel,
 														userMessage: enteredUserMessage,
-														tasks:
-															data.edits.length > 0
-																? data.edits[0].tasks
-																: data.originalTasks.tasks,
+														tasks: tmpTasks,
 														soures: 'proposal'
 													}),
 													headers: {
@@ -828,6 +863,7 @@
 									Generate Response
 								</Button>
 								<div>
+									<!-- Clear Button -->
 									<Button
 										variant="secondary"
 										disabled={checkingCaseManually || addingCase}
@@ -838,6 +874,7 @@
 										<PaintbrushIcon class="size-4" />
 										Clear
 									</Button>
+									<!-- Add to Test Suite Button -->
 									<Button
 										variant="secondary"
 										disabled={!showCase || checkingCaseManually || showAddCaseSuccess || addingCase}
@@ -846,28 +883,59 @@
 
 											if (!fetchCase) {
 												// create case first if no existing case
-												const resCase = await fetch('/api/cases', {
-													method: 'POST',
-													body: JSON.stringify({
-														formCase: {
-															data: {
-																channel: displayedChannel,
-																realUserMessage: false,
-																userMessage: displayedUserMessage,
-																botResponse: displayedBotResponse,
-																proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
-																proposalId: data.edits.length > 0 ? data.proposal.id : '',
-																taskHistoryId:
-																	data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
-																triggeredTaskId: displayedTaskId,
-																source: 'proposal'
+												let resCase;
+
+												if (
+													data.edits.length > 0
+														? _.isEqual(editedTasks, data.edits[0].tasks)
+														: _.isEqual(editedTasks, data.originalTasks.tasks)
+												) {
+													resCase = await fetch('/api/cases', {
+														method: 'POST',
+														body: JSON.stringify({
+															formCase: {
+																data: {
+																	channel: displayedChannel,
+																	realUserMessage: false,
+																	userMessage: displayedUserMessage,
+																	botResponse: displayedBotResponse,
+																	proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
+																	proposalId: data.edits.length > 0 ? data.proposal.id : '',
+																	taskHistoryId:
+																		data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
+																	triggeredTaskId: displayedTaskId,
+																	source: 'proposal'
+																}
 															}
+														}),
+														headers: {
+															'Content-Type': 'appplication/json'
 														}
-													}),
-													headers: {
-														'Content-Type': 'appplication/json'
-													}
-												});
+													});
+												} else {
+													resCase = await fetch('/api/cases', {
+														method: 'POST',
+														body: JSON.stringify({
+															formCase: {
+																data: {
+																	channel: displayedChannel,
+																	realUserMessage: false,
+																	userMessage: displayedUserMessage,
+																	botResponse: '',
+																	proposalEditId: '',
+																	proposalId: '',
+																	taskHistoryId: '',
+																	triggeredTaskId: '',
+																	source: 'proposal'
+																}
+															},
+															caseOnly: true
+														}),
+														headers: {
+															'Content-Type': 'appplication/json'
+														}
+													});
+												}
 												const resCaseData = await resCase.json();
 												const resNewCase = await fetch(`/api/cases/${resCaseData.id}`);
 												const newCase = await resNewCase.json();
@@ -883,6 +951,19 @@
 												});
 												if (res.ok) {
 													testCases.push(newCase);
+													if (
+														data.edits.length > 0
+															? !_.isEqual(editedTasks, data.edits[0].tasks)
+															: !_.isEqual(editedTasks, data.originalTasks.tasks)
+													) {
+														await tick();
+														const ref = testCaseRefs[testCaseRefs.length - 1];
+														ref.setTmpBotResponse(
+															$state.snapshot(editedTasks),
+															displayedTaskId,
+															displayedBotResponse
+														);
+													}
 													showAddCaseSuccess = true;
 												}
 											} else {
@@ -898,6 +979,20 @@
 												});
 												if (res.ok) {
 													testCases.push(fetchCase);
+													if (
+														data.edits.length > 0
+															? !_.isEqual(editedTasks, data.edits[0].tasks)
+															: !_.isEqual(editedTasks, data.originalTasks.tasks)
+													) {
+														await tick();
+														const ref = testCaseRefs[testCaseRefs.length - 1];
+														ref.setTmpBotResponse(
+															$state.snapshot(editedTasks),
+															displayedTaskId,
+															displayedBotResponse
+														);
+													}
+
 													showAddCaseSuccess = true;
 												}
 											}
