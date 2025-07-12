@@ -547,7 +547,22 @@
 												(r: BotResponse) => r.proposalEditId === edit.id
 											)}
 											{#if response === undefined}
-												<p>No response has been generated based on this edit to the bot.</p>
+												<div class="flex items-center justify-between">
+													<p>No response has been generated from this edit</p>
+													<Button
+														class="text-muted-foreground px-2 hover:cursor-pointer"
+														variant="secondary"
+														onclick={async () =>
+															await generateBotResponse(
+																edit.tasks,
+																edit.id,
+																page.params.proposalId,
+																''
+															)}
+													>
+														generate
+													</Button>
+												</div>
 											{:else}
 												{@render botResponseSection(response)}
 											{/if}
@@ -570,7 +585,17 @@
 											(r: BotResponse) => r.taskHistoryId === taskHistoryId
 										)}
 										{#if response === undefined}
-											<p>No response has been generated based on the initial version of the bot.</p>
+											<div class="flex items-center justify-between">
+												<p>No response has been generated from the initial prompt</p>
+												<Button
+													class="text-muted-foreground px-2 hover:cursor-pointer"
+													variant="secondary"
+													onclick={async () =>
+														await generateBotResponse(tasks, '', '', taskHistoryId)}
+												>
+													generate
+												</Button>
+											</div>
 										{:else}
 											{@render botResponseSection(response)}
 										{/if}
