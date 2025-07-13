@@ -332,46 +332,53 @@
 					<Table.Body>
 						{#each data.edits as edit, i (edit.id)}
 							<Table.Row class="hover:bg-trasparent">
-								{#if i === 0}
-									<Table.Cell>current</Table.Cell>
-								{:else}
-									<Table.Cell>
-										<Dialog.Root>
-											<Dialog.Trigger class="hover:cursor-pointer hover:underline">
+								<Table.Cell>
+									<Dialog.Root>
+										<Dialog.Trigger class="hover:cursor-pointer hover:underline">
+											{#if i === 0}
+												current
+											{:else}
 												view
-											</Dialog.Trigger>
-											<Dialog.Content>
-												<Dialog.Header>
-													<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
-													<Dialog.Description>
-														<p>
-															{new Date(edit.createAt).toLocaleString([], {
-																year: 'numeric',
-																month: 'numeric',
-																day: 'numeric',
-																hour: '2-digit',
-																minute: '2-digit',
-																hour12: false
-															})}
-														</p>
-														{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
-															<div class="pt-4">
-																<TaskDiffSection
-																	oldName={data.originalTasks.tasks[taskId].name}
-																	oldTrigger={data.originalTasks.tasks[taskId].trigger}
-																	oldAction={data.originalTasks.tasks[taskId].action}
-																	newName={edit.tasks[taskId].name}
-																	newTrigger={edit.tasks[taskId].trigger}
-																	newAction={edit.tasks[taskId].action}
-																/>
-															</div>
-														{/each}
-													</Dialog.Description>
-												</Dialog.Header>
-											</Dialog.Content>
-										</Dialog.Root>
-									</Table.Cell>
-								{/if}
+											{/if}
+										</Dialog.Trigger>
+										<Dialog.Content>
+											<Dialog.Header>
+												<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
+												<Dialog.Description>
+													<p>
+														{new Date(edit.createAt).toLocaleString([], {
+															year: 'numeric',
+															month: 'numeric',
+															day: 'numeric',
+															hour: '2-digit',
+															minute: '2-digit',
+															hour12: false
+														})}
+													</p>
+													<Alert.Root class="mt-2">
+														<Alert.Title>Note</Alert.Title>
+														<Alert.Description>
+															The colored strikethrough text highlights the differences between this
+															edit and the original prompt prior to any edits.
+														</Alert.Description>
+													</Alert.Root>
+													{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
+														<div class="pt-4">
+															<TaskDiffSection
+																oldName={data.originalTasks.tasks[taskId].name}
+																oldTrigger={data.originalTasks.tasks[taskId].trigger}
+																oldAction={data.originalTasks.tasks[taskId].action}
+																newName={edit.tasks[taskId].name}
+																newTrigger={edit.tasks[taskId].trigger}
+																newAction={edit.tasks[taskId].action}
+															/>
+														</div>
+													{/each}
+												</Dialog.Description>
+											</Dialog.Header>
+										</Dialog.Content>
+									</Dialog.Root>
+								</Table.Cell>
 								<Table.Cell>{edit.editor}</Table.Cell>
 								<Table.Cell>
 									{new Date(edit.createAt).toLocaleString([], {
