@@ -166,6 +166,7 @@
 		if (resCaseGenerator.ok) {
 			const caseGeneratorData = await resCaseGenerator.json();
 			generatedCases = caseGeneratorData.cases;
+			console.log($state.snapshot(generatedCases));
 			await tick();
 			generatedCaseRefs = generatedCaseRefs.slice(0, generatedCases.length);
 			generatedCaseRefs.forEach((ref, i) => {
@@ -608,7 +609,7 @@
 												channel={generatedCase.channel}
 												userMessage={generatedCase.userMessage}
 												tasks={editedTasks}
-												checkingBadge={true}
+												checkingBadge={generatedCase.label}
 												user={data.user}
 												generated={true}
 											/>

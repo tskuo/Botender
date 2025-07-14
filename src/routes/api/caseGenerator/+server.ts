@@ -97,7 +97,7 @@ const underspecifiedPipeline = async (oldTasks: Tasks, newTasks: Tasks) => {
 
 	// Generator Module
 
-	const GeneratorSysPromptArray = [
+	const generatorSysPromptArray = [
 		`You are a helpful assistant tasked with generating test cases that illustrate different interpretations of ambiguous language in a prompt. The prompt, which includes both a trigger and an action component, guides the behavior of a language model-based bot. Specifically, the bot receives user input, as defined by the input specification, and determines whether to respond based on the trigger described in the prompt. If the bot decides to respond, it generates output according to the action specified in the prompt. Your goal is to create input test cases for the bot that help human users reflect on how the prompt could be interpreted inconsistently and support collective clarification of its intended meaning. In some cases, you may not yet know whether a test case will successfully illustrate a particular interpretation of ambiguous language, since you don't know how the bot will actually respond. However, you should aim to create test cases that are likely to prompt the bot to produce the response you intend to illustrate.`,
 		`You will be provided with the following inputs:`,
 		`\t- prompt: The full prompt for the bot, containing one or more ambiguous phrases.`,
@@ -109,20 +109,20 @@ const underspecifiedPipeline = async (oldTasks: Tasks, newTasks: Tasks) => {
 		input_specification,
 		`Additionally, each case should be realistic and natural, reflecting the tone, slang, punctuation, and style typical of the specific community where the bot is being deployed. Here is a description of the community:`,
 		community_tone,
-		`Output Format`,
+		`Output Format:`,
 		`Return a JSON object containing an array of the generated test cases. Each case should have a unique key starting from 0 and include the following four properties.`,
 		`\t- underspecified_phrase: the underspecified phrase that the test case is intended to highlight as potentially problematic due to its lack of specificity`,
-		`\t- interpretation: An interpretation of the underspecified phrase that the test case is generaated to illustrate.`,
+		`\t- interpretation: An interpretation of the underspecified phrase that the test case is generated to illustrate.`,
 		`\t- reasoning: A brief explanation describing how the test case could potentially demonstrates a plausible interpretation of the underspecified phrase.`,
 		`\t- case: The input test cases, formatted according the input specification.`,
 		`All values must be JSON-safe: wrap any field that contains commas in quotes, and avoid newlines. Do not include any extra text, formatting, or commentary outside the JSON object.`
 	];
 	// console.log('\n\n========== Generator System Prompt ==========\n\n');
-	// console.log(GeneratorSysPromptArray.join('\n'));
+	// console.log(generatorSysPromptArray.join('\n'));
 
 	const generatorModel = getGenerativeModel(ai, {
 		model: 'gemini-2.0-flash',
-		systemInstruction: GeneratorSysPromptArray.join('\n'),
+		systemInstruction: generatorSysPromptArray.join('\n'),
 		generationConfig: {
 			responseMimeType: 'application/json',
 			responseSchema: Schema.object({
@@ -153,10 +153,10 @@ const underspecifiedPipeline = async (oldTasks: Tasks, newTasks: Tasks) => {
 				`prompt: \n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`,
 				`underspecified_phrase: ${ambiguity.underspecified_phrase}`,
 				`description: ${ambiguity.description}`
-			];
+			].join('\n');
 			// console.log(`\n\n========== Generator User Prompt ${idx} ==========\n\n`);
-			// console.log(generatorPrompt.join('\n'));
-			return generatorModel.generateContent(generatorPrompt.join('\n'));
+			// console.log(generatorPrompt);
+			return generatorModel.generateContent(generatorPrompt);
 		}
 	);
 	await Promise.all(generatorPromises);
@@ -181,9 +181,72 @@ const underspecifiedPipeline = async (oldTasks: Tasks, newTasks: Tasks) => {
 		};
 	});
 
-	const casesWithBotResponses = await Promise.all(botResponsePromises);
+	const botResponseResult = await Promise.all(botResponsePromises);
 
-	return casesWithBotResponses;
+	// Evaluator Modudle
+	const evaluatorSysPromptArray = [
+		`You are a helpful assistant tasked with evaluating whether a test case clearly illustrates a potential interpretation of an ambiguous phrase in a prompt that guides the behavior of a language model-based bot. The bot receives user input and decides whether to respond based on the trigger described in the prompt. If it does respond, it generates output according to the action described in the prompt. Your task is to assess whether the test case accomplishes its intended purpose, as described in the provided reasoning.`,
+		`You will be provided with the following inputs:`,
+		`\t- prompt: The full prompt for the bot, including both the trigger and action components.`,
+		`\t- underspecified_phrase: a specific quote or snippet from the prompt that is ambiguous`,
+		`\t- interpretation: An interpretation of the underspecified phrase that the test case is generated to illustrate.`,
+		`\t- reasoning: A brief explanation describing how the test case could potentially demonstrates a plausible interpretation of the underspecified phrase.`,
+		`\t- case: The test case, consisting of the user input as defined by the input specification, the specific task triggered for the bot, and the corresponding bot response to that task.`,
+		`The test case input must comply with the following input specification:`,
+		input_specification,
+		`It is possible that the user input does not trigger any task, or that the bot chooses not to respond even if a task is triggered.`,
+		`Your Task:`,
+		`Assess whether the provided test case effectively fulfills its intended purpose, as described in the provided reasoning.`,
+		`Output Format:`,
+		`Return a JSON object with the following two properties:`,
+		`\t- label: The label is a boolean value: true if the provided test case fulfills its intended purpose, and false if it does not.`,
+		`\t- explanation: A brief, 1 to 2 sentence explanation supporting your decision on the label.`
+	];
+
+	// console.log('\n\n========== Evaluator System Prompt ==========\n\n');
+	// console.log(evaluatorSysPromptArray.join('\n'));
+
+	const evaluatorModel = getGenerativeModel(ai, {
+		model: 'gemini-2.0-flash',
+		systemInstruction: evaluatorSysPromptArray.join('\n'),
+		generationConfig: {
+			responseMimeType: 'application/json',
+			responseSchema: Schema.object({
+				properties: {
+					label: Schema.boolean(),
+					explanation: Schema.string()
+				}
+			})
+		}
+	});
+
+	const evaluatorPromises = botResponseResult.map(async (testCase) => {
+		const evaluatorPrompt = [
+			`prompt: \n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`,
+			`underspecified_phrase: ${testCase.underspecified_phrase}`,
+			`interpretation: ${testCase.interpretation}`,
+			`reasoning: ${testCase.reasoning}`,
+			`case:`,
+			`\t- channel: ${testCase.channel}`,
+			`\t- user message: ${testCase.userMessage}`,
+			`\t- trigger task: ${testCase.triggeredTask === '0' ? 'No task is trigger' : newTasks[testCase.triggeredTask]}`,
+			`\t- bot response: ${testCase.botResponse}`
+		].join('\n');
+		// console.log(`\n\n========== Evaluator User Prompt ==========\n\n`);
+		// console.log(evaluatorPrompt);
+		const evaluatorOutputs = await evaluatorModel.generateContent(evaluatorPrompt);
+		const evaluatorResults = JSON.parse(evaluatorOutputs.response.text());
+		return {
+			...testCase,
+			label: evaluatorResults.label,
+			explanation: evaluatorResults.explanation
+		};
+	});
+
+	await Promise.all(evaluatorPromises);
+	const allCases = await Promise.all(evaluatorPromises);
+
+	return allCases;
 };
 
 export const POST = async ({ request }) => {
