@@ -265,15 +265,15 @@
 					</p>
 				{/if}
 				{#each Object.entries(editedTasks) as [taskId, task] (taskId)}
-					<!-- {#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])} -->
-					<div class="pt-4">
-						<TaskSection
-							bind:name={editedTasks[taskId].name}
-							bind:trigger={editedTasks[taskId].trigger}
-							bind:action={editedTasks[taskId].action}
-						/>
-					</div>
-					<!-- {/if} -->
+					{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
+						<div class="pt-4">
+							<TaskSection
+								bind:name={editedTasks[taskId].name}
+								bind:trigger={editedTasks[taskId].trigger}
+								bind:action={editedTasks[taskId].action}
+							/>
+						</div>
+					{/if}
 				{/each}
 				<Button class="my-2 w-full" variant="secondary"><PlusIcon class="size-4" /></Button>
 				{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
