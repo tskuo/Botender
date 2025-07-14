@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '$lib/firebase';
 
-export const GET = async ({ params }) => {
+export const GET = async ({ params, url }) => {
 	try {
 		const subColRef = collection(db, 'proposals', params.proposalId, 'edits');
 		const querySnapshot = await getDocs(query(subColRef, orderBy('createAt', 'desc')));
@@ -12,7 +12,11 @@ export const GET = async ({ params }) => {
 				...doc.data(),
 				createAt: doc.data().createAt.toDate()
 			}));
-			return json({ edits: edits }, { status: 201 });
+			if (url.searchParams.get('latest') === 'true') {
+				return json({ edits: [edits[0]] }, { status: 201 });
+			} else {
+				return json({ edits: edits }, { status: 201 });
+			}
 		} else {
 			return json({ edits: [] }, { status: 201 });
 		}

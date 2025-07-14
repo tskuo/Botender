@@ -52,6 +52,18 @@ declare global {
 		thumbsUp: string[];
 		triggeredTask: string;
 	};
+
+	type Proposal = {
+		id: string;
+		createAt: date;
+		description: string;
+		discussionSummary: string;
+		initiator: string;
+		open: boolean;
+		taskHistoryId: string;
+		testCases: string[];
+		title: string;
+	};
 }
 
 export {};

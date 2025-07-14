@@ -42,14 +42,44 @@
 					>
 						<Table.Cell class="font-medium">{proposal.title}</Table.Cell>
 						<Table.Cell>{proposal.initiator}</Table.Cell>
-						<Table.Cell>placeholder</Table.Cell>
+						<Table.Cell>
+							{proposal.edits.length > 0 ? proposal.edits[0].editor : 'No one has edited this yet'}
+						</Table.Cell>
 						<Table.Cell>{proposal.testCases.length}</Table.Cell>
 						<Table.Cell>
 							<div class="flex items-center">
-								<ArrowBigUpIcon class="mr-2 size-4" />
-								<p class="mr-8">0</p>
-								<ArrowBigDownIcon class="mr-2 size-4" />
-								<p>0</p>
+								<ArrowBigUpIcon
+									class="mr-2 size-4 {proposal.edits.length > 0
+										? proposal.edits[0].upvotes.includes(data.user?.userId)
+											? 'fill-primary stroke-primary'
+											: ''
+										: ''}"
+								/>
+								<p
+									class="mr-8 {proposal.edits.length > 0
+										? proposal.edits[0].upvotes.includes(data.user?.userId)
+											? 'text-primary'
+											: ''
+										: ''}"
+								>
+									{proposal.edits.length > 0 ? proposal.edits[0].upvotes.length : '-'}
+								</p>
+								<ArrowBigDownIcon
+									class="mr-2 size-4 {proposal.edits.length > 0
+										? proposal.edits[0].downvotes.includes(data.user?.userId)
+											? 'fill-primary stroke-primary'
+											: ''
+										: ''}"
+								/>
+								<p
+									class={proposal.edits.length > 0
+										? proposal.edits[0].downvotes.includes(data.user?.userId)
+											? 'text-primary'
+											: ''
+										: ''}
+								>
+									{proposal.edits.length > 0 ? proposal.edits[0].downvotes.length : '-'}
+								</p>
 							</div>
 						</Table.Cell>
 					</Table.Row>
