@@ -43,6 +43,7 @@
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+	import CogIcon from '@lucide/svelte/icons/cog';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -88,6 +89,8 @@
 	let testCaseRefs = $state<any[]>([]);
 	let runningTest = $state(false);
 	let savingEdit = $state(false);
+	let generatedCases = $state([]);
+	let generatedCaseRefs = $state<any[]>([]);
 
 	let clearManualCasePanel = () => {
 		enteredCaseId = '';
@@ -148,6 +151,32 @@
 		testedTasks = $state.snapshot(editedTasks);
 		const promises = testCaseRefs.map((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
 		await Promise.all(promises);
+
+		const resCaseGenerator = await fetch('/api/caseGenerator', {
+			method: 'POST',
+			body: JSON.stringify({
+				oldTasks: data.originalTasks.tasks,
+				newTasks: editedTasks
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (resCaseGenerator.ok) {
+			const caseGeneratorData = await resCaseGenerator.json();
+			generatedCases = caseGeneratorData.cases;
+			await tick();
+			generatedCaseRefs = generatedCaseRefs.slice(0, generatedCases.length);
+			generatedCaseRefs.forEach((ref, i) => {
+				ref.setTmpBotResponse(
+					$state.snapshot(editedTasks),
+					$state.snapshot(generatedCases[i].triggeredTask),
+					$state.snapshot(generatedCases[i].botResponse)
+				);
+			});
+		}
+
 		runningTest = false;
 	};
 
@@ -548,9 +577,14 @@
 				<Separator />
 				<div class="p-4 md:h-1/2">
 					<h3>Check other cases for possible side effects from the proposed edit</h3>
-					{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
+					{#if runningTest}
+						<div class="text-primary mb-1 flex items-center text-sm">
+							<CogIcon class="mr-2 size-4 animate-spin" />
+							<p>generating cases ...</p>
+						</div>
+					{:else if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
 						<p class="text-muted-foreground mb-1 text-sm">
-							0 cases have been suggested. You may add (+) relevant cases to the test cases.
+							{generatedCases.length} cases have been suggested.
 						</p>
 					{:else}
 						<div class="text-primary mb-1 flex items-center text-sm">
@@ -558,31 +592,34 @@
 							<p>Run tests to see new case suggestions based on your edit</p>
 						</div>
 					{/if}
-
-					<!-- <Carousel.Root
-						opts={{
-							align: 'start'
-						}}
-						class="mx-auto w-4/5 max-w-screen md:w-5/6"
-					>
-						<Carousel.Content>
-							{#each Array(5) as _, i (i)}
-								<Carousel.Item class="xl:basis-1/2">
-									<div class="p-1">
-										<CaseCard
-											id={'xxx'}
-											channel={'#introduction'}
-											userMessage={'This is Sebastian writing. I am currently building up a research group in Berlin with a focus on the intersection of data engineering and ML. We have a postdoc opening in my group, which I would like to share here:'}
-											triggeredTask={'Welcome Newcomers'}
-											botResponse={'Welcome to our community! We have channels for sports, plants, and cafe discussions. Feel free to join any of them!'}
-										/>
-									</div>
-								</Carousel.Item>
-							{/each}
-						</Carousel.Content>
-						<Carousel.Previous />
-						<Carousel.Next />
-					</Carousel.Root> -->
+					{#if generatedCases.length !== 0}
+						<Carousel.Root
+							opts={{
+								align: 'start'
+							}}
+							class="mx-auto w-4/5 max-w-screen md:w-5/6"
+						>
+							<Carousel.Content>
+								{#each generatedCases as generatedCase, i (i)}
+									<Carousel.Item class="xl:basis-1/2">
+										<div class="p-1">
+											<CaseCard
+												bind:this={generatedCaseRefs[i]}
+												channel={generatedCase.channel}
+												userMessage={generatedCase.userMessage}
+												tasks={editedTasks}
+												checkingBadge={true}
+												user={data.user}
+												generated={true}
+											/>
+										</div>
+									</Carousel.Item>
+								{/each}
+							</Carousel.Content>
+							<Carousel.Previous />
+							<Carousel.Next />
+						</Carousel.Root>
+					{/if}
 				</div>
 			</div>
 			<div class="w-full shrink-0">

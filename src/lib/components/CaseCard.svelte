@@ -33,7 +33,7 @@
 	import { page } from '$app/state';
 
 	let {
-		id = '',
+		id = 'N/A',
 		channel = '',
 		createdAt = new Date(),
 		realUserMessage = false,
@@ -44,6 +44,7 @@
 		testCaseBadge = false,
 		checkingBadge = false,
 		user,
+		generated = false,
 		removeCaseFuntion = () => {}
 	} = $props();
 
@@ -131,8 +132,9 @@
 	const textLengthCap = 95;
 
 	const loadBotResponses = async () => {
-		let data;
-		if (page.url.pathname === '/cases') {
+		if (generated) {
+			botResponses = [];
+		} else if (page.url.pathname === '/cases') {
 			const res = await fetch(`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`, {
 				method: 'GET',
 				headers: {
@@ -143,7 +145,8 @@
 				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
 				return;
 			}
-			data = await res.json();
+			const data = await res.json();
+			botResponses = data.botResponses;
 		} else if (page.url.pathname.startsWith('/proposals/')) {
 			const proposalId = page.params.proposalId;
 			const res = await fetch(
@@ -159,9 +162,10 @@
 				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
 				return;
 			}
-			data = await res.json();
+			const data = await res.json();
+			botResponses = data.botResponses;
 		}
-		botResponses = data.botResponses;
+
 		loadingBotResponse = false;
 	};
 
@@ -531,10 +535,49 @@
 									</Accordion.Content>
 								</Accordion.Item>
 							{/if}
-							{#each edits as edit, i (edit.id)}
-								<Accordion.Item value="edit-{edit.id}">
+							{#if !generated}
+								{#each edits as edit, i (edit.id)}
+									<Accordion.Item value="edit-{edit.id}">
+										<Accordion.Trigger>
+											{edit.editor}'s edit {#if i === 0 && _.isNil(tmpBotResponse)}(current){/if}
+										</Accordion.Trigger>
+										<Accordion.Content class="flex flex-col gap-4 text-balance">
+											{#if loadingBotResponse}
+												<div class="mb-2 flex items-center">
+													<LoaderIcon class="mr-2 size-4 animate-spin" />
+													<p>Loading bot response...</p>
+												</div>
+											{:else}
+												{@const response = botResponses.find(
+													(r: BotResponse) => r.proposalEditId === edit.id
+												)}
+												{#if response === undefined}
+													<div class="flex items-center justify-between">
+														<p>No response has been generated from this edit</p>
+														<Button
+															class="text-muted-foreground px-2 hover:cursor-pointer"
+															variant="secondary"
+															onclick={async () =>
+																await generateBotResponse(
+																	edit.tasks,
+																	edit.id,
+																	page.params.proposalId,
+																	''
+																)}
+														>
+															generate
+														</Button>
+													</div>
+												{:else}
+													{@render botResponseSection(response)}
+												{/if}
+											{/if}
+										</Accordion.Content>
+									</Accordion.Item>
+								{/each}
+								<Accordion.Item value="task-{taskHistoryId}">
 									<Accordion.Trigger>
-										{edit.editor}'s edit {#if i === 0 && _.isNil(tmpBotResponse)}(current){/if}
+										initial prompt {#if edits.length === 0}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}
@@ -544,21 +587,16 @@
 											</div>
 										{:else}
 											{@const response = botResponses.find(
-												(r: BotResponse) => r.proposalEditId === edit.id
+												(r: BotResponse) => r.taskHistoryId === taskHistoryId
 											)}
 											{#if response === undefined}
 												<div class="flex items-center justify-between">
-													<p>No response has been generated from this edit</p>
+													<p>No response has been generated from the initial prompt</p>
 													<Button
 														class="text-muted-foreground px-2 hover:cursor-pointer"
 														variant="secondary"
 														onclick={async () =>
-															await generateBotResponse(
-																edit.tasks,
-																edit.id,
-																page.params.proposalId,
-																''
-															)}
+															await generateBotResponse(tasks, '', '', taskHistoryId)}
 													>
 														generate
 													</Button>
@@ -569,39 +607,7 @@
 										{/if}
 									</Accordion.Content>
 								</Accordion.Item>
-							{/each}
-							<Accordion.Item value="task-{taskHistoryId}">
-								<Accordion.Trigger>
-									initial prompt {#if edits.length === 0}(current){/if}
-								</Accordion.Trigger>
-								<Accordion.Content class="flex flex-col gap-4 text-balance">
-									{#if loadingBotResponse}
-										<div class="mb-2 flex items-center">
-											<LoaderIcon class="mr-2 size-4 animate-spin" />
-											<p>Loading bot response...</p>
-										</div>
-									{:else}
-										{@const response = botResponses.find(
-											(r: BotResponse) => r.taskHistoryId === taskHistoryId
-										)}
-										{#if response === undefined}
-											<div class="flex items-center justify-between">
-												<p>No response has been generated from the initial prompt</p>
-												<Button
-													class="text-muted-foreground px-2 hover:cursor-pointer"
-													variant="secondary"
-													onclick={async () =>
-														await generateBotResponse(tasks, '', '', taskHistoryId)}
-												>
-													generate
-												</Button>
-											</div>
-										{:else}
-											{@render botResponseSection(response)}
-										{/if}
-									{/if}
-								</Accordion.Content>
-							</Accordion.Item>
+							{/if}
 						</Accordion.Root>
 					</ScrollArea>
 					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/')}
