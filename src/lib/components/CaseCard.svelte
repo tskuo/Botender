@@ -577,7 +577,7 @@
 								{/each}
 								<Accordion.Item value="task-{taskHistoryId}">
 									<Accordion.Trigger>
-										initial prompt {#if edits.length === 0}(current){/if}
+										initial prompt {#if edits.length === 0 && _.isNil(tmpBotResponse)}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}
