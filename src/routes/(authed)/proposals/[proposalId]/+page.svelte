@@ -44,6 +44,9 @@
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import CogIcon from '@lucide/svelte/icons/cog';
+	import PencilIcon from '@lucide/svelte/icons/pencil';
+	import XIcon from '@lucide/svelte/icons/x';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -52,6 +55,7 @@
 	import { onMount } from 'svelte';
 	import { tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { slide } from 'svelte/transition';
 
 	// data props
 	let { data }: PageProps = $props();
@@ -91,6 +95,8 @@
 	let savingEdit = $state(false);
 	let generatedCases = $state([]);
 	let generatedCaseRefs = $state<any[]>([]);
+	let editMode = $state(false);
+	let viewHistory = $state(false);
 
 	let clearManualCasePanel = () => {
 		enteredCaseId = '';
@@ -149,6 +155,7 @@
 	let runTest = async () => {
 		runningTest = true;
 		testedTasks = $state.snapshot(editedTasks);
+		generatedCases = [];
 		const promises = testCaseRefs.map((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
 		await Promise.all(promises);
 
@@ -168,7 +175,7 @@
 			generatedCases = caseGeneratorData.cases;
 			console.log($state.snapshot(generatedCases));
 			await tick();
-			generatedCaseRefs = generatedCaseRefs.slice(0, generatedCases.length);
+			generatedCaseRefs = generatedCaseRefs.slice(0, $state.snapshot(generatedCases.length));
 			generatedCaseRefs.forEach((ref, i) => {
 				ref.setTmpBotResponse(
 					$state.snapshot(editedTasks),
@@ -179,6 +186,17 @@
 		}
 
 		runningTest = false;
+	};
+
+	// Reset Edit
+	let resetEdit = () => {
+		if (data.edits.length > 0) {
+			editedTasks = data.edits[0].tasks;
+		} else {
+			editedTasks = data.originalTasks.tasks;
+		}
+		testCaseRefs.forEach((ref) => ref.resetTestForCase());
+		testedTasks = undefined;
 	};
 
 	// Save Proposal
@@ -203,6 +221,7 @@
 			await invalidateAll();
 			reloadProposalState();
 		}
+		editMode = false;
 		savingEdit = false;
 	};
 </script>
@@ -216,13 +235,13 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button class="mr-1">Deploy</Button>
+			<Button class="mr-1"><ExternalLinkIcon class="size-4" />Discuss</Button>
 		</div>
 		<Separator />
 	</div>
 	<div class="grid h-full flex-auto md:grid-cols-5">
 		<div class="overflow-auto border-r p-2 md:col-span-2">
-			<div class="mb-2 p-2">
+			<div class="mb-4 p-2">
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
 					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
@@ -239,311 +258,370 @@
 				</p>
 				<p>{data.proposal.description}</p>
 			</div>
-			<div class="mb-2 p-2">
+			<!-- <div class="mb-4 p-2">
 				<div class="flex items-center justify-between">
 					<div>
 						<h3>Discussion</h3>
 						{#if data.proposal.discussionSummary === ''}
-							<p class="text-muted-foreground text-sm">No one has joined the discussion yet.</p>
+							<p class="text-muted-foreground text-sm">No one has joined the discussion yet</p>
 						{/if}
 					</div>
-					<Button variant="secondary"><ExternalLinkIcon class="size-4" />Discuss</Button>
+					<Button variant="secondary">
+						<ExternalLinkIcon class="size-4" />Join
+					</Button>
 				</div>
 				{#if data.proposal.discussionSummary}
 					<p>Summary: {data.proposal.discussionSummary}</p>
 				{/if}
-			</div>
-			<div class="mb-2 p-2">
-				<h3>Proposed Edit</h3>
-				{#if data.edits.length === 0}
-					<p class="text-muted-foreground text-sm">
-						No edits have been proposed yet. The following are the original task prompts.
-					</p>
-				{:else}
-					<p class="text-muted-foreground text-sm">
-						Last edited by {data.edits[0].editor}
-					</p>
-				{/if}
-				{#each Object.entries(editedTasks) as [taskId, task] (taskId)}
-					{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
-						<div class="pt-4">
-							<TaskSection
-								bind:name={editedTasks[taskId].name}
-								bind:trigger={editedTasks[taskId].trigger}
-								bind:action={editedTasks[taskId].action}
-							/>
-						</div>
-					{/if}
-				{/each}
-				<Button class="my-2 w-full" variant="secondary"><PlusIcon class="size-4" /></Button>
-				{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
-					<div class="text-primary my-1 flex items-center text-sm">
-						<TriangleAlertIcon class="mr-2 size-4" />
-						<p>To save new edits, you must first run tests to check the updated bot responses.</p>
-					</div>
-				{/if}
-				<div class="mt-2 flex items-center justify-between">
-					<!-- Test Button -->
-					<Button
-						disabled={(data.edits.length > 0
-							? _.isEqual(editedTasks, data.edits[0].tasks)
-							: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-							_.isEqual(editedTasks, testedTasks) ||
-							runningTest ||
-							savingEdit}
-						onclick={async () => {
-							await runTest();
-						}}
-					>
-						{#if runningTest}
-							<LoaderCircleIcon class="size-4 animate-spin" />Test
+			</div> -->
+			<div class="mb-4 p-2">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3>Proposed Edit</h3>
+						{#if data.edits.length === 0}
+							<p class="text-muted-foreground text-sm">
+								No edits have been proposed yet. The following are the original task prompts
+							</p>
 						{:else}
-							<PlayIcon class="size-4" />Test
+							<p class="text-muted-foreground text-sm">
+								Last edited by {data.edits[0].editor}
+							</p>
 						{/if}
-					</Button>
-					<div class="flex items-center gap-2">
-						<!-- Reset Button -->
+					</div>
+					{#if editMode}
 						<Button
-							variant="secondary"
-							disabled={(data.edits.length > 0
-								? _.isEqual(editedTasks, data.edits[0].tasks)
-								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-								runningTest ||
-								savingEdit}
+							disabled={runningTest || savingEdit}
+							variant="ghost"
+							size="icon"
 							onclick={() => {
-								if (data.edits.length > 0) {
-									editedTasks = data.edits[0].tasks;
-								} else {
-									editedTasks = data.originalTasks.tasks;
-								}
-								testCaseRefs.forEach((ref) => ref.resetTestForCase());
-								testedTasks = undefined;
+								resetEdit();
+								editMode = false;
 							}}
 						>
-							<UndoIcon class="size-4" />Reset
+							<XIcon />
 						</Button>
-						<!-- Save Button -->
+					{:else}
+						<Button variant="secondary" onclick={() => (editMode = true)}>
+							<PencilIcon class="size-4" />Edit
+						</Button>
+					{/if}
+				</div>
+				{#if !editMode}
+					{#each Object.entries(editedTasks).sort() as [taskId, task] (taskId)}
+						{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
+							<div class="pt-4">
+								<TaskDiffSection
+									oldName={data.originalTasks.tasks[taskId].name}
+									oldTrigger={data.originalTasks.tasks[taskId].trigger}
+									oldAction={data.originalTasks.tasks[taskId].action}
+									newName={editedTasks[taskId].name}
+									newTrigger={editedTasks[taskId].trigger}
+									newAction={editedTasks[taskId].action}
+								/>
+							</div>
+						{/if}
+					{/each}
+				{:else}
+					{#each Object.entries(editedTasks).sort() as [taskId, task] (taskId)}
+						{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
+							<div class="pt-4">
+								<TaskSection
+									bind:name={editedTasks[taskId].name}
+									bind:trigger={editedTasks[taskId].trigger}
+									bind:action={editedTasks[taskId].action}
+								/>
+							</div>
+						{/if}
+					{/each}
+					<Button class="my-2 w-full" variant="secondary" size="sm">
+						<PlusIcon class="size-4" />
+					</Button>
+				{/if}
+				{#if editMode}
+					{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
+						<div class="text-primary my-1 flex items-center text-sm">
+							<TriangleAlertIcon class="mr-2 size-4" />
+							<p>You must run tests before saving new edits to see how the bot will behave</p>
+						</div>
+					{/if}
+				{/if}
+				{#if !editMode}
+					{#if data.edits.length > 0}
+						<div class="mt-2 flex items-center justify-between">
+							<ToggleGroup.Root
+								type="single"
+								value={upvotes.includes(data.user?.userId)
+									? 'upvote'
+									: downvotes.includes(data.user?.userId)
+										? 'downvote'
+										: undefined}
+								onValueChange={async (value) => {
+									const resVote = await fetch(`/api/proposals/${data.proposal.id}`, {
+										method: 'PATCH',
+										body: JSON.stringify({
+											action: 'voteProposal',
+											vote: value,
+											proposalEditId: data.edits[0].id
+										}),
+										headers: {
+											'Content-Type': 'application/json'
+										}
+									});
+									if (resVote.ok) {
+										if (value === 'upvote') {
+											upvotes.push(data.user?.userId);
+											downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+										} else if (value === 'downvote') {
+											downvotes.push(data.user?.userId);
+											upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+										} else {
+											upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+											downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+										}
+									}
+								}}
+							>
+								<ToggleGroup.Item
+									value="upvote"
+									class="data-[state=on]:text-primary mr-4 rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
+								>
+									<ArrowBigUpIcon
+										class="size-6 {upvotes.includes(data.user?.userId)
+											? 'fill-primary stroke-primary'
+											: ''}"
+									/>
+									<p>{upvotes.length}</p>
+								</ToggleGroup.Item>
+								<ToggleGroup.Item
+									value="downvote"
+									class="data-[state=on]:text-primary rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
+								>
+									<ArrowBigDownIcon
+										class="size-6 {downvotes.includes(data.user?.userId)
+											? 'fill-primary stroke-primary'
+											: ''}"
+									/>
+									<p>{downvotes.length}</p>
+								</ToggleGroup.Item>
+							</ToggleGroup.Root>
+							<!-- <Button>Deploy</Button> -->
+						</div>
+					{/if}
+				{:else}
+					<div class="mt-2 flex items-center justify-between">
+						<!-- Test Button -->
 						<Button
-							variant="secondary"
 							disabled={(data.edits.length > 0
 								? _.isEqual(editedTasks, data.edits[0].tasks)
 								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-								_.isNil(testedTasks) ||
-								!_.isEqual(testedTasks, editedTasks) ||
+								_.isEqual(editedTasks, testedTasks) ||
 								runningTest ||
 								savingEdit}
 							onclick={async () => {
-								await saveProposal();
+								await runTest();
 							}}
 						>
-							{#if savingEdit}
-								<LoaderCircleIcon class="size-4 animate-spin" />Save
+							{#if runningTest}
+								<LoaderCircleIcon class="size-4 animate-spin" />Test
 							{:else}
-								<SaveIcon class="size-4" />Save
+								<PlayIcon class="size-4" />Test
 							{/if}
 						</Button>
+						<div class="flex items-center gap-2">
+							<!-- Reset Button -->
+							<Button
+								variant="secondary"
+								disabled={(data.edits.length > 0
+									? _.isEqual(editedTasks, data.edits[0].tasks)
+									: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+									runningTest ||
+									savingEdit}
+								onclick={() => {
+									resetEdit();
+								}}
+							>
+								<UndoIcon class="size-4" />Reset
+							</Button>
+							<!-- Save Button -->
+							<Button
+								variant="secondary"
+								disabled={(data.edits.length > 0
+									? _.isEqual(editedTasks, data.edits[0].tasks)
+									: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+									_.isNil(testedTasks) ||
+									!_.isEqual(testedTasks, editedTasks) ||
+									runningTest ||
+									savingEdit}
+								onclick={async () => {
+									await saveProposal();
+								}}
+							>
+								{#if savingEdit}
+									<LoaderCircleIcon class="size-4 animate-spin" />Save
+								{:else}
+									<SaveIcon class="size-4" />Save
+								{/if}
+							</Button>
+						</div>
 					</div>
-				</div>
+				{/if}
 			</div>
 			<div class="mb-2 p-2">
-				<h3>Edit History</h3>
-				<Table.Root>
-					{#if data.edits.length === 0}
-						<Table.Caption>No edits have been proposed yet.</Table.Caption>
+				<div class="flex items-center justify-between">
+					<div>
+						<h3>Edit History</h3>
+						<p class="text-muted-foreground text-sm">
+							{data.edits.length} edit{data.edits.length > 1 ? 's have' : ' has'} been made
+						</p>
+					</div>
+					{#if viewHistory}
+						<Button variant="ghost" size="icon" onclick={() => (viewHistory = false)}>
+							<XIcon />
+						</Button>
+					{:else}
+						<Button variant="secondary" onclick={() => (viewHistory = true)}>
+							<BookOpenIcon class="size-4" />View
+						</Button>
 					{/if}
-					<Table.Header>
-						<Table.Row class="hover:bg-trasparent">
-							<Table.Head><h4>Edit</h4></Table.Head>
-							<Table.Head><h4>Editor</h4></Table.Head>
-							<Table.Head><h4>Time</h4></Table.Head>
-							<Table.Head><h4>Voting</h4></Table.Head>
-						</Table.Row>
-					</Table.Header>
-					<Table.Body>
-						{#each data.edits as edit, i (edit.id)}
-							<Table.Row class="hover:bg-trasparent">
-								<Table.Cell>
-									<Dialog.Root>
-										<Dialog.Trigger class="hover:cursor-pointer hover:underline">
-											{#if i === 0}
-												current
-											{:else}
-												view
-											{/if}
-										</Dialog.Trigger>
-										<Dialog.Content>
-											<Dialog.Header>
-												<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
-												<Dialog.Description>
-													<p>
-														{new Date(edit.createAt).toLocaleString([], {
-															year: 'numeric',
-															month: 'numeric',
-															day: 'numeric',
-															hour: '2-digit',
-															minute: '2-digit',
-															hour12: false
-														})}
-													</p>
-													<Alert.Root class="mt-2">
-														<Alert.Title>Note</Alert.Title>
-														<Alert.Description>
-															The colored strikethrough text highlights the differences between this
-															edit and the original prompt prior to any edits.
-														</Alert.Description>
-													</Alert.Root>
-													{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
-														<div class="pt-4">
-															<TaskDiffSection
-																oldName={data.originalTasks.tasks[taskId].name}
-																oldTrigger={data.originalTasks.tasks[taskId].trigger}
-																oldAction={data.originalTasks.tasks[taskId].action}
-																newName={edit.tasks[taskId].name}
-																newTrigger={edit.tasks[taskId].trigger}
-																newAction={edit.tasks[taskId].action}
-															/>
-														</div>
-													{/each}
-												</Dialog.Description>
-											</Dialog.Header>
-										</Dialog.Content>
-									</Dialog.Root>
-								</Table.Cell>
-								<Table.Cell>{edit.editor}</Table.Cell>
-								<Table.Cell>
-									{new Date(edit.createAt).toLocaleString([], {
-										year: 'numeric',
-										month: 'numeric',
-										day: 'numeric',
-										hour: '2-digit',
-										minute: '2-digit',
-										hour12: false
-									})}
-								</Table.Cell>
-								{#if i === 0}
-									<Table.Cell>
-										<ToggleGroup.Root
-											type="single"
-											value={upvotes.includes(data.user?.userId)
-												? 'upvote'
-												: downvotes.includes(data.user?.userId)
-													? 'downvote'
-													: undefined}
-											onValueChange={async (value) => {
-												const resVote = await fetch(`/api/proposals/${data.proposal.id}`, {
-													method: 'PATCH',
-													body: JSON.stringify({
-														action: 'voteProposal',
-														vote: value,
-														proposalEditId: edit.id
-													}),
-													headers: {
-														'Content-Type': 'application/json'
-													}
-												});
-												if (resVote.ok) {
-													if (value === 'upvote') {
-														upvotes.push(data.user?.userId);
-														downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
-													} else if (value === 'downvote') {
-														downvotes.push(data.user?.userId);
-														upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
-													} else {
-														upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
-														downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
-													}
-												}
-											}}
-										>
-											<ToggleGroup.Item
-												value="upvote"
-												class="data-[state=on]:text-primary mr-4 rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
-											>
-												<ArrowBigUpIcon
-													class="size-4 {upvotes.includes(data.user?.userId)
-														? 'fill-primary stroke-primary'
-														: ''}"
-												/>
-												<p>{upvotes.length}</p>
-											</ToggleGroup.Item>
-											<ToggleGroup.Item
-												value="downvote"
-												class="data-[state=on]:text-primary rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
-											>
-												<ArrowBigDownIcon
-													class="size-4 {downvotes.includes(data.user?.userId)
-														? 'fill-primary stroke-primary'
-														: ''}"
-												/>
-												<p>{downvotes.length}</p>
-											</ToggleGroup.Item>
-										</ToggleGroup.Root>
-									</Table.Cell>
-								{:else}
-									<Table.Cell>
-										<div class="text-muted-foreground mx-2 flex items-center">
-											<ArrowBigUpIcon
-												class="mr-2 size-4 {edit.upvotes.includes(data.user?.userId)
-													? 'fill-current'
-													: ''}"
-											/>
-											<p class="mr-8">{edit.upvotes.length}</p>
-											<ArrowBigDownIcon
-												class="mr-2 size-4 {edit.downvotes.includes(data.user?.userId)
-													? 'fill-current'
-													: ''}"
-											/>
-											<p>{edit.downvotes.length}</p>
-										</div>
-									</Table.Cell>
-								{/if}
-							</Table.Row>
-						{/each}
-					</Table.Body>
-				</Table.Root>
+				</div>
+				{#if viewHistory}
+					<div transition:slide>
+						<Table.Root class="mt-2">
+							{#if data.edits.length === 0}
+								<Table.Caption>No edits have been proposed yet</Table.Caption>
+							{/if}
+							<Table.Header>
+								<Table.Row class="hover:bg-trasparent">
+									<Table.Head><h4>Edit</h4></Table.Head>
+									<Table.Head><h4>Editor</h4></Table.Head>
+									<Table.Head><h4>Time</h4></Table.Head>
+									<Table.Head><h4>Voting</h4></Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each data.edits as edit, i (edit.id)}
+									<Table.Row class="hover:bg-trasparent">
+										<Table.Cell>
+											<Dialog.Root>
+												<Dialog.Trigger class="hover:cursor-pointer hover:underline">
+													{#if i === 0}
+														current
+													{:else}
+														view
+													{/if}
+												</Dialog.Trigger>
+												<Dialog.Content>
+													<Dialog.Header>
+														<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
+														<Dialog.Description>
+															<p>
+																{new Date(edit.createAt).toLocaleString([], {
+																	year: 'numeric',
+																	month: 'numeric',
+																	day: 'numeric',
+																	hour: '2-digit',
+																	minute: '2-digit',
+																	hour12: false
+																})}
+															</p>
+															{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
+																<div class="pt-4">
+																	<TaskDiffSection
+																		oldName={data.originalTasks.tasks[taskId].name}
+																		oldTrigger={data.originalTasks.tasks[taskId].trigger}
+																		oldAction={data.originalTasks.tasks[taskId].action}
+																		newName={edit.tasks[taskId].name}
+																		newTrigger={edit.tasks[taskId].trigger}
+																		newAction={edit.tasks[taskId].action}
+																	/>
+																</div>
+															{/each}
+														</Dialog.Description>
+													</Dialog.Header>
+												</Dialog.Content>
+											</Dialog.Root>
+										</Table.Cell>
+										<Table.Cell>{edit.editor}</Table.Cell>
+										<Table.Cell>
+											{new Date(edit.createAt).toLocaleString([], {
+												year: 'numeric',
+												month: 'numeric',
+												day: 'numeric',
+												hour: '2-digit',
+												minute: '2-digit',
+												hour12: false
+											})}
+										</Table.Cell>
+										{#if i === 0}
+											<Table.Cell>
+												<div class="text-muted-foreground mx-2 flex items-center">
+													<ArrowBigUpIcon
+														class="mr-2 size-4 {upvotes.includes(data.user?.userId)
+															? 'fill-current'
+															: ''}"
+													/>
+													<p class="mr-8">{upvotes.length}</p>
+													<ArrowBigDownIcon
+														class="mr-2 size-4 {downvotes.includes(data.user?.userId)
+															? 'fill-current'
+															: ''}"
+													/>
+													<p>{downvotes.length}</p>
+												</div>
+											</Table.Cell>
+										{:else}
+											<Table.Cell>
+												<div class="text-muted-foreground mx-2 flex items-center">
+													<ArrowBigUpIcon
+														class="mr-2 size-4 {edit.upvotes.includes(data.user?.userId)
+															? 'fill-current'
+															: ''}"
+													/>
+													<p class="mr-8">{edit.upvotes.length}</p>
+													<ArrowBigDownIcon
+														class="mr-2 size-4 {edit.downvotes.includes(data.user?.userId)
+															? 'fill-current'
+															: ''}"
+													/>
+													<p>{edit.downvotes.length}</p>
+												</div>
+											</Table.Cell>
+										{/if}
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					</div>
+				{/if}
 			</div>
 		</div>
-		<div class="flex h-full flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
-			<div class="flex-1 overflow-hidden">
-				<div class="p-4 md:h-1/2">
-					<div class="mb-2 md:mb-0 md:flex md:justify-between">
-						<div>
-							<h3>Check test cases</h3>
-							{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
-								<p class="text-muted-foreground mb-1 text-sm">
-									{testCases.length} test
-									{testCases.length === 1 ? 'case' : 'cases'} in total in the test suite
-								</p>
-							{:else}
-								<div class="text-primary mb-1 flex items-center text-sm">
-									<TriangleAlertIcon class="mr-2 size-4" />
-									<p>
-										Run tests to see the bot's updated response after your edits for {testCases.length}
-										test {testCases.length === 1 ? 'case' : 'cases'}
-									</p>
-								</div>
-							{/if}
-						</div>
-						<!-- <ToggleGroup.Root
-							size="lg"
-							variant="outline"
-							type="single"
-							class="mx-auto self-start md:mr-0"
-						>
-							<ToggleGroup.Item value="good" class="text-my-green px-8 text-lg"
-								>4 good</ToggleGroup.Item
-							>
-							<ToggleGroup.Item value="bad" class="text-my-pink px-8 text-lg"
-								>0 bad</ToggleGroup.Item
-							>
-							<ToggleGroup.Item value="tbd" class="text-muted-foreground px-8 text-lg"
-								>0 tbd</ToggleGroup.Item
-							>
-						</ToggleGroup.Root> -->
+		<div class="flex flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
+			<div class="px-4 pt-4">
+				<h3>Check how the bot would behave in these cases</h3>
+				{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
+					<p class="text-muted-foreground text-sm">
+						Add a thumbs up or down to indicate if you think the bot response is good or not, and
+						then edit the prompt to fix any issues you find
+					</p>
+				{:else}
+					<div class="text-primary flex items-center text-sm">
+						<TriangleAlertIcon class="mr-2 size-4" />
+						<p>
+							Run tests to see the bot's updated responses based on your edits, and review newly
+							generated cases that may reveal potential issues with your changes
+						</p>
 					</div>
+				{/if}
+			</div>
+			<div class="flex-1 overflow-hidden">
+				<div class="flex flex-col p-4 md:h-1/2">
+					<h4 class="mb-2">Saved test cases ( {testCases.length} )</h4>
 					{#if testCases.length === 0}
-						<div class="flex h-full items-center justify-center">
-							<p class="text-muted-foreground">No cases have been added to the test suite yet.</p>
+						<div
+							class="flex flex-1 items-center justify-center rounded-md border-1
+"
+						>
+							<p class="text-muted-foreground">No cases have been added to the test suite yet</p>
 						</div>
 					{:else}
 						<Carousel.Root
@@ -575,52 +653,58 @@
 						</Carousel.Root>
 					{/if}
 				</div>
-				<Separator />
-				<div class="p-4 md:h-1/2">
-					<h3>Check other cases for possible side effects from the proposed edit</h3>
+				<div class="flex flex-col p-4 md:h-1/2">
+					<h4 class="mb-2">
+						Generated cases ( {#if runningTest}
+							—
+						{:else}
+							{generatedCases.length}
+						{/if} )
+					</h4>
 					{#if runningTest}
-						<div class="text-primary mb-1 flex items-center text-sm">
-							<CogIcon class="mr-2 size-4 animate-spin" />
-							<p>generating cases ...</p>
+						<div
+							class="flex flex-1 flex-col items-center justify-center gap-y-2 rounded-md border-1
+"
+						>
+							<CogIcon class="stroke-muted-foreground mr-2 size-10 animate-spin" />
+							<p class="text-muted-foreground">generating cases ...</p>
 						</div>
-					{:else if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
-						<p class="text-muted-foreground mb-1 text-sm">
-							{generatedCases.length} cases have been suggested.
-						</p>
-					{:else}
-						<div class="text-primary mb-1 flex items-center text-sm">
-							<TriangleAlertIcon class="mr-2 size-4" />
-							<p>Run tests to see new case suggestions based on your edit</p>
+					{:else if generatedCases.length === 0}
+						<div
+							class="flex flex-1 items-center justify-center rounded-md border-1
+"
+						>
+							<p class="text-muted-foreground">No cases have been generated</p>
 						</div>
 					{/if}
-					{#if generatedCases.length !== 0}
-						<Carousel.Root
-							opts={{
-								align: 'start'
-							}}
-							class="mx-auto w-4/5 max-w-screen md:w-5/6"
-						>
-							<Carousel.Content>
-								{#each generatedCases as generatedCase, i (i)}
-									<Carousel.Item class="xl:basis-1/2">
-										<div class="p-1">
-											<CaseCard
-												bind:this={generatedCaseRefs[i]}
-												channel={generatedCase.channel}
-												userMessage={generatedCase.userMessage}
-												tasks={editedTasks}
-												checkingBadge={generatedCase.label}
-												user={data.user}
-												generated={true}
-											/>
-										</div>
-									</Carousel.Item>
-								{/each}
-							</Carousel.Content>
+					<Carousel.Root
+						opts={{
+							align: 'start'
+						}}
+						class="mx-auto w-4/5 max-w-screen md:w-5/6"
+					>
+						<Carousel.Content>
+							{#each generatedCases as generatedCase, i (i)}
+								<Carousel.Item class="xl:basis-1/2">
+									<div class="p-1">
+										<CaseCard
+											bind:this={generatedCaseRefs[i]}
+											channel={generatedCase.channel}
+											userMessage={generatedCase.userMessage}
+											tasks={editedTasks}
+											checkingBadge={generatedCase.label}
+											user={data.user}
+											generated={true}
+										/>
+									</div>
+								</Carousel.Item>
+							{/each}
+						</Carousel.Content>
+						{#if generatedCases.length !== 0}
 							<Carousel.Previous />
 							<Carousel.Next />
-						</Carousel.Root>
-					{/if}
+						{/if}
+					</Carousel.Root>
 				</div>
 			</div>
 			<div class="w-full shrink-0">

@@ -129,7 +129,7 @@
 	let botResponses = $state([]);
 	let removing = $state(false);
 
-	const textLengthCap = 95;
+	const textLengthCap = 66;
 
 	const loadBotResponses = async () => {
 		if (generated) {
