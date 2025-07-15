@@ -156,7 +156,7 @@
 			method: 'POST',
 			body: JSON.stringify({
 				oldTasks: data.originalTasks.tasks,
-				newTasks: editedTasks
+				newTasks: $state.snapshot(editedTasks)
 			}),
 			headers: {
 				'Content-Type': 'application/json'

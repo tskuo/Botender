@@ -39,7 +39,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		agentSystemPrompt = agentSystemPrompt.concat(
 			tasks[triggeredTaskId].action,
 			'\n',
-			`However, if you believe you shouldn't reply to anything, reply "n/a".\n`,
+			`However, if you believe you shouldn't reply to anything, reply n/a.\n`,
 			`Here is the user's message in the `,
 			channel,
 			' channel: \n',
@@ -54,7 +54,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		const result2 = await agentModel.generateContent(userMessage);
 		const response2 = result2.response;
 		botResponse = response2.text();
-		if (botResponse === `""` || botResponse === `n/a` || botResponse === `"n/a"`) botResponse = '';
+		if (botResponse === `""` || botResponse === 'n/a' || botResponse === `"n/a"`) botResponse = '';
 	}
 
 	return { taskId: triggeredTaskId, botResponse: botResponse };
