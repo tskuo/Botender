@@ -22,9 +22,6 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 
 	let botResponse = '';
 
-	console.log(orchestratorSystemPrompt);
-	console.log(prompt1);
-
 	if (triggeredTaskId in tasks) {
 		const agentSystemPrompt = `You are a helpful assistant tasked with responding to a user's message in a specific channel, following the instructions provided in an assigned action. You will receive the action instructions, the user's message, and the channel where it was sent. Based on the action, compose an appropriate reply. If you determine that no response is necessary, reply with n/a instead.`;
 		const prompt2 = [
@@ -41,9 +38,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		const result2 = await agentModel.generateContent(prompt2);
 		const response2 = result2.response;
 		botResponse = response2.text().trim();
-		console.log(agentSystemPrompt);
-		console.log(prompt2);
-		console.log(botResponse);
+
 		if (botResponse === 'n/a' || botResponse === `"n/a"`) botResponse = '';
 	}
 
