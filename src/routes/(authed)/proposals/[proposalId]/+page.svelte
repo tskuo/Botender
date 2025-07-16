@@ -56,6 +56,7 @@
 	import { tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { slide } from 'svelte/transition';
+	import { channels } from '$lib/pipelines/prompts';
 
 	// data props
 	let { data }: PageProps = $props();
@@ -133,7 +134,92 @@
 		return () => window.removeEventListener('resize', updateSheetWidth);
 	});
 
-	let removeCaseFuntion = async (caseId: string) => {
+	// Add New Case to the Test Suite when the Case doesn't already exist
+	let createAndAddNewTestCase = async (
+		channel: string,
+		userMessage: string,
+		triggeredTaskId: string,
+		botResponse: string
+	) => {
+		let resCase;
+		if (
+			data.edits.length > 0
+				? _.isEqual(editedTasks, data.edits[0].tasks)
+				: _.isEqual(editedTasks, data.originalTasks.tasks)
+		) {
+			resCase = await fetch('/api/cases', {
+				method: 'POST',
+				body: JSON.stringify({
+					formCase: {
+						data: {
+							channel: channel,
+							realUserMessage: false,
+							userMessage: userMessage,
+							botResponse: botResponse,
+							proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
+							proposalId: data.edits.length > 0 ? data.proposal.id : '',
+							taskHistoryId: data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
+							triggeredTaskId: triggeredTaskId,
+							source: 'proposal'
+						}
+					}
+				}),
+				headers: {
+					'Content-Type': 'appplication/json'
+				}
+			});
+		} else {
+			resCase = await fetch('/api/cases', {
+				method: 'POST',
+				body: JSON.stringify({
+					formCase: {
+						data: {
+							channel: channel,
+							realUserMessage: false,
+							userMessage: userMessage,
+							botResponse: '',
+							proposalEditId: '',
+							proposalId: '',
+							taskHistoryId: '',
+							triggeredTaskId: '',
+							source: 'proposal'
+						}
+					},
+					caseOnly: true
+				}),
+				headers: {
+					'Content-Type': 'appplication/json'
+				}
+			});
+		}
+		const resCaseData = await resCase.json();
+		const resNewCase = await fetch(`/api/cases/${resCaseData.id}`);
+		const newCase = await resNewCase.json();
+		const res = await fetch(`/api/proposals/${data.proposal.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				action: 'addCase',
+				caseId: newCase.id
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		if (res.ok) {
+			testCases.push(newCase);
+			if (
+				data.edits.length > 0
+					? !_.isEqual(editedTasks, data.edits[0].tasks)
+					: !_.isEqual(editedTasks, data.originalTasks.tasks)
+			) {
+				await tick();
+				const ref = testCaseRefs[testCaseRefs.length - 1];
+				ref.setTmpBotResponse($state.snapshot(editedTasks), triggeredTaskId, botResponse);
+			}
+		}
+	};
+
+	let removeCaseFunction = async (caseId: string) => {
 		const res = await fetch(`/api/proposals/${data.proposal.id}`, {
 			method: 'PATCH',
 			body: JSON.stringify({
@@ -149,6 +235,30 @@
 			testCases = testCases.filter((c: Case) => c.id !== caseId);
 			testCaseRefs = testCaseRefs.slice(0, testCases.length);
 		}
+	};
+
+	let addGeneratedCaseFunction = async (
+		generatedId: number,
+		channel: string,
+		userMessage: string,
+		triggeredTaskId: string,
+		botResponse: string
+	) => {
+		await createAndAddNewTestCase(channel, userMessage, triggeredTaskId, botResponse);
+
+		generatedCases = [
+			...generatedCases.slice(0, generatedId),
+			...generatedCases.slice(generatedId + 1)
+		];
+		await tick();
+		generatedCaseRefs = generatedCaseRefs.slice(0, generatedCases.length);
+		generatedCaseRefs.forEach((ref, i) => {
+			ref.setTmpBotResponse(
+				$state.snapshot(editedTasks),
+				$state.snapshot(generatedCases[i].triggeredTask),
+				$state.snapshot(generatedCases[i].botResponse)
+			);
+		});
 	};
 
 	// Run Tests
@@ -197,6 +307,7 @@
 		}
 		testCaseRefs.forEach((ref) => ref.resetTestForCase());
 		testedTasks = undefined;
+		generatedCases = [];
 	};
 
 	// Save Proposal
@@ -221,6 +332,7 @@
 			await invalidateAll();
 			reloadProposalState();
 		}
+		generatedCases = [];
 		editMode = false;
 		savingEdit = false;
 	};
@@ -495,7 +607,7 @@
 									<Table.Head><h4>Edit</h4></Table.Head>
 									<Table.Head><h4>Editor</h4></Table.Head>
 									<Table.Head><h4>Time</h4></Table.Head>
-									<Table.Head><h4>Voting</h4></Table.Head>
+									<Table.Head><h4>Votes</h4></Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>
@@ -554,7 +666,7 @@
 										</Table.Cell>
 										{#if i === 0}
 											<Table.Cell>
-												<div class="text-muted-foreground mx-2 flex items-center">
+												<div class="flex items-center">
 													<ArrowBigUpIcon
 														class="mr-2 size-4 {upvotes.includes(data.user?.userId)
 															? 'fill-current'
@@ -571,7 +683,7 @@
 											</Table.Cell>
 										{:else}
 											<Table.Cell>
-												<div class="text-muted-foreground mx-2 flex items-center">
+												<div class="flex items-center">
 													<ArrowBigUpIcon
 														class="mr-2 size-4 {edit.upvotes.includes(data.user?.userId)
 															? 'fill-current'
@@ -642,7 +754,7 @@
 												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 												user={data.user}
-												{removeCaseFuntion}
+												{removeCaseFunction}
 											/>
 										</div>
 									</Carousel.Item>
@@ -684,7 +796,7 @@
 						class="mx-auto w-4/5 max-w-screen md:w-5/6"
 					>
 						<Carousel.Content>
-							{#each generatedCases as generatedCase, i (i)}
+							{#each generatedCases as generatedCase, i (Math.random().toString(36).slice(2))}
 								<Carousel.Item class="xl:basis-1/2">
 									<div class="p-1">
 										<CaseCard
@@ -694,7 +806,8 @@
 											tasks={editedTasks}
 											checkingBadge={generatedCase.label}
 											user={data.user}
-											generated={true}
+											generatedId={i}
+											{addGeneratedCaseFunction}
 										/>
 									</div>
 								</Carousel.Item>
@@ -1033,90 +1146,13 @@
 											addingCase = true;
 
 											if (!fetchCase) {
-												// create case first if no existing case
-												let resCase;
-
-												if (
-													data.edits.length > 0
-														? _.isEqual(editedTasks, data.edits[0].tasks)
-														: _.isEqual(editedTasks, data.originalTasks.tasks)
-												) {
-													resCase = await fetch('/api/cases', {
-														method: 'POST',
-														body: JSON.stringify({
-															formCase: {
-																data: {
-																	channel: displayedChannel,
-																	realUserMessage: false,
-																	userMessage: displayedUserMessage,
-																	botResponse: displayedBotResponse,
-																	proposalEditId: data.edits.length > 0 ? data.edits[0].id : '',
-																	proposalId: data.edits.length > 0 ? data.proposal.id : '',
-																	taskHistoryId:
-																		data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
-																	triggeredTaskId: displayedTaskId,
-																	source: 'proposal'
-																}
-															}
-														}),
-														headers: {
-															'Content-Type': 'appplication/json'
-														}
-													});
-												} else {
-													resCase = await fetch('/api/cases', {
-														method: 'POST',
-														body: JSON.stringify({
-															formCase: {
-																data: {
-																	channel: displayedChannel,
-																	realUserMessage: false,
-																	userMessage: displayedUserMessage,
-																	botResponse: '',
-																	proposalEditId: '',
-																	proposalId: '',
-																	taskHistoryId: '',
-																	triggeredTaskId: '',
-																	source: 'proposal'
-																}
-															},
-															caseOnly: true
-														}),
-														headers: {
-															'Content-Type': 'appplication/json'
-														}
-													});
-												}
-												const resCaseData = await resCase.json();
-												const resNewCase = await fetch(`/api/cases/${resCaseData.id}`);
-												const newCase = await resNewCase.json();
-												const res = await fetch(`/api/proposals/${data.proposal.id}`, {
-													method: 'PATCH',
-													body: JSON.stringify({
-														action: 'addCase',
-														caseId: newCase.id
-													}),
-													headers: {
-														'Content-Type': 'application/json'
-													}
-												});
-												if (res.ok) {
-													testCases.push(newCase);
-													if (
-														data.edits.length > 0
-															? !_.isEqual(editedTasks, data.edits[0].tasks)
-															: !_.isEqual(editedTasks, data.originalTasks.tasks)
-													) {
-														await tick();
-														const ref = testCaseRefs[testCaseRefs.length - 1];
-														ref.setTmpBotResponse(
-															$state.snapshot(editedTasks),
-															displayedTaskId,
-															displayedBotResponse
-														);
-													}
-													showAddCaseSuccess = true;
-												}
+												await createAndAddNewTestCase(
+													displayedChannel,
+													displayedUserMessage,
+													displayedTaskId,
+													displayedBotResponse
+												);
+												showAddCaseSuccess = true;
 											} else {
 												const res = await fetch(`/api/proposals/${data.proposal.id}`, {
 													method: 'PATCH',
@@ -1155,7 +1191,7 @@
 										{:else}
 											<FolderPlusIcon class="size-4" />
 										{/if}
-										Add to Test Suite
+										Save as Test Case
 									</Button>
 								</div>
 							</div>

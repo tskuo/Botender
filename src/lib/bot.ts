@@ -2,59 +2,49 @@ import { getGenerativeModel } from 'firebase/ai';
 import { ai } from '$lib/firebase';
 
 export async function bot(channel: string, userMessage: string, tasks: Tasks) {
-	const orchestratorSystemPrompt = `You are a helpful assistant that determines the relevance of a user's message to specific tasks. If the message is relevant to a particular task's trigger, respond with that task's ID. If it is relevant to more than one task's trigger, respond with the ID of the task to which it is most relevant. If the message is not relevant to any tasks' triggers, respond with 0.`;
+	const orchestratorSystemPrompt = `You are a helpful assistant tasked with determining whether a task should be triggered based on a user's message in a specific channel. You will receive a list of tasks, each with an associated ID and trigger condition, as well as the user's message and the channel where it was sent. If the message in that channel is relevant to the trigger condition of a specific task, respond with that task's ID. If the message is relevant to multiple tasks, respond with the ID of the task to which it is most relevant. If the message does not match any task trigger, respond with 0.`;
 
 	const orchestratorModel = getGenerativeModel(ai, {
 		model: 'gemini-2.0-flash',
 		systemInstruction: orchestratorSystemPrompt
 	});
 
-	let prompt = 'Here is a list of tasks: \n';
+	let prompt1 = 'Here is a list of tasks: \n';
 	for (const taskId in tasks) {
-		prompt = prompt.concat(
-			'Task ID: ',
-			taskId,
-			'\n',
-			'Task Trigger: ',
-			tasks[taskId].trigger,
-			'\n\n'
-		);
+		prompt1 = prompt1.concat(`Task ID: ${taskId}\n`, `Task Trigger: ${tasks[taskId].trigger}\n\n`);
 	}
 
-	prompt = prompt.concat(
-		"Here is the user's message in the ",
-		channel,
-		' channel: \n',
-		userMessage
-	);
+	prompt1 = prompt1.concat(`User message in the ${channel} channel:\n`, userMessage);
 
-	const result1 = await orchestratorModel.generateContent(prompt);
+	const result1 = await orchestratorModel.generateContent(prompt1);
 	const response1 = result1.response;
 	const triggeredTaskId = response1.text().trim();
 
 	let botResponse = '';
 
+	console.log(orchestratorSystemPrompt);
+	console.log(prompt1);
+
 	if (triggeredTaskId in tasks) {
-		let agentSystemPrompt = `You are a helpful assistant that replies to a user's message based on the following instructions:\n`;
-		agentSystemPrompt = agentSystemPrompt.concat(
-			tasks[triggeredTaskId].action,
-			'\n',
-			`However, if you believe you shouldn't reply to anything, reply n/a.\n`,
-			`Here is the user's message in the `,
-			channel,
-			' channel: \n',
+		const agentSystemPrompt = `You are a helpful assistant tasked with responding to a user's message in a specific channel, following the instructions provided in an assigned action. You will receive the action instructions, the user's message, and the channel where it was sent. Based on the action, compose an appropriate reply. If you determine that no response is necessary, reply with n/a instead.`;
+		const prompt2 = [
+			`Action: ${tasks[triggeredTaskId].action}`,
+			`User message in the ${channel} channel:`,
 			userMessage
-		);
+		].join('\n');
 
 		const agentModel = getGenerativeModel(ai, {
 			model: 'gemini-2.0-flash',
 			systemInstruction: agentSystemPrompt
 		});
 
-		const result2 = await agentModel.generateContent(userMessage);
+		const result2 = await agentModel.generateContent(prompt2);
 		const response2 = result2.response;
-		botResponse = response2.text();
-		if (botResponse === `""` || botResponse === 'n/a' || botResponse === `"n/a"`) botResponse = '';
+		botResponse = response2.text().trim();
+		console.log(agentSystemPrompt);
+		console.log(prompt2);
+		console.log(botResponse);
+		if (botResponse === 'n/a' || botResponse === `"n/a"`) botResponse = '';
 	}
 
 	return { taskId: triggeredTaskId, botResponse: botResponse };

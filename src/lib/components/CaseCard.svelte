@@ -22,9 +22,10 @@
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
 	import LoaderIcon from '@lucide/svelte/icons/loader';
-	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
 
 	// import svelte features
 	import { onMount } from 'svelte';
@@ -44,8 +45,9 @@
 		testCaseBadge = false,
 		checkingBadge = false,
 		user,
-		generated = false,
-		removeCaseFuntion = () => {}
+		generatedId = undefined,
+		removeCaseFunction = () => {},
+		addGeneratedCaseFunction = () => {}
 	} = $props();
 
 	export async function runTestForCase(editedTasks: Tasks) {
@@ -128,11 +130,12 @@
 	let loadingBotResponse = $state(true);
 	let botResponses = $state([]);
 	let removing = $state(false);
+	let adding = $state(false);
 
 	const textLengthCap = 66;
 
 	const loadBotResponses = async () => {
-		if (generated) {
+		if (generatedId !== undefined) {
 			botResponses = [];
 		} else if (page.url.pathname === '/cases') {
 			const res = await fetch(`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`, {
@@ -535,7 +538,7 @@
 									</Accordion.Content>
 								</Accordion.Item>
 							{/if}
-							{#if !generated}
+							{#if generatedId === undefined}
 								{#each edits as edit, i (edit.id)}
 									<Accordion.Item value="edit-{edit.id}">
 										<Accordion.Trigger>
@@ -617,15 +620,40 @@
 							class="mt-4 w-full"
 							onclick={async () => {
 								removing = true;
-								removeCaseFuntion(id);
+								await removeCaseFunction(id);
 							}}
 						>
 							{#if removing}
 								<LoaderCircleIcon class="size-4 animate-spin" />
 							{:else}
-								<TriangleAlertIcon class="size-4" />
+								<Trash2Icon class="size-4" />
 							{/if}
-							remove from the test suite
+							remove from saved test cases
+						</Button>
+					{/if}
+					{#if generatedId !== undefined && page.url.pathname.startsWith('/proposals/')}
+						<Button
+							disabled={adding}
+							class="mt-4 w-full"
+							onclick={async () => {
+								adding = true;
+								if (tmpBotResponse) {
+									await addGeneratedCaseFunction(
+										generatedId,
+										channel,
+										userMessage,
+										tmpBotResponse.triggeredTask,
+										tmpBotResponse.botResponse
+									);
+								}
+							}}
+						>
+							{#if adding}
+								<LoaderCircleIcon class="size-4 animate-spin" />
+							{:else}
+								<FolderPlusIcon class="size-4" />
+							{/if}
+							save as a test case
 						</Button>
 					{/if}
 				{/if}
