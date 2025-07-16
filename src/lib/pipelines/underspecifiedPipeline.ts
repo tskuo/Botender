@@ -30,7 +30,7 @@ export async function underspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
 	}
 	if (!prompt) return [];
 
-	const detectorSysPromptArray = [
+	const detectorSysPrompt = [
 		`You are a helpful assistant supporting users in improving the clarity and consistency of prompts given to language model-based bots. Your task is to identify underspecified parts of a prompt: phrases that could be interpreted in different ways by different people, or that might cause the bot to behave inconsistently or unpredictably.`,
 		bot_capability,
 		`Your Task:`,
@@ -46,14 +46,14 @@ export async function underspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
 		`\t- underspecified_phrase: a specific quote or snippet from the prompt that is ambiguous`,
 		`\t- description: a 1-2 sentence explanation of what makes it ambiguous or open to multiple interpretations`,
 		`All values must be JSON-safe: wrap any field that contains commas in quotes, and avoid newlines. Do not include any extra text, formatting, or commentary outside the JSON object.`
-	];
+	].join('\n');
 
 	// console.log('\n\n========== Detector System Prompt ==========\n\n');
-	// console.log(detectorSysPromptArray.join('\n'));
+	// console.log(detectorSysPrompt);
 
 	const detectorModel = getGenerativeModel(ai, {
 		model: 'gemini-2.0-flash',
-		systemInstruction: detectorSysPromptArray.join('\n'),
+		systemInstruction: detectorSysPrompt,
 		generationConfig: {
 			responseMimeType: 'application/json',
 			responseSchema: Schema.object({

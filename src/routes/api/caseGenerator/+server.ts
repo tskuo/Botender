@@ -1,15 +1,40 @@
 import { underspecifiedPipeline } from '$lib/pipelines/underspecifiedPipeline';
 import { overspecifiedPipeline } from '$lib/pipelines/overspecifiedPipeline';
+import { generalEvaluator } from '$lib/pipelines/generalEvaluator';
 import { json, error } from '@sveltejs/kit';
+import _ from 'lodash';
 
 export const POST = async ({ request }) => {
 	try {
 		const { oldTasks, newTasks } = await request.json();
 
 		const underspecifiedCases = await underspecifiedPipeline(oldTasks, newTasks);
-		const overspecifiedCases = await overspecifiedPipeline(oldTasks, newTasks);
+		// const overspecifiedCases = await overspecifiedPipeline(oldTasks, newTasks);
 
-		return json({ cases: underspecifiedCases }, { status: 201 });
+		let prompt: Task | undefined = undefined;
+
+		// ALERT: THIS SHOULD BE UPDATED LATER
+		for (const [taskId, task] of Object.entries(newTasks)) {
+			if (taskId in oldTasks) {
+				if (
+					_.isEqual(
+						_.pick(oldTasks[taskId], ['trigger', 'action']),
+						_.pick(newTasks[taskId], ['trigger', 'action'])
+					)
+				) {
+					continue;
+				} else {
+					prompt = task;
+					break;
+				}
+			} else {
+				prompt = task;
+				break;
+			}
+		}
+		const allCases = await generalEvaluator(prompt, newTasks, underspecifiedCases);
+
+		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
 	} catch {
 		throw error(400, 'Fail to generate cases');
 	}
