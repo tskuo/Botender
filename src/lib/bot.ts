@@ -18,7 +18,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 
 	const result1 = await orchestratorModel.generateContent(prompt1);
 	const response1 = result1.response;
-	const triggeredTaskId = response1.text().trim();
+	let triggeredTaskId = response1.text().trim();
 
 	let botResponse = '';
 
@@ -40,6 +40,8 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		botResponse = response2.text().trim();
 
 		if (botResponse === 'n/a' || botResponse === `"n/a"`) botResponse = '';
+	} else {
+		triggeredTaskId = '0';
 	}
 
 	return { taskId: triggeredTaskId, botResponse: botResponse };

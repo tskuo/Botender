@@ -101,8 +101,8 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<div class="flex items-center justify-between p-3">
-			<h2 class=" text-xl font-bold">Playground</h2>
+		<div class="flex items-center justify-between p-4">
+			<h2 class="text-xl font-bold">Playground</h2>
 			<!-- <Button
 				variant="secondary"
 				onclick={() => {
@@ -220,7 +220,6 @@
 									<p class="mb-3 pl-6">{displayedBotResponse}</p>
 								{/if}
 							{/if}
-
 							<div class="flex items-center gap-2">
 								<form method="POST" use:enhance action="?/createCase" class="hidden">
 									<Form.Field {form} name="channel">
@@ -461,7 +460,6 @@
 						{/if}
 					{/if}
 				</div>
-
 				<div class="flex flex-col gap-2">
 					<Select.Root type="single" bind:value={selectedChannel}>
 						<Select.Trigger class="w-[180px]">
