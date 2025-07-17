@@ -50,6 +50,16 @@
 		addGeneratedCaseFunction = () => {}
 	} = $props();
 
+	// temporary bot response based on unsaved edits
+	let tmpBotResponse = $state<BotResponse | undefined>(undefined);
+	let tmpTasks = $state<Tasks | undefined>(undefined);
+	let loadingBotResponse = $state(true);
+	let botResponses = $state([]);
+	let removing = $state(false);
+	let adding = $state(false);
+
+	const textLengthCap = 66;
+
 	export async function runTestForCase(editedTasks: Tasks) {
 		loadingBotResponse = true;
 		if (!_.isEqual(editedTasks, tmpTasks)) {
@@ -122,17 +132,6 @@
 			resetTestForCase();
 		}
 	}
-
-	// temporary bot response based on unsaved edits
-	let tmpBotResponse = $state<BotResponse | undefined>(undefined);
-	let tmpTasks = $state<Tasks | undefined>(undefined);
-
-	let loadingBotResponse = $state(true);
-	let botResponses = $state([]);
-	let removing = $state(false);
-	let adding = $state(false);
-
-	const textLengthCap = 66;
 
 	const loadBotResponses = async () => {
 		if (generatedId !== undefined) {
@@ -640,6 +639,7 @@
 								if (tmpBotResponse) {
 									await addGeneratedCaseFunction(
 										generatedId,
+										tmpTasks,
 										channel,
 										userMessage,
 										tmpBotResponse.triggeredTask,

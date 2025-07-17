@@ -56,7 +56,6 @@
 	import { tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { slide } from 'svelte/transition';
-	import { channels } from '$lib/pipelines/prompts';
 
 	// data props
 	let { data }: PageProps = $props();
@@ -136,6 +135,7 @@
 
 	// Add New Case to the Test Suite when the Case doesn't already exist
 	let createAndAddNewTestCase = async (
+		tmpTasks: Tasks,
 		channel: string,
 		userMessage: string,
 		triggeredTaskId: string,
@@ -144,8 +144,8 @@
 		let resCase;
 		if (
 			data.edits.length > 0
-				? _.isEqual(editedTasks, data.edits[0].tasks)
-				: _.isEqual(editedTasks, data.originalTasks.tasks)
+				? _.isEqual(tmpTasks, data.edits[0].tasks)
+				: _.isEqual(tmpTasks, data.originalTasks.tasks)
 		) {
 			resCase = await fetch('/api/cases', {
 				method: 'POST',
@@ -209,12 +209,12 @@
 			testCases.push(newCase);
 			if (
 				data.edits.length > 0
-					? !_.isEqual(editedTasks, data.edits[0].tasks)
-					: !_.isEqual(editedTasks, data.originalTasks.tasks)
+					? !_.isEqual(tmpTasks, data.edits[0].tasks)
+					: !_.isEqual(tmpTasks, data.originalTasks.tasks)
 			) {
 				await tick();
 				const ref = testCaseRefs[testCaseRefs.length - 1];
-				ref.setTmpBotResponse($state.snapshot(editedTasks), triggeredTaskId, botResponse);
+				ref.setTmpBotResponse(tmpTasks, triggeredTaskId, botResponse);
 			}
 		}
 	};
@@ -239,12 +239,13 @@
 
 	let addGeneratedCaseFunction = async (
 		generatedId: number,
+		tmpTasks: Tasks,
 		channel: string,
 		userMessage: string,
 		triggeredTaskId: string,
 		botResponse: string
 	) => {
-		await createAndAddNewTestCase(channel, userMessage, triggeredTaskId, botResponse);
+		await createAndAddNewTestCase(tmpTasks, channel, userMessage, triggeredTaskId, botResponse);
 
 		generatedCases = [
 			...generatedCases.slice(0, generatedId),
@@ -1147,6 +1148,7 @@
 
 											if (!fetchCase) {
 												await createAndAddNewTestCase(
+													editedTasks,
 													displayedChannel,
 													displayedUserMessage,
 													displayedTaskId,
