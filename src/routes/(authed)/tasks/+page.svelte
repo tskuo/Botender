@@ -5,8 +5,6 @@
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -54,9 +52,8 @@
 								{/if}
 							</p>
 						</Card.Content>
-						<Card.Footer class="mt-auto">
-							<p>X proposals</p>
-						</Card.Footer>
+						<!-- <Card.Footer class="mt-auto">
+						</Card.Footer> -->
 					</Card.Root>
 				{/each}
 			</div>

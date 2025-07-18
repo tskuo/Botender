@@ -468,7 +468,7 @@
 					{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
 						<div class="text-primary my-1 flex items-center text-sm">
 							<TriangleAlertIcon class="mr-2 size-4" />
-							<p>You must run tests before saving new edits to see how the bot will behave</p>
+							<p>Run tests before saving new edits to observe how the bot behaves</p>
 						</div>
 					{/if}
 				{/if}
@@ -726,28 +726,39 @@
 				<h3>Check how the bot would behave in these cases</h3>
 				{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
 					<p class="text-muted-foreground text-sm">
-						Add a thumbs up or down to indicate if you think the bot response is good or not, and
-						then edit the prompt to fix any issues you find
+						Give a thumbs up if the bot's response is good, or a thumbs down if it is bad. If you
+						find any issues, edit the prompt to fix them.
 					</p>
 				{:else}
-					<div class="text-primary flex items-center text-sm">
+					<!-- <div class="text-primary flex items-center text-sm">
 						<TriangleAlertIcon class="mr-2 size-4" />
 						<p>
-							Run tests to see the bot's updated responses based on your edits, and review newly
-							generated cases that may reveal potential issues with your changes
+							Run tests to see the bot's updated responses and review generated cases to identify
+							any potential issues with your changes
 						</p>
-					</div>
+					</div> -->
+					<Alert.Root class="border-primary text-primary mt-1">
+						<TriangleAlertIcon />
+						<Alert.Title>
+							Run tests to see the bot's updated responses and review generated cases to identify
+							any potential issues with your changes.
+						</Alert.Title>
+						<!-- <Alert.Description class="text-primary">
+							Run tests to see the bot's updated responses and review generated cases to identify
+							any potential issues with your changes.
+						</Alert.Description> -->
+					</Alert.Root>
 				{/if}
 			</div>
 			<div class="flex-1 overflow-hidden">
 				<div class="flex flex-col p-4 md:h-1/2">
-					<h4 class="mb-2">Saved test cases ( {testCases.length} )</h4>
+					<h4 class="pb-2">Saved test cases ( {testCases.length} )</h4>
 					{#if testCases.length === 0}
 						<div
 							class="flex flex-1 items-center justify-center rounded-md border-1
 "
 						>
-							<p class="text-muted-foreground">No cases have been added to the test suite yet</p>
+							<p class="text-muted-foreground">No cases have been saved to the test suite yet</p>
 						</div>
 					{:else}
 						<Carousel.Root
@@ -780,7 +791,7 @@
 					{/if}
 				</div>
 				<div class="flex flex-col p-4 md:h-1/2">
-					<h4 class="mb-2">
+					<h4 class="pb-2">
 						Generated cases ( {#if runningTest}
 							—
 						{:else}
