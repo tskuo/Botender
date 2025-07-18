@@ -32,7 +32,8 @@ export const POST = async ({ request }) => {
 				break;
 			}
 		}
-		const allCases = await generalEvaluator(prompt, newTasks, underspecifiedCases);
+		const evaluatedCases = await generalEvaluator(prompt, newTasks, underspecifiedCases);
+		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
 	} catch {

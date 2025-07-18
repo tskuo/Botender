@@ -97,7 +97,13 @@
 		tmpBotResponse = undefined;
 	}
 
-	export function setTmpBotResponse(editedTasks: Tasks, taskId: string, botResponse: string) {
+	export function setTmpBotResponse(
+		editedTasks: Tasks,
+		taskId: string,
+		botResponse: string,
+		thumbsUp: string[],
+		thumbsDown: string[]
+	) {
 		tmpTasks = editedTasks;
 		tmpBotResponse = {
 			id: 'tmp',
@@ -106,8 +112,8 @@
 			proposalEditId: 'tmp',
 			proposalId: page.params.proposalId,
 			taskHistoryId: '',
-			thumbsDown: [],
-			thumbsUp: [],
+			thumbsDown: thumbsDown,
+			thumbsUp: thumbsUp,
 			triggeredTask: taskId
 		};
 	}
@@ -643,7 +649,9 @@
 										channel,
 										userMessage,
 										tmpBotResponse.triggeredTask,
-										tmpBotResponse.botResponse
+										tmpBotResponse.botResponse,
+										tmpBotResponse.thumbsUp,
+										tmpBotResponse.thumbsDown
 									);
 								}
 							}}

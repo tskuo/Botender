@@ -43,8 +43,8 @@ export const POST = async ({ request }) => {
 				proposalEditId: formCase.data.proposalEditId,
 				proposalId: formCase.data.proposalId,
 				taskHistoryId: formCase.data.taskHistoryId,
-				thumbsDown: [],
-				thumbsUp: [],
+				thumbsDown: formCase.data.thumbsDown,
+				thumbsUp: formCase.data.thumbsUp,
 				triggeredTask: formCase.data.triggeredTaskId
 			});
 		}

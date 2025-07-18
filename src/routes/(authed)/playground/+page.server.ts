@@ -59,13 +59,15 @@ export const actions: Actions = {
 					data: {
 						channel: formProposal.data.channel,
 						realUserMessage: formProposal.data.realUserMessage,
+						source: formProposal.data.source,
 						userMessage: formProposal.data.userMessage,
 						botResponse: formProposal.data.botResponse,
 						proposalEditId: formProposal.data.proposalEditId,
 						proposalId: formProposal.data.proposalId,
 						taskHistoryId: formProposal.data.taskHistoryId,
 						triggeredTaskId: formProposal.data.triggeredTaskId,
-						source: formProposal.data.source
+						thumbsUp: [], // TODO
+						thumbsDown: [] // TODo
 					}
 				}
 			}),
