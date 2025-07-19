@@ -1,7 +1,4 @@
 <script lang="ts">
-	// import my components
-	import TaskSection from '$lib/components/TaskSection.svelte';
-
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -25,14 +22,14 @@
 	<div class="grid h-full flex-1 md:grid-cols-5">
 		<div class="overflow-auto border-r p-4 md:col-span-2">
 			<div class="grid auto-rows-fr gap-2">
-				{#each data.tasks as task (task.id)}
+				{#each Object.entries(data.latestTasks.tasks).sort() as [taskId, _] (taskId)}
+					{@const task = data.latestTasks.tasks[taskId]}
 					<Card.Root
 						class="hover:bg-muted/50 hover:cursor-pointer"
-						onclick={() => (clickedTaskId = task.id)}
+						onclick={() => (clickedTaskId = taskId)}
 					>
 						<Card.Header>
 							<Card.Title><h3>{task.name}</h3></Card.Title>
-							<!-- <Card.Description>Card Description</Card.Description> -->
 						</Card.Header>
 						<Card.Content>
 							<p class="mb-2">
@@ -52,8 +49,6 @@
 								{/if}
 							</p>
 						</Card.Content>
-						<!-- <Card.Footer class="mt-auto">
-						</Card.Footer> -->
 					</Card.Root>
 				{/each}
 			</div>
@@ -61,8 +56,9 @@
 		<div class="h-full md:col-span-3">
 			{#if clickedTaskId}
 				<div class="p-4">
-					{#each data.tasks as task (task.id)}
-						{#if task.id === clickedTaskId}
+					{#each Object.entries(data.latestTasks.tasks) as [taskId, _] (taskId)}
+						{@const task = data.latestTasks.tasks[taskId]}
+						{#if taskId === clickedTaskId}
 							<h3 class="mb-4 text-lg">Task: {task.name}</h3>
 							<div class="mb-4 w-full">
 								<h4 class="mb-1">Trigger:</h4>

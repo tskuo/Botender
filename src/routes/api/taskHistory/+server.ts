@@ -5,6 +5,7 @@ import { db } from '$lib/firebase';
 export const GET = async ({ url }) => {
 	try {
 		const latest = url.searchParams.get('latest');
+
 		if (latest === 'true') {
 			const querySnapshot = await getDocs(
 				query(collection(db, 'taskHistory'), orderBy('createAt', 'desc'), limit(1))
@@ -15,24 +16,22 @@ export const GET = async ({ url }) => {
 				createAt: querySnapshot.docs[0].data().createAt.toDate()
 			};
 			return json(res);
+		} else {
+			const res: { id: string; tasks: Tasks; createAt: Date }[] = [];
+			const querySnapshot = await getDocs(
+				query(collection(db, 'taskHistory'), orderBy('createAt', 'desc'))
+			);
+			querySnapshot.forEach((doc) => {
+				const taskHistory = {
+					id: doc.id,
+					tasks: doc.data().tasks,
+					createAt: doc.data().createAt.toDate()
+				};
+				res.push(taskHistory);
+			});
+			return json(res);
 		}
-
-		const res: Task[] = [];
-		const querySnapshot = await getDocs(
-			query(collection(db, 'tasks'), orderBy('createAt', 'desc'))
-		);
-		querySnapshot.forEach((doc) => {
-			const task = {
-				id: doc.id,
-				action: doc.data().action,
-				createAt: doc.data().createAt.toDate(),
-				name: doc.data().name,
-				trigger: doc.data().trigger
-			};
-			res.push(task);
-		});
-		return json(res);
 	} catch {
-		throw error(400, 'Fail to fetch data from Firestore.');
+		throw error(400, 'Fail to fetch taskHistory from Firestore.');
 	}
 };

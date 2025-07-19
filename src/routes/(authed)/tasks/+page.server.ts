@@ -3,10 +3,10 @@ import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ fetch }) => {
 	try {
-		const resTasks = await fetch('/api/tasks');
-		const tasks: Task[] = await resTasks.json();
+		const res = await fetch('/api/taskHistory?latest=true');
+		const latestTasks = await res.json();
 		return {
-			tasks
+			latestTasks
 		};
 	} catch {
 		throw error(404, 'Fail to fetch tasks.');

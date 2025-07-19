@@ -7,7 +7,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 
 export const load: PageServerLoad = async ({ fetch, locals }) => {
 	try {
-		const res = await fetch('/api/tasks?latest=true');
+		const res = await fetch('/api/taskHistory?latest=true');
 		const latestTasks = await res.json();
 
 		return {
