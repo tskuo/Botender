@@ -20,6 +20,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -49,6 +50,9 @@
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
+	import InfoIcon from '@lucide/svelte/icons/info';
+	import FolderCogIcon from '@lucide/svelte/icons/folder-cog';
+	import FlameIcon from '@lucide/svelte/icons/flame';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -96,11 +100,13 @@
 	let addingCase = $state(false);
 	let testCaseRefs = $state<any[]>([]);
 	let runningTest = $state(false);
+	let generatingCase = $state(false);
 	let savingEdit = $state(false);
 	let generatedCases = $state([]);
 	let generatedCaseRefs = $state<any[]>([]);
 	let editMode = $state(false);
 	let viewHistory = $state(false);
+	let overheated = $state(false);
 
 	let clearManualCasePanel = () => {
 		enteredCaseId = '';
@@ -278,15 +284,27 @@
 	let runTest = async () => {
 		runningTest = true;
 		testedTasks = $state.snapshot(editedTasks);
-		generatedCases = [];
-		const promises = testCaseRefs.map((ref) => ref.runTestForCase($state.snapshot(editedTasks)));
-		await Promise.all(promises);
+		const promise1 = runTestCases(testedTasks);
+		const promise2 = generateCases(testedTasks);
+		await Promise.all([promise1, promise2]);
+		runningTest = false;
+	};
 
+	let runTestCases = async (tasks: Tasks | undefined) => {
+		const promises = testCaseRefs.map((ref) => ref.runTestForCase(tasks));
+		await Promise.all(promises);
+	};
+
+	let generateCases = async (tasks: Tasks | undefined) => {
+		generatingCase = true;
+		overheated = false;
+		generatedCases = [];
+		if (_.isNil(tasks)) return;
 		const resCaseGenerator = await fetch('/api/caseGenerator', {
 			method: 'POST',
 			body: JSON.stringify({
 				oldTasks: data.originalTasks.tasks,
-				newTasks: $state.snapshot(editedTasks)
+				newTasks: tasks
 			}),
 			headers: {
 				'Content-Type': 'application/json'
@@ -301,16 +319,17 @@
 			generatedCaseRefs = generatedCaseRefs.slice(0, $state.snapshot(generatedCases.length));
 			generatedCaseRefs.forEach((ref, i) => {
 				ref.setTmpBotResponse(
-					$state.snapshot(editedTasks),
+					tasks,
 					$state.snapshot(generatedCases[i].triggeredTask),
 					$state.snapshot(generatedCases[i].botResponse),
 					[],
 					[]
 				);
 			});
+		} else {
+			overheated = true;
 		}
-
-		runningTest = false;
+		generatingCase = false;
 	};
 
 	// Reset Edit
@@ -362,7 +381,7 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button class="mr-1"><ExternalLinkIcon class="size-4" />Discuss</Button>
+			<Button class="mr-1 hover:cursor-pointer"><ExternalLinkIcon class="size-4" />Discuss</Button>
 		</div>
 		<Separator />
 	</div>
@@ -385,22 +404,6 @@
 				</p>
 				<p>{data.proposal.description}</p>
 			</div>
-			<!-- <div class="mb-4 p-2">
-				<div class="flex items-center justify-between">
-					<div>
-						<h3>Discussion</h3>
-						{#if data.proposal.discussionSummary === ''}
-							<p class="text-muted-foreground text-sm">No one has joined the discussion yet</p>
-						{/if}
-					</div>
-					<Button variant="secondary">
-						<ExternalLinkIcon class="size-4" />Join
-					</Button>
-				</div>
-				{#if data.proposal.discussionSummary}
-					<p>Summary: {data.proposal.discussionSummary}</p>
-				{/if}
-			</div> -->
 			<div class="mb-4 p-2">
 				<div class="flex items-center justify-between">
 					<div>
@@ -417,9 +420,10 @@
 					</div>
 					{#if editMode}
 						<Button
-							disabled={runningTest || savingEdit}
+							disabled={runningTest || savingEdit || generatingCase}
 							variant="ghost"
 							size="icon"
+							class="hover:cursor-pointer"
 							onclick={() => {
 								resetEdit();
 								editMode = false;
@@ -428,7 +432,12 @@
 							<XIcon />
 						</Button>
 					{:else}
-						<Button variant="secondary" onclick={() => (editMode = true)}>
+						<Button
+							disabled={generatingCase || runningTest}
+							variant="secondary"
+							class="hover:cursor-pointer"
+							onclick={() => (editMode = true)}
+						>
 							<PencilIcon class="size-4" />Edit
 						</Button>
 					{/if}
@@ -460,7 +469,7 @@
 							</div>
 						{/if}
 					{/each}
-					<Button class="my-2 w-full" variant="secondary" size="sm">
+					<Button class="my-2 w-full hover:cursor-pointer" variant="secondary" size="sm">
 						<PlusIcon class="size-4" />
 					</Button>
 				{/if}
@@ -468,7 +477,7 @@
 					{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
 						<div class="text-primary my-1 flex items-center text-sm">
 							<TriangleAlertIcon class="mr-2 size-4" />
-							<p>Run tests before saving new edits to observe how the bot behaves</p>
+							<p>Run test and generate before saving new edits to observe how the bot behaves</p>
 						</div>
 					{/if}
 				{/if}
@@ -542,15 +551,16 @@
 								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
 								_.isEqual(editedTasks, testedTasks) ||
 								runningTest ||
+								generatingCase ||
 								savingEdit}
 							onclick={async () => {
 								await runTest();
 							}}
 						>
 							{#if runningTest}
-								<LoaderCircleIcon class="size-4 animate-spin" />Test
+								<LoaderCircleIcon class="size-4 animate-spin" />Test + Generate
 							{:else}
-								<PlayIcon class="size-4" />Test
+								<PlayIcon class="size-4" />Test + Generate
 							{/if}
 						</Button>
 						<div class="flex items-center gap-2">
@@ -561,6 +571,7 @@
 									? _.isEqual(editedTasks, data.edits[0].tasks)
 									: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
 									runningTest ||
+									generatingCase ||
 									savingEdit}
 								onclick={() => {
 									resetEdit();
@@ -577,6 +588,7 @@
 									_.isNil(testedTasks) ||
 									!_.isEqual(testedTasks, editedTasks) ||
 									runningTest ||
+									generatingCase ||
 									savingEdit}
 								onclick={async () => {
 									await saveProposal();
@@ -601,11 +613,20 @@
 						</p>
 					</div>
 					{#if viewHistory}
-						<Button variant="ghost" size="icon" onclick={() => (viewHistory = false)}>
+						<Button
+							variant="ghost"
+							class="hover:cursor-pointer"
+							size="icon"
+							onclick={() => (viewHistory = false)}
+						>
 							<XIcon />
 						</Button>
 					{:else}
-						<Button variant="secondary" onclick={() => (viewHistory = true)}>
+						<Button
+							variant="secondary"
+							class="hover:cursor-pointer"
+							onclick={() => (viewHistory = true)}
+						>
 							<BookOpenIcon class="size-4" />View
 						</Button>
 					{/if}
@@ -723,36 +744,52 @@
 		</div>
 		<div class="flex flex-col overflow-hidden md:col-span-3" bind:this={rightCol}>
 			<div class="px-4 pt-4">
-				<h3>Check how the bot would behave in these cases</h3>
+				<div class="flex items-center gap-2">
+					<h3>Check how the bot would behave in these cases</h3>
+					<Popover.Root>
+						<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+						<Popover.Content class="text-sm">
+							For each case, give a thumbs up if the bot's response is good, or a thumbs down if
+							it's not. If you notice any issues, try editing the prompt to address them. If the
+							bot's responses are already satisfactory, feel free to upvote the proposed edit to
+							support its deployment.
+						</Popover.Content>
+					</Popover.Root>
+				</div>
 				{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
-					<p class="text-muted-foreground text-sm">
-						Give a thumbs up if the bot's response is good, or a thumbs down if it is bad. If you
-						find any issues, edit the prompt to fix them.
-					</p>
+					<!-- <Alert.Root class="text-muted-foreground mt-1">
+						<InfoIcon />
+						<Alert.Title>Heads up!</Alert.Title>
+						<Alert.Description>
+							For each case, give a thumbs up if the bot's response is good, or a thumbs down if
+							it's not. If you notice any issues, try editing the prompt to address them. If the
+							bot's responses are already satisfactory, feel free to upvote the proposed edit to
+							support its deployment.
+						</Alert.Description>
+					</Alert.Root> -->
 				{:else}
-					<!-- <div class="text-primary flex items-center text-sm">
-						<TriangleAlertIcon class="mr-2 size-4" />
-						<p>
-							Run tests to see the bot's updated responses and review generated cases to identify
-							any potential issues with your changes
-						</p>
-					</div> -->
 					<Alert.Root class="border-primary text-primary mt-1">
 						<TriangleAlertIcon />
-						<Alert.Title>
-							Run tests to see the bot's updated responses and review generated cases to identify
-							any potential issues with your changes.
-						</Alert.Title>
-						<!-- <Alert.Description class="text-primary">
-							Run tests to see the bot's updated responses and review generated cases to identify
-							any potential issues with your changes.
-						</Alert.Description> -->
+						<!-- <Alert.Title>Heads up!</Alert.Title> -->
+						<Alert.Description class="text-primary">
+							Run test and generate to see the bot's updated responses and review generated cases to
+							identify any potential issues with your edit.
+						</Alert.Description>
 					</Alert.Root>
 				{/if}
 			</div>
 			<div class="flex-1 overflow-hidden">
 				<div class="flex flex-col p-4 md:h-1/2">
-					<h4 class="pb-2">Saved test cases ( {testCases.length} )</h4>
+					<div class="flex items-center gap-2 pb-2">
+						<h4>Saved test cases ( {testCases.length} )</h4>
+						<Popover.Root>
+							<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+							<Popover.Content class="text-sm">
+								Cases saved collectively by everyone to observe how the bot behaves based on the
+								proposed edits.
+							</Popover.Content>
+						</Popover.Root>
+					</div>
 					{#if testCases.length === 0}
 						<div
 							class="flex flex-1 items-center justify-center rounded-md border-1
@@ -791,26 +828,53 @@
 					{/if}
 				</div>
 				<div class="flex flex-col p-4 md:h-1/2">
-					<h4 class="pb-2">
-						Generated cases ( {#if runningTest}
-							—
-						{:else}
-							{generatedCases.length}
-						{/if} )
-					</h4>
-					{#if runningTest}
+					<div class="flex items-center justify-between pb-2">
+						<div class="flex items-center gap-2">
+							<h4>
+								Generated cases ( {#if generatingCase}
+									—
+								{:else}
+									{generatedCases.length}
+								{/if} )
+							</h4>
+							<Popover.Root>
+								<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+								<Popover.Content class="text-sm">
+									Cases generated to uncover potential issues with the proposed edits. You can save
+									relevant ones as test cases.
+								</Popover.Content>
+							</Popover.Root>
+						</div>
+						<Button
+							variant="secondary"
+							class="hover:cursor-pointer"
+							disabled={generatingCase || data.edits.length === 0}
+							onclick={async () => {
+								await generateCases($state.snapshot(editedTasks));
+							}}
+						>
+							<FolderCogIcon class="size-4" />
+							Generate
+						</Button>
+					</div>
+					{#if generatingCase}
 						<div
-							class="flex flex-1 flex-col items-center justify-center gap-y-2 rounded-md border-1
-"
+							class="flex flex-1 flex-col items-center justify-center gap-y-2 rounded-md border-1"
 						>
 							<CogIcon class="stroke-muted-foreground mr-2 size-10 animate-spin" />
 							<p class="text-muted-foreground">generating cases ...</p>
 						</div>
-					{:else if generatedCases.length === 0}
+					{:else if overheated}
 						<div
-							class="flex flex-1 items-center justify-center rounded-md border-1
-"
+							class="flex flex-1 flex-col items-center justify-center gap-y-2 rounded-md border-1"
 						>
+							<FlameIcon class="stroke-muted-foreground size-10" />
+							<p class="text-muted-foreground">
+								The generator has overheated. Please try again later.
+							</p>
+						</div>
+					{:else if generatedCases.length === 0}
+						<div class="flex flex-1 items-center justify-center rounded-md border-1">
 							<p class="text-muted-foreground">No cases have been generated</p>
 						</div>
 					{/if}

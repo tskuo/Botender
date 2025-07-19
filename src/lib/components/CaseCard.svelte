@@ -530,7 +530,7 @@
 						<Accordion.Root type="single" class="w-full">
 							{#if !_.isNil(tmpBotResponse)}
 								<Accordion.Item value="edit-tmp">
-									<Accordion.Trigger>Your unsaved edit (current)</Accordion.Trigger>
+									<Accordion.Trigger>Proposed edit (current)</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}
 											<div class="mb-2 flex items-center">
@@ -636,9 +636,10 @@
 							remove from saved test cases
 						</Button>
 					{/if}
-					{#if generatedId !== undefined && page.url.pathname.startsWith('/proposals/')}
+					{#if generatedId !== undefined && tmpBotResponse && page.url.pathname.startsWith('/proposals/')}
 						<Button
-							disabled={adding}
+							disabled={adding ||
+								(tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0)}
 							class="mt-4 w-full"
 							onclick={async () => {
 								adding = true;
