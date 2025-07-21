@@ -59,7 +59,6 @@ export async function generalEvaluator(newTasks: Tasks, testCases) {
 	});
 
 	const evaluatorPromises = testCases.map(async (testCase) => {
-		console.log(testCase);
 		const evaluatorUserPrompt = [
 			`prompt: \n\t Trigger: ${testCase.prompt.trigger}\n\t Action: ${testCase.prompt.action}`,
 			// `reasoning: ${testCase.reasoning}`,

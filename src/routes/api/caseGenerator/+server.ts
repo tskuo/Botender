@@ -60,10 +60,7 @@ export const POST = async ({ request }) => {
 		// Combine arrays
 		// const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
 		const allRawCases = consequenceCases;
-		console.log(allRawCases);
-		console.log('before evaluatedCases');
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
-		console.log('after evaluatedCases');
 
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
