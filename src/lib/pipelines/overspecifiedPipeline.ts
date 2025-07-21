@@ -232,7 +232,6 @@ export async function overspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 		};
 	});
 
-	await Promise.all(evaluatorPromises);
 	const allCases = await Promise.all(evaluatorPromises);
 
 	return allCases;

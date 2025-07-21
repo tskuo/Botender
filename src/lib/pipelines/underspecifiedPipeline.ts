@@ -22,7 +22,7 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 		`Prioritize ambiguities that could lead to reasonable differences in human interpretation, especially those where people might disagree about whether the bot's behavior is desirable. Focus on ambiguities that could cause visible inconsistencies in the bot's behavior. Do not list trivial ambiguities, style differences, or issues that would not affect how real users experience the bot.`,
 		`Output Format:`,
 		`Return a JSON object containing an array of ambiguities. Each ambiguity should have a unique key starting from 0 and include the following two properties:`,
-		`\t- underspecified_phrase: a specific quote or snippet from the prompt that is ambiguous`,
+		`\t- underspecified_phrase: a specific snippet from the prompt that is ambiguous`,
 		`\t- description: a 1-2 sentence explanation of what makes it ambiguous or open to multiple interpretations`,
 		`All values must be JSON-safe: wrap any field that contains commas in quotes, and avoid newlines. Do not include any extra text, formatting, or commentary outside the JSON object.`
 	].join('\n');
@@ -216,7 +216,6 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 		};
 	});
 
-	await Promise.all(evaluatorPromises);
 	const allCases = await Promise.all(evaluatorPromises);
 
 	return allCases;

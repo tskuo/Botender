@@ -1,7 +1,6 @@
 import { getGenerativeModel, Schema } from 'firebase/ai';
 import { bot_capability } from '$lib/pipelines/prompts';
 import { ai } from '$lib/firebase';
-import _ from 'lodash';
 
 export async function generalEvaluator(newTasks: Tasks, testCases) {
 	const systemPrompt = [
@@ -60,6 +59,7 @@ export async function generalEvaluator(newTasks: Tasks, testCases) {
 	});
 
 	const evaluatorPromises = testCases.map(async (testCase) => {
+		console.log(testCase);
 		const evaluatorUserPrompt = [
 			`prompt: \n\t Trigger: ${testCase.prompt.trigger}\n\t Action: ${testCase.prompt.action}`,
 			// `reasoning: ${testCase.reasoning}`,
@@ -78,7 +78,6 @@ export async function generalEvaluator(newTasks: Tasks, testCases) {
 		};
 	});
 
-	await Promise.all(evaluatorPromises);
 	const allCases = await Promise.all(evaluatorPromises);
 
 	return allCases;

@@ -1,5 +1,6 @@
 import { underspecifiedPipeline } from '$lib/pipelines/underspecifiedPipeline';
 import { overspecifiedPipeline } from '$lib/pipelines/overspecifiedPipeline';
+import { consequencePipeline } from '$lib/pipelines/consequencePipeline';
 import { generalEvaluator } from '$lib/pipelines/generalEvaluator';
 import { json, error } from '@sveltejs/kit';
 import _ from 'lodash';
@@ -29,29 +30,41 @@ export const POST = async ({ request }) => {
 			}
 		}
 
-		// Start both promises (do NOT await yet)
-		const underspecifiedPromise = Promise.all(
-			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
+		// const underspecifiedPromise = Promise.all(
+		// 	diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
+		// );
+
+		// const overspecifiedPromise = Promise.all(
+		// 	diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
+		// );
+
+		const consequencePromise = Promise.all(
+			diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
 		);
 
-		const overspecifiedPromise = Promise.all(
-			diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
-		);
+		// Await in parallel
+		// const [underspecifiedResults, overspecifiedResults, consequenceResults] = await Promise.all([
+		// 	underspecifiedPromise,
+		// 	overspecifiedPromise,
+		// 	consequencePromise
+		// ]);
 
-		// Await both in parallel
-		const [underspecifiedResults, overspecifiedResults] = await Promise.all([
-			underspecifiedPromise,
-			overspecifiedPromise
-		]);
+		// const underspecifiedResults = await underspecifiedPromise;
+		// const overspecifiedResults = await overspecifiedPromise;
+		const consequenceResults = await consequencePromise;
 
-		const underspecifiedCases = underspecifiedResults.flat();
-		const overspecifiedCases = overspecifiedResults.flat();
+		// const underspecifiedCases = underspecifiedResults.flat();
+		// const overspecifiedCases = overspecifiedResults.flat();
+		const consequenceCases = consequenceResults.flat();
 
-		// Combine both arrays
-		const allRawCases = [...underspecifiedCases, ...overspecifiedCases];
-		// const allRawCases = underspecifiedCases;
-
+		// Combine arrays
+		// const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
+		const allRawCases = consequenceCases;
+		console.log(allRawCases);
+		console.log('before evaluatedCases');
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
+		console.log('after evaluatedCases');
+
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
