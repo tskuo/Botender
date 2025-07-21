@@ -48,8 +48,8 @@ export const POST = async ({ request }) => {
 		const overspecifiedCases = overspecifiedResults.flat();
 
 		// Combine both arrays
-		// const allRawCases = [...underspecifiedCases, ...overspecifiedCases];
-		const allRawCases = underspecifiedCases;
+		const allRawCases = [...underspecifiedCases, ...overspecifiedCases];
+		// const allRawCases = underspecifiedCases;
 
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
