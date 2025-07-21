@@ -1,25 +1,34 @@
 <script lang="ts">
 	import { diffWords } from 'diff';
-
 	import { Label } from '$lib/components/ui/label/index.js';
+	import _ from 'lodash';
 
 	let {
-		oldName = '',
-		oldTrigger = '',
-		oldAction = '',
-		newName = '',
-		newTrigger = '',
-		newAction = ''
+		oldTask = {
+			name: '',
+			trigger: '',
+			action: ''
+		},
+		newTask = {
+			name: '',
+			trigger: '',
+			action: ''
+		}
 	} = $props();
 
-	let diffName = $derived(diffWords(oldName, newName));
-	let diffTrigger = $derived(diffWords(oldTrigger, newTrigger));
-	let diffAction = $derived(diffWords(oldAction, newAction));
+	let diffName = $derived(diffWords(oldTask.name, newTask.name));
+	let diffTrigger = $derived(diffWords(oldTask.trigger, newTask.trigger));
+	let diffAction = $derived(diffWords(oldTask.action, newTask.action));
 </script>
 
 <div class="border-l">
 	<div class="pl-3">
 		<h4 class="font-medium">
+			{#if oldTask.name === '' && oldTask.trigger === '' && oldTask.action === ''}
+				New
+			{:else if newTask.name === '' && newTask.trigger === '' && newTask.action === ''}
+				Deleted
+			{/if}
 			Task: {#each diffName as n}
 				<span class={n.added ? 'text-my-green' : n.removed ? 'text-my-pink line-through' : ''}>
 					{n.value}

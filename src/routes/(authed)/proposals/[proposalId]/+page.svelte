@@ -2,14 +2,15 @@
 	// import lodash for object comparison
 	import _ from 'lodash';
 
-	// import my components
+	// import my components and functions
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
 	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
+	import { checkEmptyTask } from '$lib/tasks';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
@@ -21,6 +22,8 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -53,6 +56,8 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import FolderCogIcon from '@lucide/svelte/icons/folder-cog';
 	import FlameIcon from '@lucide/svelte/icons/flame';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import DiffIcon from '@lucide/svelte/icons/diff';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -102,11 +107,19 @@
 	let runningTest = $state(false);
 	let generatingCase = $state(false);
 	let savingEdit = $state(false);
-	let generatedCases = $state([]);
+	let generatedCases = $state<any[]>([]);
 	let generatedCaseRefs = $state<any[]>([]);
 	let editMode = $state(false);
 	let viewHistory = $state(false);
 	let overheated = $state(false);
+
+	let editScope = $state(
+		data.edits.length > 0
+			? Object.keys(data.edits[0].tasks).filter(
+					(key) => !_.isEqual(data.edits[0].tasks[key], data.originalTasks.tasks[key])
+				)
+			: []
+	);
 
 	let clearManualCasePanel = () => {
 		enteredCaseId = '';
@@ -342,6 +355,12 @@
 		testCaseRefs.forEach((ref) => ref.resetTestForCase());
 		testedTasks = undefined;
 		generatedCases = [];
+		editScope =
+			data.edits.length > 0
+				? Object.keys(data.edits[0].tasks).filter(
+						(key) => !_.isEqual(data.edits[0].tasks[key], data.originalTasks.tasks[key])
+					)
+				: [];
 	};
 
 	// Save Proposal
@@ -370,6 +389,11 @@
 		editMode = false;
 		savingEdit = false;
 	};
+
+	let removeTaskFunction = (taskId: string) => {
+		editScope = editScope.filter((i) => i !== taskId);
+		editedTasks = _.omit(editedTasks, [taskId]);
+	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -381,7 +405,12 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button class="mr-1 hover:cursor-pointer"><ExternalLinkIcon class="size-4" />Discuss</Button>
+			<Button
+				class="mr-1 hover:cursor-pointer"
+				onclick={() => {
+					console.log($state.snapshot(editedTasks));
+				}}><ExternalLinkIcon class="size-4" />Discuss</Button
+			>
 		</div>
 		<Separator />
 	</div>
@@ -408,10 +437,10 @@
 				<div class="flex items-center justify-between">
 					<div>
 						<h3>Proposed Edit</h3>
-						{#if data.edits.length === 0}
-							<p class="text-muted-foreground text-sm">
-								No edits have been proposed yet. The following are the original task prompts
-							</p>
+						{#if editMode}
+							<p class="text-primary text-sm">You are currently making edits</p>
+						{:else if data.edits.length === 0}
+							<p class="text-muted-foreground text-sm">No edits have been proposed yet</p>
 						{:else}
 							<p class="text-muted-foreground text-sm">
 								Last edited by {data.edits[0].editor}
@@ -443,44 +472,83 @@
 					{/if}
 				</div>
 				{#if !editMode}
-					{#each Object.entries(editedTasks).sort() as [taskId, task] (taskId)}
-						{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
+					{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+						{#if !_.isEqual(data.originalTasks.tasks[taskId], editedTasks[taskId])}
 							<div class="pt-4">
 								<TaskDiffSection
-									oldName={data.originalTasks.tasks[taskId].name}
-									oldTrigger={data.originalTasks.tasks[taskId].trigger}
-									oldAction={data.originalTasks.tasks[taskId].action}
-									newName={editedTasks[taskId].name}
-									newTrigger={editedTasks[taskId].trigger}
-									newAction={editedTasks[taskId].action}
+									oldTask={data.originalTasks.tasks[taskId]}
+									newTask={editedTasks[taskId]}
 								/>
 							</div>
 						{/if}
 					{/each}
 				{:else}
-					{#each Object.entries(editedTasks).sort() as [taskId, task] (taskId)}
-						{#if !_.isEqual(editedTasks[taskId], data.originalTasks.tasks[taskId])}
-							<div class="pt-4">
-								<TaskSection
-									bind:name={editedTasks[taskId].name}
-									bind:trigger={editedTasks[taskId].trigger}
-									bind:action={editedTasks[taskId].action}
-								/>
-							</div>
-						{/if}
+					{#each editScope as taskId (taskId)}
+						<div class="pt-4">
+							<TaskSection
+								id={taskId}
+								bind:name={editedTasks[taskId].name}
+								bind:trigger={editedTasks[taskId].trigger}
+								bind:action={editedTasks[taskId].action}
+								{removeTaskFunction}
+							/>
+						</div>
 					{/each}
-					<Button class="my-2 w-full hover:cursor-pointer" variant="secondary" size="sm">
-						<PlusIcon class="size-4" />
-					</Button>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger class="my-2 w-full">
+							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
+								<PlusIcon />
+							</Button>
+						</DropdownMenu.Trigger>
+						<DropdownMenu.Content class="w-full">
+							<DropdownMenu.Group class="w-full">
+								<DropdownMenu.Label class="w-full">Show or Hide Tasks</DropdownMenu.Label>
+								<DropdownMenu.Separator />
+								{#each [...Object.keys(data.originalTasks.tasks).sort(), 'new'] as taskId (taskId)}
+									<DropdownMenu.Item
+										onclick={() => {
+											if (editScope.includes(taskId)) {
+												editScope = editScope.filter((i) => i !== taskId);
+											} else {
+												if (!(taskId in editedTasks)) {
+													if (taskId === 'new') {
+														editedTasks[taskId] = {
+															name: '',
+															trigger: '',
+															action: ''
+														};
+													} else {
+														editedTasks[taskId] = data.originalTasks.tasks[taskId];
+													}
+												}
+												editScope.push(taskId);
+											}
+										}}
+									>
+										<div class="flex w-full items-center justify-between">
+											{#if taskId in editedTasks}
+												<p class="mr-2">Task: {editedTasks[taskId].name}</p>
+											{:else if taskId === 'new'}
+												<p class="mr-2">New Task</p>
+											{:else}
+												<p class="mr-2">Task: {data.originalTasks.tasks[taskId].name} (deleted)</p>
+											{/if}
+											{#if editScope.includes(taskId)}<CheckIcon />{/if}
+										</div>
+									</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Group>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
 				{/if}
-				{#if editMode}
+				<!-- {#if editMode}
 					{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
 						<div class="text-primary my-1 flex items-center text-sm">
 							<TriangleAlertIcon class="mr-2 size-4" />
 							<p>Run test and generate before saving new edits to observe how the bot behaves</p>
 						</div>
 					{/if}
-				{/if}
+				{/if} -->
 				{#if !editMode}
 					{#if data.edits.length > 0}
 						<div class="mt-2 flex items-center justify-between">
@@ -543,6 +611,14 @@
 						</div>
 					{/if}
 				{:else}
+					{#if checkEmptyTask(editedTasks)}
+						<Alert.Root class="border-my-pink text-my-pink my-1">
+							<TriangleAlertIcon />
+							<Alert.Description class="text-my-pink">
+								Task fields must not be left empty.
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
 					<div class="mt-2 flex items-center justify-between">
 						<!-- Test Button -->
 						<Button
@@ -552,7 +628,8 @@
 								_.isEqual(editedTasks, testedTasks) ||
 								runningTest ||
 								generatingCase ||
-								savingEdit}
+								savingEdit ||
+								checkEmptyTask(editedTasks)}
 							onclick={async () => {
 								await runTest();
 							}}
@@ -564,6 +641,40 @@
 							{/if}
 						</Button>
 						<div class="flex items-center gap-2">
+							<!-- Diff Button -->
+							<Dialog.Root>
+								<Dialog.Trigger
+									class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+									disabled={(data.edits.length > 0
+										? _.isEqual(editedTasks, data.edits[0].tasks)
+										: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+										runningTest ||
+										generatingCase ||
+										savingEdit}
+								>
+									<DiffIcon />
+									Diff
+								</Dialog.Trigger>
+								<Dialog.Content class="max-h-[80vh]">
+									<Dialog.Header>
+										<Dialog.Title>Compare the differences</Dialog.Title>
+										<Dialog.Description>
+											The highlighted and strikethrough text indicates the edits you made to the
+											current bot instructions.
+										</Dialog.Description>
+									</Dialog.Header>
+									<ScrollArea class="h-[50vh] w-full">
+										{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+											<div class="pt-4">
+												<TaskDiffSection
+													oldTask={data.originalTasks.tasks[taskId]}
+													newTask={editedTasks[taskId]}
+												/>
+											</div>
+										{/each}
+									</ScrollArea>
+								</Dialog.Content>
+							</Dialog.Root>
 							<!-- Reset Button -->
 							<Button
 								variant="secondary"
@@ -671,15 +782,16 @@
 																	hour12: false
 																})}
 															</p>
-															{#each Object.entries(edit.tasks).sort() as [taskId, task] (taskId)}
+															<p class="text-foreground mt-2">
+																The highlighted and strikethrough text show the differences between
+																the edits made and the original bot instructions prior to any edits
+																proposed here.
+															</p>
+															{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
 																<div class="pt-4">
 																	<TaskDiffSection
-																		oldName={data.originalTasks.tasks[taskId].name}
-																		oldTrigger={data.originalTasks.tasks[taskId].trigger}
-																		oldAction={data.originalTasks.tasks[taskId].action}
-																		newName={edit.tasks[taskId].name}
-																		newTrigger={edit.tasks[taskId].trigger}
-																		newAction={edit.tasks[taskId].action}
+																		oldTask={data.originalTasks.tasks[taskId]}
+																		newTask={edit.tasks[taskId]}
 																	/>
 																</div>
 															{/each}
@@ -772,8 +884,8 @@
 						<TriangleAlertIcon />
 						<!-- <Alert.Title>Heads up!</Alert.Title> -->
 						<Alert.Description class="text-primary">
-							Run test and generate to see the bot's updated responses and review generated cases to
-							identify any potential issues with your edit.
+							Before saving new edits, run test + generate to see the bot's updated responses and
+							review generated cases to identify any potential issues with your edit.
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
@@ -812,7 +924,7 @@
 												bind:this={testCaseRefs[i]}
 												{...testCase}
 												testCaseBadge={true}
-												tasks={data.originalTasks.tasks}
+												tasks={editedTasks}
 												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 												user={data.user}
@@ -848,7 +960,9 @@
 						<Button
 							variant="secondary"
 							class="hover:cursor-pointer"
-							disabled={generatingCase || data.edits.length === 0}
+							disabled={generatingCase ||
+								(data.edits.length === 0 && _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+								checkEmptyTask(editedTasks)}
 							onclick={async () => {
 								await generateCases($state.snapshot(editedTasks));
 							}}
@@ -893,7 +1007,7 @@
 											channel={generatedCase.channel}
 											userMessage={generatedCase.userMessage}
 											tasks={editedTasks}
-											checkingBadge={generatedCase.label}
+											checkingBadge={generatedCase.rating >= 2 ? true : false}
 											user={data.user}
 											generatedId={generatedCase.tmpId}
 											{addGeneratedCaseFunction}
@@ -1064,7 +1178,8 @@
 										checkingCaseManually ||
 										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel) ||
 										runningTest ||
-										savingEdit}
+										savingEdit ||
+										checkEmptyTask(editedTasks)}
 									onclick={async () => {
 										checkingCaseManually = true;
 										showCaseError = false;
@@ -1247,7 +1362,7 @@
 									{:else}
 										<BotMessageSquareIcon class="size-4" />
 									{/if}
-									Generate Response
+									Bot Response
 								</Button>
 								<div>
 									<!-- Clear Button -->

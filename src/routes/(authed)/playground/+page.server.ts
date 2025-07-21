@@ -5,6 +5,8 @@ import { createCaseSchema, playgroundCreateProposalSchema } from '$lib/schema.js
 
 import { zod } from 'sveltekit-superforms/adapters';
 
+import _ from 'lodash';
+
 export const load: PageServerLoad = async ({ fetch, locals }) => {
 	try {
 		const res = await fetch('/api/taskHistory?latest=true');
@@ -46,12 +48,46 @@ export const actions: Actions = {
 		};
 	},
 	createProposal: async (event) => {
-		const formProposal = await superValidate(event, zod(playgroundCreateProposalSchema));
-
+		const formData = await event.request.formData();
+		const formProposal = await superValidate(formData, zod(playgroundCreateProposalSchema));
 		if (!formProposal.valid) {
 			return fail(400, { formProposal });
 		}
 
+		// Create Proposal
+		const resProposal = await event.fetch('/api/proposals', {
+			method: 'POST',
+			body: JSON.stringify({ formProposal }),
+			headers: {
+				'Content-Type': 'appplication/json'
+			}
+		});
+		if (!resProposal.ok) {
+			return fail(400, { formProposal });
+		}
+		const dataProposal = await resProposal.json();
+
+		// Create Proposed Edit (If Needed)
+		let editId = undefined;
+		const editedTasks = formData.get('editedTasks');
+		if (!_.isNil(editedTasks) && typeof editedTasks === 'string') {
+			const resEdit = await event.fetch(`/api/proposals/${dataProposal.id}/edits`, {
+				method: 'POST',
+				body: JSON.stringify({
+					tasks: JSON.parse(editedTasks),
+					editor: formProposal.data.initiator
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			if (resEdit.ok) {
+				const resEditData = await resEdit.json();
+				editId = resEditData.id;
+			}
+		}
+
+		// Create Case
 		const resCase = await event.fetch('/api/cases', {
 			method: 'POST',
 			body: JSON.stringify({
@@ -62,9 +98,9 @@ export const actions: Actions = {
 						source: formProposal.data.source,
 						userMessage: formProposal.data.userMessage,
 						botResponse: formProposal.data.botResponse,
-						proposalEditId: formProposal.data.proposalEditId,
-						proposalId: formProposal.data.proposalId,
-						taskHistoryId: formProposal.data.taskHistoryId,
+						proposalEditId: editId === undefined ? '' : editId,
+						proposalId: editId === undefined ? '' : dataProposal.id,
+						taskHistoryId: editId === undefined ? formProposal.data.taskHistoryId : '',
 						triggeredTaskId: formProposal.data.triggeredTaskId,
 						thumbsUp: [], // TODO
 						thumbsDown: [] // TODo
@@ -75,21 +111,20 @@ export const actions: Actions = {
 				'Content-Type': 'appplication/json'
 			}
 		});
-
 		const dataCase = await resCase.json();
 
-		const resProposal = await event.fetch('/api/proposals', {
-			method: 'POST',
-			body: JSON.stringify({ formProposal, caseId: dataCase.id }),
+		await event.fetch(`/api/proposals/${dataProposal.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				action: 'addCase',
+				caseId: dataCase.id
+			}),
 			headers: {
-				'Content-Type': 'appplication/json'
+				'Content-Type': 'application/json'
 			}
 		});
-		if (!resProposal.ok) {
-			return fail(400, { formProposal });
-		}
+
 		// Redirect to the newly created proposal
-		const dataProposal = await resProposal.json();
 		throw redirect(303, `/proposals/${dataProposal.id}`);
 	}
 };

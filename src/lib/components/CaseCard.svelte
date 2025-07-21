@@ -75,19 +75,21 @@
 					'Content-Type': 'application/json'
 				}
 			});
-			const { taskId, botResponse } = await resBot.json();
-			tmpTasks = editedTasks;
-			tmpBotResponse = {
-				id: 'tmp',
-				botResponse: botResponse,
-				createAt: '',
-				proposalEditId: 'tmp',
-				proposalId: page.params.proposalId,
-				taskHistoryId: '',
-				thumbsDown: [],
-				thumbsUp: [],
-				triggeredTask: taskId
-			};
+			if (resBot.ok) {
+				const { taskId, botResponse } = await resBot.json();
+				tmpTasks = editedTasks;
+				tmpBotResponse = {
+					id: 'tmp',
+					botResponse: botResponse,
+					createAt: '',
+					proposalEditId: 'tmp',
+					proposalId: page.params.proposalId,
+					taskHistoryId: '',
+					thumbsDown: [],
+					thumbsUp: [],
+					triggeredTask: taskId
+				};
+			}
 		}
 		loadingBotResponse = false;
 	}
@@ -501,7 +503,7 @@
 											''
 										)}
 								>
-									<BotMessageSquareIcon class="size-4" />Generate Response
+									<BotMessageSquareIcon class="size-4" />Bot Response
 								</Button>
 							{:else}
 								{@render botResponseSection(response)}

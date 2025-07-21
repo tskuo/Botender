@@ -4,32 +4,10 @@ import { getGenerativeModel, Schema } from 'firebase/ai';
 import { ai } from '$lib/firebase';
 import _ from 'lodash';
 
-export async function overspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
-	let prompt: Task | undefined = undefined;
+export async function overspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
+	const prompt = diffTask;
 
 	// Detector Module
-
-	// ALERT: FOCUS ON ONE TASK ONLY NOW
-	for (const [taskId, task] of Object.entries(newTasks)) {
-		if (taskId in oldTasks) {
-			if (
-				_.isEqual(
-					_.pick(oldTasks[taskId], ['trigger', 'action']),
-					_.pick(newTasks[taskId], ['trigger', 'action'])
-				)
-			) {
-				continue;
-			} else {
-				prompt = task;
-				break;
-			}
-		} else {
-			prompt = task;
-			break;
-		}
-	}
-	if (!prompt) return [];
-
 	const detectorSysPrompt = [
 		`You are a helpful assistant supporting users in improving the coverage and generalizability of prompts given to language model-based bots. Your task is to identify parts of a prompt that are overspecified: phrased too narrowly, rigidly, or in ways that depend on surface-level features. These narrow definitions may cause the bot to miss important situations that still align with the prompt's broader intended goal.`,
 		bot_capability,
@@ -249,7 +227,8 @@ export async function overspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
 		return {
 			...testCase,
 			label: evaluatorResult.label,
-			explanation: evaluatorResult.explanation
+			explanation: evaluatorResult.explanation,
+			prompt: prompt
 		};
 	});
 

@@ -3,36 +3,53 @@ import { overspecifiedPipeline } from '$lib/pipelines/overspecifiedPipeline';
 import { generalEvaluator } from '$lib/pipelines/generalEvaluator';
 import { json, error } from '@sveltejs/kit';
 import _ from 'lodash';
+import { trimTaskCustomizer } from '$lib/tasks';
 
 export const POST = async ({ request }) => {
 	try {
 		const { oldTasks, newTasks } = await request.json();
 
-		const underspecifiedCases = await underspecifiedPipeline(oldTasks, newTasks);
-		// const overspecifiedCases = await overspecifiedPipeline(oldTasks, newTasks);
+		const diffTasks: Task[] = [];
 
-		let prompt: Task | undefined = undefined;
-
-		// ALERT: THIS SHOULD BE UPDATED LATER
 		for (const [taskId, task] of Object.entries(newTasks)) {
 			if (taskId in oldTasks) {
 				if (
-					_.isEqual(
+					_.isEqualWith(
 						_.pick(oldTasks[taskId], ['trigger', 'action']),
-						_.pick(newTasks[taskId], ['trigger', 'action'])
+						_.pick(newTasks[taskId], ['trigger', 'action']),
+						trimTaskCustomizer
 					)
 				) {
 					continue;
 				} else {
-					prompt = task;
-					break;
+					diffTasks.push(task as Task);
 				}
 			} else {
-				prompt = task;
-				break;
+				diffTasks.push(task as Task);
 			}
 		}
-		const evaluatedCases = await generalEvaluator(prompt, newTasks, underspecifiedCases);
+
+		// Start both promises (do NOT await yet)
+		const underspecifiedPromise = Promise.all(
+			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
+		);
+		const overspecifiedPromise = Promise.all(
+			diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
+		);
+
+		// Await both in parallel
+		const [underspecifiedResults, overspecifiedResults] = await Promise.all([
+			underspecifiedPromise,
+			overspecifiedPromise
+		]);
+
+		const underspecifiedCases = underspecifiedResults.flat();
+		const overspecifiedCases = overspecifiedResults.flat();
+
+		// Combine both arrays
+		const allRawCases = [...underspecifiedCases, ...overspecifiedCases];
+
+		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });

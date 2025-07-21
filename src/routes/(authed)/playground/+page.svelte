@@ -4,6 +4,10 @@
 
 	// import my components
 	import TaskSection from '$lib/components/TaskSection.svelte';
+	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
+
+	// import my functions
+	import { checkEmptyTask, trimTaskCustomizer, trimWhiteSpaceInTasks } from '$lib/tasks';
 
 	// import ui components
 	import * as Form from '$lib/components/ui/form/index.js';
@@ -17,6 +21,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 
 	// import lucide icons
 	import UndoIcon from '@lucide/svelte/icons/undo';
@@ -30,6 +35,9 @@
 	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
 	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
+	import DiffIcon from '@lucide/svelte/icons/diff';
 
 	// import form-related things
 	import { createCaseSchema, playgroundCreateProposalSchema } from '$lib/schema';
@@ -63,21 +71,25 @@
 	let disableCreateProposalBtn = $state(true);
 	const formProposal = superForm(data.formProposal, {
 		validators: zodClient(playgroundCreateProposalSchema),
-		onSubmit() {
+		onSubmit({ formData }) {
 			disableCreateProposalBtn = true;
+			if (isTaskChanged) formData.set('editedTasks', JSON.stringify(playgroundTasks));
 		},
 		onError() {
 			disableCreateProposalBtn = false;
 		},
 		onUpdated() {
-			disableCreateProposalBtn = true;
+			disableCreateProposalBtn = false;
 		}
 	});
 	const { form: formDataProposal, enhance: enhanceProposal } = formProposal;
 
 	// initialize states
 	let playgroundTasks = $state(data.latestTasks.tasks);
-	let isTaskChanged = $derived(!_.isEqual(playgroundTasks, data.latestTasks.tasks));
+	let testedTasks = $state<Tasks | undefined>(undefined);
+	let isTaskChanged = $derived(
+		!_.isEqualWith(playgroundTasks, data.latestTasks.tasks, trimTaskCustomizer)
+	);
 	let scope = $state('overall');
 	let selectedChannel = $state('');
 	let displayedChannel = $state('');
@@ -89,51 +101,32 @@
 	let showCase = $state(false);
 	let savedCase = $state(false);
 
-	const scopes = [
-		{ value: 'overall', label: 'Overall behaviors' },
-		{ value: 'triggers', label: 'Triggers' }
-	];
+	let scopes = $derived([
+		{ value: 'overall', label: 'All Tasks' },
+		// { value: 'triggers', label: 'Triggers' },
+		...Object.entries(playgroundTasks).map(([taskId, task]) => ({
+			value: taskId,
+			label: `Task: ${playgroundTasks[taskId].name}`
+		}))
+	]);
 
-	for (const taskId in data.latestTasks.tasks) {
-		scopes.push({ value: taskId, label: 'Task: ' + data.latestTasks.tasks[taskId].name });
-	}
+	let removeTaskFunction = (taskId: string) => {
+		playgroundTasks = _.omit(playgroundTasks, [taskId]);
+	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
 		<div class="flex items-center justify-between p-4">
 			<h2 class="text-xl font-bold">Playground</h2>
-			<!-- <Button
-				variant="secondary"
-				onclick={() => {
-					showCase = false;
-				}}
-			>
-				<PaintbrushIcon class="size-4" />
-				Clear
-			</Button> -->
 		</div>
 		<Separator />
 	</div>
-
 	<div class="grid flex-1 md:grid-cols-5">
-		<div class="border-r p-2 md:col-span-2">
+		<div class="border-r p-4 md:col-span-2">
 			<ScrollArea class="h-full w-full">
-				{#if isTaskChanged}
-					<div class="p-2">
-						<Alert.Root class="border-primary text-primary">
-							<PencilIcon />
-							<Alert.Title><h4>Heads up! You've edited the bot's prompts</h4></Alert.Title>
-							<Alert.Description class="text-primary">
-								Your changes will affect the bot's responses here in the playground, but not on your
-								community platform. To update the bot on your community platform, you'll need to
-								initiate a proposal.
-							</Alert.Description>
-						</Alert.Root>
-					</div>
-				{/if}
-				<h4 class="p-2 font-medium">Scope</h4>
-				<div class="px-2">
+				<h4 class="font-medium">Scope</h4>
+				<div class="pt-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
 						<Select.Trigger class="w-full">
 							{scopes.find((s) => s.value === scope)?.label ?? 'Select the scope'}
@@ -147,36 +140,103 @@
 						</Select.Content>
 					</Select.Root>
 				</div>
-				<div class="px-2 py-2">
-					{#each Object.entries(playgroundTasks) as [taskId, task] (taskId)}
+				<div class="pt-2">
+					{#each [...Object.keys(_.omit( playgroundTasks, ['new'] )).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === taskId}
 							<div class="pt-4">
 								<TaskSection
+									id={taskId}
 									bind:name={playgroundTasks[taskId].name}
 									bind:trigger={playgroundTasks[taskId].trigger}
 									bind:action={playgroundTasks[taskId].action}
 									triggersOnly={scope === 'triggers'}
+									{removeTaskFunction}
 								/>
 							</div>
 						{/if}
 					{/each}
 				</div>
 				<Button
-					class="m-2"
+					class="mt-2 w-full hover:cursor-pointer"
 					variant="secondary"
-					disabled={!isTaskChanged}
+					size="sm"
+					hidden={'new' in playgroundTasks || scope !== 'overall'}
+					disabled={'new' in playgroundTasks}
 					onclick={() => {
-						playgroundTasks = data.latestTasks.tasks;
+						playgroundTasks['new'] = {
+							name: '',
+							trigger: '',
+							action: ''
+						};
 					}}
 				>
-					<UndoIcon class="size-4" />
-					Reset
+					<PlusIcon class="size-4" />
 				</Button>
+				<div class="flex items-center gap-2 pt-2">
+					<Dialog.Root>
+						<Dialog.Trigger
+							class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+							disabled={!isTaskChanged}
+						>
+							<DiffIcon />
+							Diff
+						</Dialog.Trigger>
+						<Dialog.Content class="max-h-[80vh]">
+							<Dialog.Header>
+								<Dialog.Title>Compare the differences</Dialog.Title>
+								<Dialog.Description>
+									The highlighted and strikethrough text indicates the edits you made to the current
+									bot instructions.
+								</Dialog.Description>
+							</Dialog.Header>
+							<ScrollArea class="h-[50vh] w-full">
+								{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
+									<div class="pt-4">
+										<TaskDiffSection
+											oldTask={data.latestTasks.tasks[taskId]}
+											newTask={playgroundTasks[taskId]}
+										/>
+									</div>
+								{/each}
+							</ScrollArea>
+						</Dialog.Content>
+					</Dialog.Root>
+					<Button
+						class="hover:cursor-pointer"
+						variant="secondary"
+						disabled={!isTaskChanged}
+						onclick={() => {
+							playgroundTasks = data.latestTasks.tasks;
+						}}
+					>
+						<UndoIcon class="size-4" />
+						Reset
+					</Button>
+				</div>
 			</ScrollArea>
 		</div>
-		<div class="p-3 md:col-span-3">
+		<div class="p-4 md:col-span-3">
 			<div class="flex h-full flex-col justify-between">
-				<div>
+				<div class="flex-1">
+					{#if isTaskChanged}
+						<Alert.Root class="border-primary text-primary mb-2">
+							<PencilIcon />
+							<Alert.Title><h4>Heads up! You've edited the bot.</h4></Alert.Title>
+							<Alert.Description class="text-primary">
+								The bot in this playground will now behave according to your edit. You can enter
+								example user messages in a selected channel to see how the bot responds. Note that
+								changing the task name will not impact the bot's response.
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if checkEmptyTask(playgroundTasks)}
+						<Alert.Root class="border-my-pink text-my-pink mb-2">
+							<TriangleAlertIcon />
+							<Alert.Description class="text-my-pink">
+								Task fields must not be left empty.
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
 					{#if showCase}
 						<div class="mb-1 flex items-center">
 							<HashIcon class="mr-2 size-4" />
@@ -319,15 +379,19 @@
 									{/if}
 								</form>
 								<Dialog.Root>
-									<Dialog.Trigger class={buttonVariants({ variant: 'default' })}>
+									<Dialog.Trigger
+										class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}
+										disabled={!_.isEqualWith(playgroundTasks, testedTasks, trimTaskCustomizer)}
+									>
 										<LightbulbIcon class="size-4" />
 										New Proposal
 									</Dialog.Trigger>
-									<Dialog.Content>
+									<Dialog.Content class="max-h-[80vh]">
 										<Dialog.Header>
 											<Dialog.Title>Initiate a new proposal</Dialog.Title>
 											<Dialog.Description>
-												Initiate a proposal based on the case you just entered and ran
+												Describe the issue you've observed with the current bot's behavior, and
+												explain how you would like it to be improved.
 											</Dialog.Description>
 										</Dialog.Header>
 										<form method="POST" use:enhanceProposal action="?/createProposal">
@@ -355,11 +419,7 @@
 												<Form.Control>
 													{#snippet children({ props })}
 														<Form.Label>Description</Form.Label>
-														<Textarea
-															{...props}
-															bind:value={$formDataProposal.description}
-															placeholder="Describe the issue you've noticed and/or suggest any changes you'd like to propose for the bot."
-														/>
+														<Textarea {...props} bind:value={$formDataProposal.description} />
 													{/snippet}
 												</Form.Control>
 												<Form.Description></Form.Description>
@@ -375,7 +435,7 @@
 												<Form.FieldErrors />
 											</Form.Field>
 											<!-- Form Field for Create Case -->
-											<Form.Field {form} name="channel">
+											<Form.Field form={formProposal} name="channel">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value={displayedChannel} />
@@ -384,7 +444,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="userMessage">
+											<Form.Field form={formProposal} name="userMessage">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value={displayedUserMessage} />
@@ -393,7 +453,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="realUserMessage">
+											<Form.Field form={formProposal} name="realUserMessage">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Checkbox class="hidden" {...props} checked={false} />
@@ -402,7 +462,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="triggeredTaskId">
+											<Form.Field form={formProposal} name="triggeredTaskId">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value={triggeredTaskId} />
@@ -411,7 +471,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="botResponse">
+											<Form.Field form={formProposal} name="botResponse">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value={displayedBotResponse} />
@@ -420,7 +480,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="source">
+											<Form.Field form={formProposal} name="source">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value="playground" />
@@ -429,7 +489,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="proposalEditId">
+											<Form.Field form={formProposal} name="proposalEditId">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value="" />
@@ -438,7 +498,7 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field {form} name="proposalId">
+											<Form.Field form={formProposal} name="proposalId">
 												<Form.Control>
 													{#snippet children({ props })}
 														<Input type="hidden" {...props} value="" />
@@ -447,7 +507,23 @@
 												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Button disabled={disableCreateProposalBtn}>
+											{#if isTaskChanged}
+												<Label>Review your proposed edit:</Label>
+												<ScrollArea class="mt-1 mb-3 h-[40%] w-full text-sm">
+													{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
+														<div class="pt-4">
+															<TaskDiffSection
+																oldTask={data.latestTasks.tasks[taskId]}
+																newTask={playgroundTasks[taskId]}
+															/>
+														</div>
+													{/each}
+												</ScrollArea>
+											{/if}
+											<Form.Button
+												disabled={disableCreateProposalBtn ||
+													!_.isEqualWith(playgroundTasks, testedTasks, trimTaskCustomizer)}
+											>
 												{#if disableCreateProposalBtn}
 													<LoaderCircleIcon class="size-4 animate-spin" />
 												{/if}
@@ -474,13 +550,17 @@
 					</Select.Root>
 					<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
 					<Button
-						class="w-fit self-end"
-						disabled={running || enteredUserMessage.trim() === '' || selectedChannel === ''}
+						class="w-fit self-end hover:cursor-pointer"
+						disabled={running ||
+							enteredUserMessage.trim() === '' ||
+							selectedChannel === '' ||
+							checkEmptyTask(playgroundTasks)}
 						onclick={async () => {
 							running = true;
 							showCase = true;
 							displayedChannel = selectedChannel;
 							displayedUserMessage = enteredUserMessage;
+							playgroundTasks = trimWhiteSpaceInTasks(playgroundTasks);
 							const response = await fetch('/api/bot', {
 								method: 'POST',
 								body: JSON.stringify({
@@ -502,6 +582,7 @@
 							disableCreateProposalBtn = false;
 							savedCase = false;
 							enteredUserMessage = '';
+							testedTasks = $state.snapshot(playgroundTasks);
 						}}
 					>
 						{#if running}
@@ -509,7 +590,7 @@
 						{:else}
 							<BotMessageSquareIcon class="size-4" />
 						{/if}
-						Generate Response
+						Bot Response
 					</Button>
 				</div>
 			</div>

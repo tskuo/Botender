@@ -2,34 +2,11 @@ import { bot } from '$lib/bot';
 import { bot_capability, input_specification, community_tone } from '$lib/pipelines/prompts';
 import { getGenerativeModel, Schema } from 'firebase/ai';
 import { ai } from '$lib/firebase';
-import _ from 'lodash';
 
-export async function underspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
-	let prompt: Task | undefined = undefined;
+export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
+	const prompt = diffTask;
 
 	// Detector Module
-
-	// ALERT: FOCUS ON ONE TASK ONLY NOW
-	for (const [taskId, task] of Object.entries(newTasks)) {
-		if (taskId in oldTasks) {
-			if (
-				_.isEqual(
-					_.pick(oldTasks[taskId], ['trigger', 'action']),
-					_.pick(newTasks[taskId], ['trigger', 'action'])
-				)
-			) {
-				continue;
-			} else {
-				prompt = task;
-				break;
-			}
-		} else {
-			prompt = task;
-			break;
-		}
-	}
-	if (!prompt) return [];
-
 	const detectorSysPrompt = [
 		`You are a helpful assistant supporting users in improving the clarity and consistency of prompts given to language model-based bots. Your task is to identify underspecified parts of a prompt: phrases that could be interpreted in different ways by different people, or that might cause the bot to behave inconsistently or unpredictably.`,
 		bot_capability,
@@ -225,7 +202,8 @@ export async function underspecifiedPipeline(oldTasks: Tasks, newTasks: Tasks) {
 		return {
 			...testCase,
 			label: evaluatorResult.label,
-			explanation: evaluatorResult.explanation
+			explanation: evaluatorResult.explanation,
+			prompt: prompt
 		};
 	});
 

@@ -2,7 +2,7 @@ import { getGenerativeModel, Schema } from 'firebase/ai';
 import { ai } from '$lib/firebase';
 import _ from 'lodash';
 
-export async function generalEvaluator(prompt, newTasks, testCases) {
+export async function generalEvaluator(newTasks: Tasks, testCases) {
 	const systemPrompt = [
 		`You are a helpful assistant tasked with evaluating how provocative a given test case is, to support prompt designers in refining a language model-based bot's prompt. In this context, a case consists of a user input and the bot's response, which is generated according to the trigger and action described in the prompt. Your task is to assess the level of provocativeness of each case, providing valuable feedback to help improve the design of the bot's prompt.`,
 		`You will be provided with the following inputs:`,
@@ -42,7 +42,7 @@ export async function generalEvaluator(prompt, newTasks, testCases) {
 
 	const evaluatorPromises = testCases.map(async (testCase) => {
 		const evaluatorUserPrompt = [
-			`prompt: \n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`,
+			`prompt: \n\t Trigger: ${testCase.prompt.trigger}\n\t Action: ${testCase.prompt.action}`,
 			`reasoning: ${testCase.reasoning}`,
 			`case:`,
 			`\t- channel: ${testCase.channel}`,
