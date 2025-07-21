@@ -859,7 +859,9 @@
 				<div class="flex items-center gap-2">
 					<h3>Check how the bot would behave in these cases</h3>
 					<Popover.Root>
-						<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+						<Popover.Trigger>
+							<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
+						</Popover.Trigger>
 						<Popover.Content class="text-sm">
 							For each case, give a thumbs up if the bot's response is good, or a thumbs down if
 							it's not. If you notice any issues, try editing the prompt to address them. If the
@@ -895,7 +897,9 @@
 					<div class="flex items-center gap-2 pb-2">
 						<h4>Saved test cases ( {testCases.length} )</h4>
 						<Popover.Root>
-							<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+							<Popover.Trigger>
+								<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
+							</Popover.Trigger>
 							<Popover.Content class="text-sm">
 								Cases saved collectively by everyone to observe how the bot behaves based on the
 								proposed edits.
@@ -950,7 +954,9 @@
 								{/if} )
 							</h4>
 							<Popover.Root>
-								<Popover.Trigger><InfoIcon class="text-muted-foreground size-4" /></Popover.Trigger>
+								<Popover.Trigger>
+									<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
+								</Popover.Trigger>
 								<Popover.Content class="text-sm">
 									Cases generated to uncover potential issues with the proposed edits. You can save
 									relevant ones as test cases.
