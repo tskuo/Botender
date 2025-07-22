@@ -24,6 +24,8 @@
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -58,6 +60,7 @@
 	import FlameIcon from '@lucide/svelte/icons/flame';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import DiffIcon from '@lucide/svelte/icons/diff';
+	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -65,11 +68,14 @@
 	// import svelte features
 	import { onMount } from 'svelte';
 	import { tick } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, goto } from '$app/navigation';
 	import { slide } from 'svelte/transition';
+	import { redirect } from '@sveltejs/kit';
 
 	// data props
 	let { data }: PageProps = $props();
+
+	let DEPLOY_THRESHOLD = 2;
 
 	// state for the proposal
 	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
@@ -390,6 +396,52 @@
 		savingEdit = false;
 	};
 
+	let closeProposal = async () => {
+		await fetch(`/api/proposals/${data.proposal.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				action: 'closeProposal'
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		goto(`/proposals`);
+	};
+
+	let deployProposal = async () => {
+		if (data.edits.length === 0 || upvotes.length < DEPLOY_THRESHOLD || _.isNil(data.user.userId)) {
+			return;
+		}
+		const resTaskHistory = await fetch('/api/taskHistory', {
+			method: 'POST',
+			body: JSON.stringify({
+				formTaskHistory: {
+					data: {
+						tasks: data.edits[0].tasks,
+						creator: data.user.userId
+					}
+				},
+				caseOnly: true
+			}),
+			headers: {
+				'Content-Type': 'appplication/json'
+			}
+		});
+		if (resTaskHistory.ok) {
+			await fetch(`/api/proposals/${data.proposal.id}`, {
+				method: 'PATCH',
+				body: JSON.stringify({
+					action: 'closeProposal'
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			goto(`/tasks`);
+		}
+	};
+
 	let removeTaskFunction = (taskId: string) => {
 		editScope = editScope.filter((i) => i !== taskId);
 		editedTasks = _.omit(editedTasks, [taskId]);
@@ -417,6 +469,15 @@
 	<div class="grid h-full flex-auto md:grid-cols-5">
 		<div class="overflow-auto border-r p-2 md:col-span-2">
 			<div class="mb-4 p-2">
+				{#if !data.proposal.open}
+					<Alert.Root class="border-my-pink text-my-pink mb-2">
+						<TriangleAlertIcon />
+						<Alert.Title><h4>This proposal has been closed.</h4></Alert.Title>
+						<Alert.Description class="text-my-pink">
+							<p>This proposal is now available for viewing only.</p>
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
 					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
@@ -450,6 +511,7 @@
 					{#if editMode}
 						<Button
 							disabled={runningTest || savingEdit || generatingCase}
+							hidden={!data.proposal.open}
 							variant="ghost"
 							size="icon"
 							class="hover:cursor-pointer"
@@ -463,6 +525,7 @@
 					{:else}
 						<Button
 							disabled={generatingCase || runningTest}
+							hidden={!data.proposal.open}
 							variant="secondary"
 							class="hover:cursor-pointer"
 							onclick={() => (editMode = true)}
@@ -550,7 +613,7 @@
 					{/if}
 				{/if} -->
 				{#if !editMode}
-					{#if data.edits.length > 0}
+					{#if data.edits.length > 0 && data.proposal.open}
 						<div class="mt-2 flex items-center justify-between">
 							<ToggleGroup.Root
 								type="single"
@@ -608,6 +671,65 @@
 									<p>{downvotes.length}</p>
 								</ToggleGroup.Item>
 							</ToggleGroup.Root>
+							<AlertDialog.Root>
+								<AlertDialog.Trigger
+									class={buttonVariants()}
+									disabled={upvotes.length < DEPLOY_THRESHOLD}
+								>
+									<LandPlotIcon class="size-4" />
+									Deploy
+								</AlertDialog.Trigger>
+								<AlertDialog.Content>
+									<AlertDialog.Header>
+										<AlertDialog.Title>
+											Are you sure you want to deploy this proposed edit?
+										</AlertDialog.Title>
+										<AlertDialog.Description>
+											Review the changes to the original and latest tasks below to ensure they are
+											correct. If you are satisfied, click the submit button to confirm deployment.
+										</AlertDialog.Description>
+									</AlertDialog.Header>
+									<Tabs.Root value="original" class="mt-2 w-full">
+										<Tabs.List class="w-full">
+											<Tabs.Trigger value="original">Compare with Original Tasks</Tabs.Trigger>
+											<Tabs.Trigger value="latest">Compare with Latest Tasks</Tabs.Trigger>
+										</Tabs.List>
+										<Tabs.Content value="original">
+											<ScrollArea class="h-[50vh] w-full">
+												{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
+													<div class="pt-4">
+														<TaskDiffSection
+															oldTask={data.originalTasks.tasks[taskId]}
+															newTask={data.edits[0].tasks[taskId]}
+														/>
+													</div>
+												{/each}
+											</ScrollArea>
+										</Tabs.Content>
+										<Tabs.Content value="latest">
+											<ScrollArea class="h-[50vh] w-full">
+												{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
+													<div class="pt-4">
+														<TaskDiffSection
+															oldTask={data.latestTasks.tasks[taskId]}
+															newTask={data.edits[0].tasks[taskId]}
+														/>
+													</div>
+												{/each}
+											</ScrollArea>
+										</Tabs.Content>
+									</Tabs.Root>
+									<AlertDialog.Footer>
+										<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+										<AlertDialog.Action
+											disabled={upvotes.length < DEPLOY_THRESHOLD}
+											onclick={async () => {
+												deployProposal();
+											}}>Submit</AlertDialog.Action
+										>
+									</AlertDialog.Footer>
+								</AlertDialog.Content>
+							</AlertDialog.Root>
 						</div>
 					{/if}
 				{:else}
@@ -782,19 +904,52 @@
 																	hour12: false
 																})}
 															</p>
-															<p class="text-foreground mt-2">
-																The highlighted and strikethrough text show the differences between
-																the edits made and the original bot instructions prior to any edits
-																proposed here.
+															<p class="mt-2">
+																<Alert.Root>
+																	<InfoIcon />
+																	<Alert.Title><h4>Original Task v.s. Latest Task</h4></Alert.Title>
+																	<Alert.Description>
+																		The original task refers to the version in place when this
+																		proposal was first initiated, while the latest task is the
+																		currently deployed version that determines how the bot behaves
+																		within your community platform now.
+																	</Alert.Description>
+																</Alert.Root>
 															</p>
-															{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
-																<div class="pt-4">
-																	<TaskDiffSection
-																		oldTask={data.originalTasks.tasks[taskId]}
-																		newTask={edit.tasks[taskId]}
-																	/>
-																</div>
-															{/each}
+															<Tabs.Root value="original" class="mt-2 w-full">
+																<Tabs.List class="w-full">
+																	<Tabs.Trigger value="original">
+																		Compare with Original Tasks
+																	</Tabs.Trigger>
+																	<Tabs.Trigger value="latest">
+																		Compare with Latest Tasks
+																	</Tabs.Trigger>
+																</Tabs.List>
+																<Tabs.Content value="original">
+																	<ScrollArea class="h-[50vh] w-full">
+																		{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
+																			<div class="pt-4">
+																				<TaskDiffSection
+																					oldTask={data.originalTasks.tasks[taskId]}
+																					newTask={edit.tasks[taskId]}
+																				/>
+																			</div>
+																		{/each}
+																	</ScrollArea>
+																</Tabs.Content>
+																<Tabs.Content value="latest">
+																	<ScrollArea class="h-[50vh] w-full">
+																		{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
+																			<div class="pt-4">
+																				<TaskDiffSection
+																					oldTask={data.latestTasks.tasks[taskId]}
+																					newTask={edit.tasks[taskId]}
+																				/>
+																			</div>
+																		{/each}
+																	</ScrollArea>
+																</Tabs.Content>
+															</Tabs.Root>
 														</Dialog.Description>
 													</Dialog.Header>
 												</Dialog.Content>
@@ -932,7 +1087,7 @@
 												edits={data.edits}
 												taskHistoryId={data.proposal.taskHistoryId}
 												user={data.user}
-												{removeCaseFunction}
+												removeCaseFunction={data.proposal.open ? removeCaseFunction : undefined}
 											/>
 										</div>
 									</Carousel.Item>
@@ -969,6 +1124,7 @@
 							disabled={generatingCase ||
 								(data.edits.length === 0 && _.isEqual(editedTasks, data.originalTasks.tasks)) ||
 								checkEmptyTask(editedTasks)}
+							hidden={!data.proposal.open}
 							onclick={async () => {
 								await generateCases($state.snapshot(editedTasks));
 							}}
@@ -1029,7 +1185,7 @@
 					</Carousel.Root>
 				</div>
 			</div>
-			<div class="w-full shrink-0">
+			<div class="w-full shrink-0" hidden={!data.proposal.open}>
 				<Sheet.Root
 					onOpenChangeComplete={(openSheet) => {
 						if (!openSheet) clearManualCasePanel();

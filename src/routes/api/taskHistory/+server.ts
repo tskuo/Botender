@@ -1,5 +1,13 @@
 import { json, error } from '@sveltejs/kit';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import {
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	limit,
+	addDoc,
+	serverTimestamp
+} from 'firebase/firestore';
 import { db } from '$lib/firebase';
 
 export const GET = async ({ url }) => {
@@ -33,5 +41,33 @@ export const GET = async ({ url }) => {
 		}
 	} catch {
 		throw error(400, 'Fail to fetch taskHistory from Firestore.');
+	}
+};
+
+export const POST = async ({ request }) => {
+	try {
+		const { formTaskHistory } = await request.json();
+		const tasks: Tasks = { ...formTaskHistory.data.tasks };
+
+		if ('new' in tasks) {
+			const taskDocRef = await addDoc(collection(db, 'tasks'), {
+				action: tasks['new'].action,
+				createAt: serverTimestamp(),
+				name: tasks['new'].name,
+				trigger: tasks['new'].trigger
+			});
+			const newId = taskDocRef.id;
+			tasks[newId] = { ...tasks['new'] };
+			delete tasks['new'];
+		}
+
+		const docRef = await addDoc(collection(db, 'taskHistory'), {
+			createAt: serverTimestamp(),
+			tasks,
+			creator: formTaskHistory.data.creator
+		});
+		return json({ id: docRef.id }, { status: 201 });
+	} catch {
+		throw error(400, 'Fail to create a new proposal in the database.');
 	}
 };

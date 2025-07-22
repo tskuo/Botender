@@ -23,7 +23,7 @@
 
 <div class="border-l">
 	<div class="pl-3">
-		<h4 class="font-medium">
+		<h4 class="text-base font-medium">
 			{#if oldTask.name === '' && oldTask.trigger === '' && oldTask.action === ''}
 				New
 			{:else if newTask.name === '' && newTask.trigger === '' && newTask.action === ''}
@@ -36,7 +36,7 @@
 			{/each}
 		</h4>
 		<div class="grid w-full gap-1.5 pt-3">
-			<Label for="trigger">Trigger</Label>
+			<Label class="text-base" for="trigger"><h4>Trigger</h4></Label>
 			<div>
 				{#each diffTrigger as t}
 					<span class={t.added ? 'text-my-green' : t.removed ? 'text-my-pink line-through' : ''}>
@@ -46,7 +46,7 @@
 			</div>
 		</div>
 		<div class="grid w-full gap-1.5 pt-3">
-			<Label for="action">Action</Label>
+			<Label class="text-base" for="action"><h4>Action</h4></Label>
 			<div>
 				{#each diffAction as a}
 					<span class={a.added ? 'text-my-green' : a.removed ? 'text-my-pink line-through' : ''}>

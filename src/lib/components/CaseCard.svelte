@@ -46,7 +46,7 @@
 		checkingBadge = false,
 		user,
 		generatedId = undefined,
-		removeCaseFunction = () => {},
+		removeCaseFunction = undefined,
 		addGeneratedCaseFunction = () => {}
 	} = $props();
 
@@ -527,7 +527,7 @@
 					{/if}
 				{/if}
 				{#if page.url.pathname.startsWith('/proposals/')}
-					<h4 class="mt-6">Bot responses from all edits and the initial prompt:</h4>
+					<h4 class="mt-6">Bot responses from all edits and the original prompt:</h4>
 					<ScrollArea class="h-64 w-full">
 						<Accordion.Root type="single" class="w-full">
 							{#if !_.isNil(tmpBotResponse)}
@@ -587,7 +587,7 @@
 								{/each}
 								<Accordion.Item value="task-{taskHistoryId}">
 									<Accordion.Trigger>
-										initial prompt {#if edits.length === 0 && _.isNil(tmpBotResponse)}(current){/if}
+										original prompt {#if edits.length === 0 && _.isNil(tmpBotResponse)}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}
@@ -601,7 +601,7 @@
 											)}
 											{#if response === undefined}
 												<div class="flex items-center justify-between">
-													<p>No response has been generated from the initial prompt</p>
+													<p>No response has been generated from the original prompt</p>
 													<Button
 														class="text-muted-foreground px-2 hover:cursor-pointer"
 														variant="secondary"
@@ -620,7 +620,7 @@
 							{/if}
 						</Accordion.Root>
 					</ScrollArea>
-					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/')}
+					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/') && removeCaseFunction !== undefined}
 						<Button
 							disabled={removing}
 							variant="secondary"

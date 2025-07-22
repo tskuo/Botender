@@ -12,6 +12,9 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 		const resOriginalTasks = await fetch(`/api/taskHistory/${proposal.taskHistoryId}`);
 		const originalTasks = await resOriginalTasks.json();
 
+		const resLatestTasks = await fetch('/api/taskHistory?latest=true');
+		const latestTasks = await resLatestTasks.json();
+
 		const testCases = [];
 
 		for (const caseId of proposal.testCases) {
@@ -26,6 +29,7 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 			proposal,
 			edits: edits.edits,
 			originalTasks,
+			latestTasks,
 			testCases,
 			user: locals.user
 		};

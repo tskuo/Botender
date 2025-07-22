@@ -10,7 +10,7 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			user: User | null;
+			user: User;
 		}
 		// interface PageData {}
 		// interface PageState {}

@@ -49,6 +49,10 @@ export const PATCH = async ({ params, request, locals }) => {
 					downvotes: arrayRemove(userId)
 				});
 			}
+		} else if (action === 'closeProposal') {
+			await updateDoc(doc(db, 'proposals', params.proposalId), {
+				open: false
+			});
 		}
 		return json({ status: 201 });
 	} catch {
