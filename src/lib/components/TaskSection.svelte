@@ -7,6 +7,7 @@
 
 	// import lucide icons
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
 
 	let {
 		id,
@@ -15,7 +16,8 @@
 		action = $bindable(''),
 		triggersOnly = false,
 		readonly = false,
-		removeTaskFunction = () => {}
+		removeTaskFunction = () => {},
+		hideTaskFunction = undefined
 	} = $props();
 </script>
 
@@ -32,15 +34,29 @@
 					{readonly}
 				/>
 			</div>
-			<Button
-				class="hover:cursor-pointer"
-				variant="secondary"
-				onclick={() => {
-					removeTaskFunction(id);
-				}}
-			>
-				<Trash2Icon class="size-4" />Delete
-			</Button>
+			<div class="flex items-center gap-2">
+				<Button
+					class="hover:cursor-pointer"
+					variant="secondary"
+					onclick={() => {
+						// removeTaskFunction(id);
+						name = '';
+						trigger = '';
+						action = '';
+					}}
+				>
+					<Trash2Icon class="size-4" />Delete
+				</Button>
+				<Button
+					class="hover:cursor-pointer"
+					variant="secondary"
+					onclick={() => {
+						hideTaskFunction(id);
+					}}
+				>
+					<EyeClosedIcon class="size-4" />Hide
+				</Button>
+			</div>
 		</div>
 		<div class="grid w-full gap-1.5 pt-3">
 			<Label for="trigger">Trigger</Label>

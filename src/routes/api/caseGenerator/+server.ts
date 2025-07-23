@@ -30,17 +30,17 @@ export const POST = async ({ request }) => {
 			}
 		}
 
-		// const underspecifiedPromise = Promise.all(
-		// 	diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
-		// );
+		const underspecifiedPromise = Promise.all(
+			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
+		);
 
 		// const overspecifiedPromise = Promise.all(
 		// 	diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
 		// );
 
-		const consequencePromise = Promise.all(
-			diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
-		);
+		// const consequencePromise = Promise.all(
+		// 	diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
+		// );
 
 		// Await in parallel
 		// const [underspecifiedResults, overspecifiedResults, consequenceResults] = await Promise.all([
@@ -49,17 +49,17 @@ export const POST = async ({ request }) => {
 		// 	consequencePromise
 		// ]);
 
-		// const underspecifiedResults = await underspecifiedPromise;
+		const underspecifiedResults = await underspecifiedPromise;
 		// const overspecifiedResults = await overspecifiedPromise;
-		const consequenceResults = await consequencePromise;
+		// const consequenceResults = await consequencePromise;
 
-		// const underspecifiedCases = underspecifiedResults.flat();
+		const underspecifiedCases = underspecifiedResults.flat();
 		// const overspecifiedCases = overspecifiedResults.flat();
-		const consequenceCases = consequenceResults.flat();
+		// const consequenceCases = consequenceResults.flat();
 
 		// Combine arrays
 		// const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
-		const allRawCases = consequenceCases;
+		const allRawCases = underspecifiedCases;
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
 
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));

@@ -54,13 +54,11 @@
 					</Avatar.Root>
 					<h1 class="text-2xl font-bold">Botender</h1>
 				</div>
-				<!-- <h1 class="p-2 text-2xl font-bold">Botender</h1> -->
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 	</Sidebar.Header>
 	<Sidebar.Content>
 		<Sidebar.Group>
-			<!-- <Sidebar.GroupLabel>Application</Sidebar.GroupLabel> -->
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					{#each items as item (item.title)}

@@ -7,7 +7,13 @@ export function checkEmptyTask(tasks: Tasks) {
 	return hasEmptyString;
 }
 
-export function trimTaskCustomizer(objValue: any, othValue: any) {
+export function isTaskEmpty(task: Task) {
+	if (task.name.trim() === '' && task.trigger.trim() === '' && task.action.trim() === '')
+		return true;
+	else return false;
+}
+
+export function trimTaskCustomizer(objValue: string, othValue: string) {
 	// If both values are strings, compare their trimmed versions
 	if (_.isString(objValue) && _.isString(othValue)) {
 		return _.trim(objValue) === _.trim(othValue);

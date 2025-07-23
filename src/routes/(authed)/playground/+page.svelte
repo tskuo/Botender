@@ -170,7 +170,7 @@
 						};
 					}}
 				>
-					<PlusIcon class="size-4" />
+					<PlusIcon class="size-4" />New Task
 				</Button>
 				<div class="flex items-center gap-2 pt-2">
 					<Dialog.Root>
@@ -388,7 +388,7 @@
 									</Dialog.Trigger>
 									<Dialog.Content class="max-h-[80vh]">
 										<Dialog.Header>
-											<Dialog.Title>Initiate a new proposal</Dialog.Title>
+											<Dialog.Title>Initiate a New Proposal</Dialog.Title>
 											<Dialog.Description>
 												Describe the issue you've observed with the current bot's behavior, and
 												explain how you would like it to be improved.

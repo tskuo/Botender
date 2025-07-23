@@ -6,7 +6,7 @@
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
 	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
-	import { checkEmptyTask } from '$lib/tasks';
+	import { checkEmptyTask, isTaskEmpty } from '$lib/tasks';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -61,6 +61,9 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import DiffIcon from '@lucide/svelte/icons/diff';
 	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
+	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
+
+	import EyeIcon from '@lucide/svelte/icons/eye';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -446,6 +449,15 @@
 		editScope = editScope.filter((i) => i !== taskId);
 		editedTasks = _.omit(editedTasks, [taskId]);
 	};
+
+	let hideTaskFunction = (taskId: string) => {
+		editScope = editScope.filter((i) => i !== taskId);
+		if (taskId in editedTasks) {
+			if (isTaskEmpty(editedTasks[taskId])) {
+				editedTasks = _.omit(editedTasks, [taskId]);
+			}
+		}
+	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -553,19 +565,19 @@
 								bind:name={editedTasks[taskId].name}
 								bind:trigger={editedTasks[taskId].trigger}
 								bind:action={editedTasks[taskId].action}
-								{removeTaskFunction}
+								{hideTaskFunction}
 							/>
 						</div>
 					{/each}
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger class="my-2 w-full">
 							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
-								<PlusIcon />
+								<PlusIcon />edit more tasks
 							</Button>
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content class="w-full">
 							<DropdownMenu.Group class="w-full">
-								<DropdownMenu.Label class="w-full">Show or Hide Tasks</DropdownMenu.Label>
+								<DropdownMenu.Label class="w-full">Select a task to edit</DropdownMenu.Label>
 								<DropdownMenu.Separator />
 								{#each [...Object.keys(data.originalTasks.tasks).sort(), 'new'] as taskId (taskId)}
 									<DropdownMenu.Item
@@ -574,17 +586,17 @@
 												editScope = editScope.filter((i) => i !== taskId);
 											} else {
 												if (!(taskId in editedTasks)) {
-													if (taskId === 'new') {
-														editedTasks[taskId] = {
-															name: '',
-															trigger: '',
-															action: ''
-														};
-													} else {
-														editedTasks[taskId] = data.originalTasks.tasks[taskId];
-													}
+													editedTasks[taskId] = {
+														name: '',
+														trigger: '',
+														action: ''
+													};
 												}
 												editScope.push(taskId);
+												editScope = editScope
+													.filter((i) => i !== 'new') // Remove 'new' from the array
+													.sort() // Sort the remaining keys
+													.concat(editScope.includes('new') ? ['new'] : []); // Add 'new' at the end if it exists
 											}
 										}}
 									>
@@ -596,7 +608,11 @@
 											{:else}
 												<p class="mr-2">Task: {data.originalTasks.tasks[taskId].name} (deleted)</p>
 											{/if}
-											{#if editScope.includes(taskId)}<CheckIcon />{/if}
+											{#if editScope.includes(taskId)}
+												<EyeIcon />
+											{:else if !editScope.includes(taskId) && taskId !== 'new'}
+												<EyeClosedIcon />
+											{/if}
 										</div>
 									</DropdownMenu.Item>
 								{/each}
@@ -1062,10 +1078,7 @@
 						</Popover.Root>
 					</div>
 					{#if testCases.length === 0}
-						<div
-							class="flex flex-1 items-center justify-center rounded-md border-1
-"
-						>
+						<div class="flex flex-1 items-center justify-center rounded-md border-1">
 							<p class="text-muted-foreground">No cases have been saved to the test suite yet</p>
 						</div>
 					{:else}
