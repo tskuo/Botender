@@ -79,7 +79,8 @@
 		validators: zodClient(playgroundCreateProposalSchema),
 		onSubmit({ formData }) {
 			disableCreateProposalBtn = true;
-			if (isTaskChanged) formData.set('editedTasks', JSON.stringify(playgroundTasks));
+			if (isTaskChanged && !_.isNil(testedTasks))
+				formData.set('editedTasks', JSON.stringify(testedTasks));
 		},
 		onError() {
 			disableCreateProposalBtn = false;
@@ -171,9 +172,57 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<div class="flex items-center p-4">
-			<Sidebar.Trigger class="mr-2 md:hidden" />
-			<h2 class="text-xl font-bold">Playground</h2>
+		<div class="flex items-center justify-between p-3">
+			<div class="flex items-center p-1">
+				<Sidebar.Trigger class="mr-2 md:hidden" />
+				<h2 class="text-xl font-bold">Playground</h2>
+			</div>
+			<div>
+				<Dialog.Root>
+					<Dialog.Trigger
+						class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+						disabled={!isTaskChanged}
+					>
+						<DiffIcon />
+						Diff
+					</Dialog.Trigger>
+					<Dialog.Content class="max-h-[80vh]">
+						<Dialog.Header>
+							<Dialog.Title><h2>Compare the Differences</h2></Dialog.Title>
+							<Dialog.Description>
+								The highlighted and strikethrough text indicates the edits you made to the current
+								bot instructions.
+							</Dialog.Description>
+						</Dialog.Header>
+						<ScrollArea class="h-[50vh] w-full text-sm">
+							<div class="flex flex-col gap-4">
+								{#each Object.keys(data.latestTasks.tasks).sort() as taskId (taskId)}
+									<TaskDiffSection
+										oldTask={data.latestTasks.tasks[taskId]}
+										newTask={playgroundTasks[taskId]}
+									/>
+								{/each}
+								{#if 'new' in playgroundTasks}
+									{#if !isTaskEmpty(playgroundTasks['new'])}
+										<TaskDiffSection newTask={playgroundTasks['new']} />
+									{/if}
+								{/if}
+							</div>
+						</ScrollArea>
+					</Dialog.Content>
+				</Dialog.Root>
+				<Button
+					class="hover:cursor-pointer"
+					variant="secondary"
+					disabled={!canReset}
+					onclick={() => {
+						playgroundTasks = data.latestTasks.tasks;
+					}}
+				>
+					<UndoIcon class="size-4" />
+					Reset
+				</Button>
+			</div>
 		</div>
 		<Separator />
 	</div>
@@ -226,52 +275,7 @@
 				>
 					<PlusIcon class="size-4" />New Task
 				</Button>
-				<div class="flex items-center gap-2 pt-2">
-					<Dialog.Root>
-						<Dialog.Trigger
-							class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
-							disabled={!isTaskChanged}
-						>
-							<DiffIcon />
-							Diff
-						</Dialog.Trigger>
-						<Dialog.Content class="max-h-[80vh]">
-							<Dialog.Header>
-								<Dialog.Title><h2>Compare the Differences</h2></Dialog.Title>
-								<Dialog.Description>
-									The highlighted and strikethrough text indicates the edits you made to the current
-									bot instructions.
-								</Dialog.Description>
-							</Dialog.Header>
-							<ScrollArea class="h-[50vh] w-full text-sm">
-								<div class="flex flex-col gap-4">
-									{#each Object.keys(data.latestTasks.tasks).sort() as taskId (taskId)}
-										<TaskDiffSection
-											oldTask={data.latestTasks.tasks[taskId]}
-											newTask={playgroundTasks[taskId]}
-										/>
-									{/each}
-									{#if 'new' in playgroundTasks}
-										{#if !isTaskEmpty(playgroundTasks['new'])}
-											<TaskDiffSection newTask={playgroundTasks['new']} />
-										{/if}
-									{/if}
-								</div>
-							</ScrollArea>
-						</Dialog.Content>
-					</Dialog.Root>
-					<Button
-						class="hover:cursor-pointer"
-						variant="secondary"
-						disabled={!canReset}
-						onclick={() => {
-							playgroundTasks = data.latestTasks.tasks;
-						}}
-					>
-						<UndoIcon class="size-4" />
-						Reset
-					</Button>
-				</div>
+				<div class="flex items-center gap-2 pt-2"></div>
 			</div>
 		</div>
 		<div class="flex h-full flex-col md:col-span-3">
@@ -279,12 +283,12 @@
 				{#if isTaskChanged}
 					<Alert.Root class="border-primary text-primary mb-2">
 						<PencilIcon />
-						<Alert.Title><h4>Heads up! You've edited the bot's instructions.</h4></Alert.Title>
+						<Alert.Title><h4>Heads up! You've edited the bot.</h4></Alert.Title>
 						<Alert.Description class="text-primary">
-							The bot will now behave according to your edits in this playground. To initiate a
-							proposal based on your edit, first enter at least one user message to observe the
-							bot's behavior. Note that renaming the task will not affect the bot's responses, and
-							each proposal can include only one new task at a time.
+							The bot will now respond based on the edits you've made in this playground, which may
+							differ from its current behavior in your Discord server. To see the bot's new
+							behavior, enter a user message here. If you're satisfied, you can then create a
+							proposal to update the bot in your server with these changes.
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
@@ -314,14 +318,29 @@
 					</Alert.Root>
 				{/if}
 				{#if showCase}
-					{#if displayedBotResponse === '' && triggeredTaskId !== '0' && isTaskTested}
+					{#if displayedBotResponse === '' && triggeredTaskId !== '0'}
 						<Alert.Root class="mb-2">
 							<InfoIcon />
 							<Alert.Title><h4>Tips: The bot chose not to respond.</h4></Alert.Title>
 							<Alert.Description>
-								It is possible that the bot may choose not to respond, even when a specific task is
-								triggered. In such cases, the bot has recognized the action from the triggered
-								prompt but still decides not to reply.
+								This situation happens when the bot reviews all task triggers and identifies one
+								task as especially relevant to the user's message in the selected channel. However,
+								after considering the action associated with that task, the bot still decides that
+								the best response is no response at all. If you feel that the bot is triggering the
+								wrong task, or that the correct task is triggered but its action is not what you
+								expect, you can create a new proposal to improve either the trigger or the action as
+								appropriate.
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if displayedBotResponse === '' && triggeredTaskId === '0'}
+						<Alert.Root class="mb-2">
+							<InfoIcon />
+							<Alert.Title><h4>Tips: No task is triggered.</h4></Alert.Title>
+							<Alert.Description>
+								This situation happens when the bot reviews all task triggers and finds that none
+								apply to the user's message in the selected channel. If you think a particular task
+								should have been triggered, you can create a new proposal to improve its trigger.
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
@@ -464,147 +483,161 @@
 									<LightbulbIcon class="size-4" />
 									New Proposal
 								</Dialog.Trigger>
-								<Dialog.Content class="max-h-[80vh]">
+								<Dialog.Content class="flex max-h-[80vh] flex-col">
 									<Dialog.Header>
 										<Dialog.Title><h2>Initiate a New Proposal</h2></Dialog.Title>
 										<Dialog.Description>
-											Describe the issue you've observed with the current bot's behavior, and
-											explain how you would like it to be improved.
+											{#if isTaskChanged}
+												Describe why you are proposing this edit to the bot. For example, you might
+												want to address an issue you've noticed or suggest new edits to improve its
+												functionality.
+											{:else}
+												Describe the issue you've observed with the current bot's behavior, and
+												explain how you would like it to be improved.
+											{/if}
 										</Dialog.Description>
 									</Dialog.Header>
-									<form method="POST" use:enhanceProposal action="?/createProposal">
-										<Form.Field form={formProposal} name="title">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Form.Label>Proposal Title</Form.Label>
-													<Input {...props} bind:value={$formDataProposal.title} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description></Form.Description>
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="initiator">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Form.Label>Initiator</Form.Label>
-													<Input {...props} value={data.user?.userName} readonly />
-												{/snippet}
-											</Form.Control>
-											<Form.Description></Form.Description>
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="description">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Form.Label>Description</Form.Label>
-													<Textarea {...props} bind:value={$formDataProposal.description} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description></Form.Description>
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="taskHistoryId">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value={data.latestTasks.id} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<!-- Form Field for Create Case -->
-										<Form.Field form={formProposal} name="channel">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value={displayedChannel} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="userMessage">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value={displayedUserMessage} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="realUserMessage">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Checkbox class="hidden" {...props} checked={false} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="triggeredTaskId">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value={triggeredTaskId} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="botResponse">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value={displayedBotResponse} />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="source">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value="playground" />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="proposalEditId">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value="" />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										<Form.Field form={formProposal} name="proposalId">
-											<Form.Control>
-												{#snippet children({ props })}
-													<Input type="hidden" {...props} value="" />
-												{/snippet}
-											</Form.Control>
-											<Form.Description />
-											<Form.FieldErrors />
-										</Form.Field>
-										{#if isTaskChanged}
-											<Label>Review your proposed edit:</Label>
-											<ScrollArea class="mt-1 mb-3 h-[40%] w-full text-sm">
-												{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
-													<div class="pt-4">
-														<TaskDiffSection
-															oldTask={data.latestTasks.tasks[taskId]}
-															newTask={playgroundTasks[taskId]}
-														/>
-													</div>
+									<div class="min-h-0 flex-1 overflow-y-auto p-1">
+										<form method="POST" use:enhanceProposal action="?/createProposal">
+											<Form.Field form={formProposal} name="title">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label><h4>Proposal title</h4></Form.Label>
+														<Input {...props} bind:value={$formDataProposal.title} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="initiator">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label><h4>Initiator</h4></Form.Label>
+														<Input {...props} value={data.user?.userName} readonly />
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="description">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label><h4>Description</h4></Form.Label>
+														<Textarea {...props} bind:value={$formDataProposal.description} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description></Form.Description>
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="taskHistoryId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={data.latestTasks.id} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<!-- Form Field for Create Case -->
+											<Form.Field form={formProposal} name="channel">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedChannel} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="userMessage">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedUserMessage} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="realUserMessage">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Checkbox class="hidden" {...props} checked={false} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="triggeredTaskId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={triggeredTaskId} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="botResponse">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={displayedBotResponse} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="source">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="playground" />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="proposalEditId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="" />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											<Form.Field form={formProposal} name="proposalId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value="" />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
+											{#if isTaskChanged}
+												<Label class="mt-4"><h4>Review your proposed edits:</h4></Label>
+												<p class="text-muted-foreground mt-1 text-sm">
+													Tasks that have not been edited are not shown.
+												</p>
+												{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks && !isTaskEmpty(playgroundTasks['new']) ? ['new'] : [])] as taskId (taskId)}
+													{#if !_.isEqualWith(data.latestTasks.tasks[taskId], playgroundTasks[taskId], trimTaskCustomizer)}
+														<div class="pt-2 text-sm">
+															<TaskDiffSection
+																oldTask={data.latestTasks.tasks[taskId]}
+																newTask={playgroundTasks[taskId]}
+															/>
+														</div>
+													{/if}
 												{/each}
-											</ScrollArea>
-										{/if}
-										<Form.Button disabled={disableCreateProposalBtn || !isTaskTested}>
-											{#if disableCreateProposalBtn}
-												<LoaderCircleIcon class="size-4 animate-spin" />
 											{/if}
-											Submit
-										</Form.Button>
-									</form>
+											<Form.Button
+												disabled={disableCreateProposalBtn || !isTaskTested}
+												class="mt-4"
+											>
+												{#if disableCreateProposalBtn}
+													<LoaderCircleIcon class="size-4 animate-spin" />
+												{/if}
+												Submit
+											</Form.Button>
+										</form>
+									</div>
 								</Dialog.Content>
 							</Dialog.Root>
 						</div>
@@ -635,13 +668,13 @@
 							running = true;
 							showCase = true;
 							displayedChannel = selectedChannel;
-							displayedUserMessage = enteredUserMessage;
+							displayedUserMessage = enteredUserMessage.trim();
 							playgroundTasks = trimWhiteSpaceInTasks(playgroundTasks);
 							const response = await fetch('/api/bot', {
 								method: 'POST',
 								body: JSON.stringify({
-									channel: selectedChannel,
-									userMessage: enteredUserMessage,
+									channel: displayedChannel,
+									userMessage: displayedUserMessage,
 									tasks: playgroundTasks,
 									soures: 'playground'
 								}),
@@ -658,7 +691,10 @@
 							disableCreateProposalBtn = false;
 							// savedCase = false;
 							enteredUserMessage = '';
-							testedTasks = $state.snapshot(playgroundTasks);
+							testedTasks =
+								'new' in playgroundTasks && isTaskEmpty(playgroundTasks['new'])
+									? _.omit(playgroundTasks, ['new'])
+									: $state.snapshot(playgroundTasks);
 						}}
 					>
 						{#if running}

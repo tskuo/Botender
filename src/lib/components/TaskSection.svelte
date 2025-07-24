@@ -45,11 +45,13 @@
 					}}
 				>
 					<Trash2Icon class="size-4" />
-					{#if name === '' && trigger === '' && action === ''}
-						Deleted
-					{:else}
-						Delete
-					{/if}
+					<p class="hidden lg:inline">
+						{#if name === '' && trigger === '' && action === ''}
+							Deleted
+						{:else}
+							Delete
+						{/if}
+					</p>
 				</Button>
 			</div>
 		</div>
