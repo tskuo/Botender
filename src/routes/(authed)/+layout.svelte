@@ -8,7 +8,7 @@
 <Sidebar.Provider>
 	<AppSidebar />
 	<main class="w-full">
-		<Sidebar.Trigger class="mt-2 ml-2 md:hidden" />
+		<!-- <Sidebar.Trigger class="mt-2 ml-2 md:hidden" /> -->
 		{@render children?.()}
 	</main>
 </Sidebar.Provider>

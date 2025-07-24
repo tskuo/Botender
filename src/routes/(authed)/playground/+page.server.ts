@@ -1,7 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
-import { createCaseSchema, playgroundCreateProposalSchema } from '$lib/schema.js';
+// import { createCaseSchema } from '$lib/schema.js';
+import { playgroundCreateProposalSchema } from '$lib/schema.js';
 
 import { zod } from 'sveltekit-superforms/adapters';
 
@@ -14,7 +15,7 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 
 		return {
 			latestTasks,
-			form: await superValidate(zod(createCaseSchema)),
+			// form: await superValidate(zod(createCaseSchema)),
 			formProposal: await superValidate(zod(playgroundCreateProposalSchema)),
 			user: locals.user
 		};
@@ -24,29 +25,29 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 };
 
 export const actions: Actions = {
-	createCase: async (event) => {
-		const formCase = await superValidate(event, zod(createCaseSchema));
+	// createCase: async (event) => {
+	// 	const formCase = await superValidate(event, zod(createCaseSchema));
 
-		if (!formCase.valid) {
-			return fail(400, { formCase });
-		}
+	// 	if (!formCase.valid) {
+	// 		return fail(400, { formCase });
+	// 	}
 
-		const resCase = await event.fetch('/api/cases', {
-			method: 'POST',
-			body: JSON.stringify({ formCase }),
-			headers: {
-				'Content-Type': 'appplication/json'
-			}
-		});
+	// 	const resCase = await event.fetch('/api/cases', {
+	// 		method: 'POST',
+	// 		body: JSON.stringify({ formCase }),
+	// 		headers: {
+	// 			'Content-Type': 'appplication/json'
+	// 		}
+	// 	});
 
-		if (!resCase.ok) {
-			return fail(400, { formCase });
-		}
+	// 	if (!resCase.ok) {
+	// 		return fail(400, { formCase });
+	// 	}
 
-		return {
-			formCase
-		};
-	},
+	// 	return {
+	// 		formCase
+	// 	};
+	// },
 	createProposal: async (event) => {
 		const formData = await event.request.formData();
 		const formProposal = await superValidate(formData, zod(playgroundCreateProposalSchema));

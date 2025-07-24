@@ -2,6 +2,7 @@
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	// import types
 	import type { PageProps } from './$types';
@@ -16,7 +17,10 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<h2 class="p-4 text-xl font-bold">Tasks</h2>
+		<div class="flex items-center p-4">
+			<Sidebar.Trigger class="mr-2 md:hidden" />
+			<h2 class="text-xl font-bold">Tasks</h2>
+		</div>
 		<Separator />
 	</div>
 	<div class="grid h-full flex-1 md:grid-cols-5">

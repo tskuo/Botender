@@ -31,11 +31,11 @@
 			url: '/proposals',
 			icon: LightbulbIcon
 		},
-		{
-			title: 'Cases',
-			url: '/cases',
-			icon: FoldersIcon
-		},
+		// {
+		// 	title: 'Cases',
+		// 	url: '/cases',
+		// 	icon: FoldersIcon
+		// },
 		{
 			title: 'Playground',
 			url: '/playground',

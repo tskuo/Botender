@@ -3,6 +3,7 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	// import lucide icons
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
@@ -70,7 +71,10 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<h2 class="p-4 text-xl font-bold">Proposals</h2>
+		<div class="flex items-center p-4">
+			<Sidebar.Trigger class="mr-2 md:hidden" />
+			<h2 class="text-xl font-bold">Proposals</h2>
+		</div>
 		<Separator />
 	</div>
 	<div class="h-full p-3">

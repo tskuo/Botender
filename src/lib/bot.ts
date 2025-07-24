@@ -1,5 +1,6 @@
 import { getGenerativeModel } from 'firebase/ai';
 import { ai } from '$lib/firebase';
+import { isTaskEmpty } from '$lib/tasks';
 
 export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 	const orchestratorSystemPrompt = `You are a helpful assistant tasked with determining whether a task should be triggered based on a user's message in a specific channel. You will receive a list of tasks, each with an associated ID and trigger condition, as well as the user's message and the channel where it was sent. If the message in that channel is relevant to the trigger condition of a specific task, respond with that task's ID. If the message is relevant to multiple tasks, respond with the ID of the task to which it is most relevant. If the message does not match any task trigger, respond with 0.`;
@@ -11,7 +12,13 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 
 	let prompt1 = 'Here is a list of tasks: \n';
 	for (const taskId in tasks) {
-		prompt1 = prompt1.concat(`Task ID: ${taskId}\n`, `Task Trigger: ${tasks[taskId].trigger}\n\n`);
+		// ignore empty (deleted) tasks
+		if (!isTaskEmpty(tasks[taskId])) {
+			prompt1 = prompt1.concat(
+				`Task ID: ${taskId}\n`,
+				`Task Trigger: ${tasks[taskId].trigger}\n\n`
+			);
+		}
 	}
 
 	prompt1 = prompt1.concat(`User message in the ${channel} channel:\n`, userMessage);

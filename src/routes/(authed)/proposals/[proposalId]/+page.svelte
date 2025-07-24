@@ -26,6 +26,7 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -444,20 +445,6 @@
 			goto(`/tasks`);
 		}
 	};
-
-	let removeTaskFunction = (taskId: string) => {
-		editScope = editScope.filter((i) => i !== taskId);
-		editedTasks = _.omit(editedTasks, [taskId]);
-	};
-
-	let hideTaskFunction = (taskId: string) => {
-		editScope = editScope.filter((i) => i !== taskId);
-		if (taskId in editedTasks) {
-			if (isTaskEmpty(editedTasks[taskId])) {
-				editedTasks = _.omit(editedTasks, [taskId]);
-			}
-		}
-	};
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -565,19 +552,20 @@
 								bind:name={editedTasks[taskId].name}
 								bind:trigger={editedTasks[taskId].trigger}
 								bind:action={editedTasks[taskId].action}
-								{hideTaskFunction}
 							/>
 						</div>
 					{/each}
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger class="my-2 w-full">
 							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
-								<PlusIcon />edit more tasks
+								<WrenchIcon />view more or hide tasks
 							</Button>
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content class="w-full">
 							<DropdownMenu.Group class="w-full">
-								<DropdownMenu.Label class="w-full">Select a task to edit</DropdownMenu.Label>
+								<DropdownMenu.Label class="w-full">
+									Select a task to view or hide
+								</DropdownMenu.Label>
 								<DropdownMenu.Separator />
 								{#each [...Object.keys(data.originalTasks.tasks).sort(), 'new'] as taskId (taskId)}
 									<DropdownMenu.Item
@@ -601,8 +589,10 @@
 										}}
 									>
 										<div class="flex w-full items-center justify-between">
-											{#if taskId in editedTasks}
+											{#if taskId in editedTasks && editedTasks[taskId].name.trim() !== ''}
 												<p class="mr-2">Task: {editedTasks[taskId].name}</p>
+											{:else if taskId in editedTasks && editedTasks[taskId].name.trim() === ''}
+												<p class="mr-2">Task: (deleted task)</p>
 											{:else if taskId === 'new'}
 												<p class="mr-2">New Task</p>
 											{:else}
