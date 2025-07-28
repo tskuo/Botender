@@ -47,7 +47,7 @@ export const GET = async ({ url }) => {
 export const POST = async ({ request }) => {
 	try {
 		const { formTaskHistory } = await request.json();
-		const changedTasks: Tasks = { ...formTaskHistory.data.tasks };
+		const changedTasks: Tasks = { ...formTaskHistory.data.changedTasks };
 
 		// Check if a new task is proposed
 		if ('new' in changedTasks) {

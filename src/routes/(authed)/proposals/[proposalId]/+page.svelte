@@ -130,6 +130,7 @@
 	let editMode = $state(false);
 	let viewHistory = $state(false);
 	let overheated = $state(false);
+	let deployingProposal = $state(false);
 
 	let editScope = $state(
 		(data.edits.length > 0
@@ -461,6 +462,7 @@
 	};
 
 	let deployProposal = async () => {
+		deployingProposal = true;
 		if (data.edits.length === 0 || upvotes.length < DEPLOY_THRESHOLD || _.isNil(data.user.userId)) {
 			return;
 		}
@@ -469,8 +471,6 @@
 			data.edits[0].tasks,
 			(task, taskId) => !_.isEqualWith(task, data.originalTasks.tasks[taskId], trimTaskCustomizer)
 		);
-
-		return;
 
 		const resTaskHistory = await fetch('/api/taskHistory', {
 			method: 'POST',
@@ -845,13 +845,21 @@
 										</Tabs.Root>
 									</div>
 									<AlertDialog.Footer>
-										<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+										<AlertDialog.Cancel disabled={deployingProposal} class="hover:cursor-pointer"
+											>Cancel</AlertDialog.Cancel
+										>
 										<AlertDialog.Action
-											disabled={upvotes.length < DEPLOY_THRESHOLD}
+											class="hover:cursor-pointer"
+											disabled={upvotes.length < DEPLOY_THRESHOLD || deployingProposal}
 											onclick={async () => {
 												deployProposal();
-											}}>Submit</AlertDialog.Action
+											}}
 										>
+											{#if deployingProposal}
+												<LoaderCircleIcon class="size-4 animate-spin" />
+											{/if}
+											Submit
+										</AlertDialog.Action>
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
 							</AlertDialog.Root>
