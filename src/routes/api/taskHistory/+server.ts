@@ -47,27 +47,37 @@ export const GET = async ({ url }) => {
 export const POST = async ({ request }) => {
 	try {
 		const { formTaskHistory } = await request.json();
-		const tasks: Tasks = { ...formTaskHistory.data.tasks };
+		const changedTasks: Tasks = { ...formTaskHistory.data.tasks };
 
-		if ('new' in tasks) {
+		// Check if a new task is proposed
+		if ('new' in changedTasks) {
 			const taskDocRef = await addDoc(collection(db, 'tasks'), {
-				action: tasks['new'].action,
+				action: changedTasks['new'].action.trim(),
 				createAt: serverTimestamp(),
-				name: tasks['new'].name,
-				trigger: tasks['new'].trigger
+				name: changedTasks['new'].name.trim(),
+				trigger: changedTasks['new'].trigger.trim()
 			});
 			const newId = taskDocRef.id;
-			tasks[newId] = { ...tasks['new'] };
-			delete tasks['new'];
+			changedTasks[newId] = { ...changedTasks['new'] };
+			delete changedTasks['new'];
 		}
+
+		// Get the very latest task:
+		const querySnapshot = await getDocs(
+			query(collection(db, 'taskHistory'), orderBy('createAt', 'desc'), limit(1))
+		);
+		const latestTasks: Tasks = querySnapshot.docs[0].data().tasks;
+
+		// If a task ID exists in both latestTasks and editedTasks, the value from editedTasks (the one on the right) will overwrite the one from latestTasks
+		const newTasks = { ...latestTasks, ...changedTasks };
 
 		const docRef = await addDoc(collection(db, 'taskHistory'), {
 			createAt: serverTimestamp(),
-			tasks,
+			tasks: newTasks,
 			creator: formTaskHistory.data.creator
 		});
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
-		throw error(400, 'Fail to create a new proposal in the database.');
+		throw error(400, 'Fail to create a new taskHistory in the database.');
 	}
 };

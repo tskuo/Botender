@@ -41,6 +41,7 @@
 		userMessage = '',
 		taskHistoryId = '',
 		edits = [],
+		originalTasks = {},
 		tasks = {},
 		testCaseBadge = false,
 		checkingBadge = false,
@@ -514,11 +515,13 @@
 								(r: BotResponse) => r.taskHistoryId === taskHistoryId
 							)}
 							{#if response === undefined}
-								<Alert.Root>
-									<Alert.Description>
-										No response has been generated based on the most recent edit to the bot.
-									</Alert.Description>
-								</Alert.Root>
+								<Button
+									class="w-full"
+									onclick={async () =>
+										await generateBotResponse(originalTasks, '', '', taskHistoryId)}
+								>
+									<BotMessageSquareIcon class="size-4" />Bot Response
+								</Button>
 							{:else}
 								{@render botResponseSection(response)}
 								{@render thumbsUpDownButtons(response)}
@@ -606,7 +609,7 @@
 														class="text-muted-foreground px-2 hover:cursor-pointer"
 														variant="secondary"
 														onclick={async () =>
-															await generateBotResponse(tasks, '', '', taskHistoryId)}
+															await generateBotResponse(originalTasks, '', '', taskHistoryId)}
 													>
 														generate
 													</Button>

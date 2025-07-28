@@ -6,6 +6,7 @@
 
 	// import types
 	import type { PageProps } from './$types';
+	import { isTaskEmpty } from '$lib/tasks';
 
 	// data props
 	let { data }: PageProps = $props();
@@ -28,32 +29,34 @@
 			<div class="grid auto-rows-fr gap-2">
 				{#each Object.entries(data.latestTasks.tasks).sort() as [taskId, _] (taskId)}
 					{@const task = data.latestTasks.tasks[taskId]}
-					<Card.Root
-						class="hover:bg-muted/50 hover:cursor-pointer"
-						onclick={() => (clickedTaskId = taskId)}
-					>
-						<Card.Header>
-							<Card.Title><h3>{task.name}</h3></Card.Title>
-						</Card.Header>
-						<Card.Content>
-							<p class="mb-2">
-								<span class="font-[GintoDiscordMedium]">Trigger:</span>
-								{#if task.trigger.length <= textLengthCap}
-									{task.trigger}
-								{:else}
-									{task.trigger.substring(0, textLengthCap)}...
-								{/if}
-							</p>
-							<p>
-								<span class="font-[GintoDiscordMedium]">Action:</span>
-								{#if task.action.length <= textLengthCap}
-									{task.action}
-								{:else}
-									{task.action.substring(0, textLengthCap)}...
-								{/if}
-							</p>
-						</Card.Content>
-					</Card.Root>
+					{#if !isTaskEmpty(task)}
+						<Card.Root
+							class="hover:bg-muted/50 hover:cursor-pointer"
+							onclick={() => (clickedTaskId = taskId)}
+						>
+							<Card.Header>
+								<Card.Title><h3>{task.name}</h3></Card.Title>
+							</Card.Header>
+							<Card.Content>
+								<p class="mb-2">
+									<span class="font-[GintoDiscordMedium]">Trigger:</span>
+									{#if task.trigger.length <= textLengthCap}
+										{task.trigger}
+									{:else}
+										{task.trigger.substring(0, textLengthCap)}...
+									{/if}
+								</p>
+								<p>
+									<span class="font-[GintoDiscordMedium]">Action:</span>
+									{#if task.action.length <= textLengthCap}
+										{task.action}
+									{:else}
+										{task.action.substring(0, textLengthCap)}...
+									{/if}
+								</p>
+							</Card.Content>
+						</Card.Root>
+					{/if}
 				{/each}
 			</div>
 		</div>

@@ -172,64 +172,64 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<div class="flex items-center justify-between p-3">
-			<div class="flex items-center p-1">
-				<Sidebar.Trigger class="mr-2 md:hidden" />
-				<h2 class="text-xl font-bold">Playground</h2>
-			</div>
-			<div>
-				<Dialog.Root>
-					<Dialog.Trigger
-						class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
-						disabled={!isTaskChanged}
-					>
-						<DiffIcon />
-						Diff
-					</Dialog.Trigger>
-					<Dialog.Content class="max-h-[80vh]">
-						<Dialog.Header>
-							<Dialog.Title><h2>Compare the Differences</h2></Dialog.Title>
-							<Dialog.Description>
-								The highlighted and strikethrough text indicates the edits you made to the current
-								bot instructions.
-							</Dialog.Description>
-						</Dialog.Header>
-						<ScrollArea class="h-[50vh] w-full text-sm">
-							<div class="flex flex-col gap-4">
-								{#each Object.keys(data.latestTasks.tasks).sort() as taskId (taskId)}
-									<TaskDiffSection
-										oldTask={data.latestTasks.tasks[taskId]}
-										newTask={playgroundTasks[taskId]}
-									/>
-								{/each}
-								{#if 'new' in playgroundTasks}
-									{#if !isTaskEmpty(playgroundTasks['new'])}
-										<TaskDiffSection newTask={playgroundTasks['new']} />
-									{/if}
-								{/if}
-							</div>
-						</ScrollArea>
-					</Dialog.Content>
-				</Dialog.Root>
-				<Button
-					class="hover:cursor-pointer"
-					variant="secondary"
-					disabled={!canReset}
-					onclick={() => {
-						playgroundTasks = data.latestTasks.tasks;
-					}}
-				>
-					<UndoIcon class="size-4" />
-					Reset
-				</Button>
-			</div>
+		<div class="flex items-center p-4">
+			<Sidebar.Trigger class="mr-2 md:hidden" />
+			<h2 class="text-xl font-bold">Playground</h2>
 		</div>
 		<Separator />
 	</div>
 	<div class="grid flex-1 overflow-hidden md:grid-cols-5">
 		<div class="overflow-y-auto border-r md:col-span-2">
 			<div class="p-4">
-				<h4 class="font-medium">Scope</h4>
+				<div class="flex items-center justify-between">
+					<h4 class="font-medium">Bot Instructions</h4>
+					<div>
+						<Button
+							class="hover:cursor-pointer"
+							variant="secondary"
+							disabled={!canReset}
+							onclick={() => {
+								playgroundTasks = data.latestTasks.tasks;
+							}}
+						>
+							<UndoIcon class="size-4" />
+							Reset
+						</Button>
+						<Dialog.Root>
+							<Dialog.Trigger
+								class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+								disabled={!isTaskChanged}
+							>
+								<DiffIcon />
+								Diff
+							</Dialog.Trigger>
+							<Dialog.Content class="flex max-h-[80vh] flex-col">
+								<Dialog.Header class="text-left">
+									<Dialog.Title><h2>Compare the differences</h2></Dialog.Title>
+									<Dialog.Description>
+										The highlighted and strikethrough text indicates the edits you made to the
+										current bot instructions.
+									</Dialog.Description>
+								</Dialog.Header>
+								<div class="min-h-0 flex-1 overflow-y-auto text-sm">
+									<div class="flex flex-col gap-6">
+										{#each Object.keys(data.latestTasks.tasks).sort() as taskId (taskId)}
+											<TaskDiffSection
+												oldTask={data.latestTasks.tasks[taskId]}
+												newTask={playgroundTasks[taskId]}
+											/>
+										{/each}
+										{#if 'new' in playgroundTasks}
+											{#if !isTaskEmpty(playgroundTasks['new'])}
+												<TaskDiffSection newTask={playgroundTasks['new']} />
+											{/if}
+										{/if}
+									</div>
+								</div>
+							</Dialog.Content>
+						</Dialog.Root>
+					</div>
+				</div>
 				<div class="pt-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
 						<Select.Trigger class="w-full">
@@ -244,10 +244,10 @@
 						</Select.Content>
 					</Select.Root>
 				</div>
-				<div class="pt-2">
+				<div class="flex flex-col gap-6 pt-4">
 					{#each [...Object.keys(_.omit( playgroundTasks, ['new'] )).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === taskId}
-							<div class="pt-4">
+							<div>
 								<TaskSection
 									id={taskId}
 									bind:name={playgroundTasks[taskId].name}
@@ -260,7 +260,7 @@
 					{/each}
 				</div>
 				<Button
-					class="mt-2 w-full hover:cursor-pointer"
+					class="mt-4 w-full hover:cursor-pointer"
 					variant="secondary"
 					size="sm"
 					hidden={'new' in playgroundTasks || scope !== 'overall'}
@@ -485,7 +485,7 @@
 								</Dialog.Trigger>
 								<Dialog.Content class="flex max-h-[80vh] flex-col">
 									<Dialog.Header>
-										<Dialog.Title><h2>Initiate a New Proposal</h2></Dialog.Title>
+										<Dialog.Title><h2>Initiate a new proposal</h2></Dialog.Title>
 										<Dialog.Description>
 											{#if isTaskChanged}
 												Describe why you are proposing this edit to the bot. For example, you might
@@ -616,16 +616,16 @@
 												<p class="text-muted-foreground mt-1 text-sm">
 													Tasks that have not been edited are not shown.
 												</p>
-												{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks && !isTaskEmpty(playgroundTasks['new']) ? ['new'] : [])] as taskId (taskId)}
-													{#if !_.isEqualWith(data.latestTasks.tasks[taskId], playgroundTasks[taskId], trimTaskCustomizer)}
-														<div class="pt-2 text-sm">
+												<div class="flex flex-col gap-6 pt-4">
+													{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks && !isTaskEmpty(playgroundTasks['new']) ? ['new'] : [])] as taskId (taskId)}
+														{#if !_.isEqualWith(data.latestTasks.tasks[taskId], playgroundTasks[taskId], trimTaskCustomizer)}
 															<TaskDiffSection
 																oldTask={data.latestTasks.tasks[taskId]}
 																newTask={playgroundTasks[taskId]}
 															/>
-														</div>
-													{/if}
-												{/each}
+														{/if}
+													{/each}
+												</div>
 											{/if}
 											<Form.Button
 												disabled={disableCreateProposalBtn || !isTaskTested}

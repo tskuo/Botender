@@ -4,7 +4,7 @@ import { consequencePipeline } from '$lib/pipelines/consequencePipeline';
 import { generalEvaluator } from '$lib/pipelines/generalEvaluator';
 import { json, error } from '@sveltejs/kit';
 import _ from 'lodash';
-import { trimTaskCustomizer } from '$lib/tasks';
+import { isTaskEmpty, trimTaskCustomizer } from '$lib/tasks';
 
 export const POST = async ({ request }) => {
 	try {
@@ -13,20 +13,22 @@ export const POST = async ({ request }) => {
 		const diffTasks: Task[] = [];
 
 		for (const [taskId, task] of Object.entries(newTasks)) {
-			if (taskId in oldTasks) {
-				if (
-					_.isEqualWith(
-						_.pick(oldTasks[taskId], ['trigger', 'action']),
-						_.pick(newTasks[taskId], ['trigger', 'action']),
-						trimTaskCustomizer
-					)
-				) {
-					continue;
+			if (!isTaskEmpty(newTasks[taskId])) {
+				if (taskId in oldTasks) {
+					if (
+						_.isEqualWith(
+							_.pick(oldTasks[taskId], ['trigger', 'action']),
+							_.pick(newTasks[taskId], ['trigger', 'action']),
+							trimTaskCustomizer
+						)
+					) {
+						continue;
+					} else {
+						diffTasks.push(task as Task);
+					}
 				} else {
 					diffTasks.push(task as Task);
 				}
-			} else {
-				diffTasks.push(task as Task);
 			}
 		}
 

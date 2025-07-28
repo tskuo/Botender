@@ -6,7 +6,13 @@
 	import CaseCard from '$lib/components/CaseCard.svelte';
 	import TaskSection from '$lib/components/TaskSection.svelte';
 	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
-	import { checkEmptyTask, isTaskEmpty } from '$lib/tasks';
+	import {
+		checkEmptyTask,
+		trimTaskCustomizer,
+		trimWhiteSpaceInTasks,
+		isTaskEmpty,
+		isTaskMissingField
+	} from '$lib/tasks';
 
 	// import ui components
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -26,7 +32,7 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import * as Accordion from '$lib/components/ui/accordion/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -63,6 +69,7 @@
 	import DiffIcon from '@lucide/svelte/icons/diff';
 	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
 	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
+	import SmileIcon from '@lucide/svelte/icons/smile';
 
 	import EyeIcon from '@lucide/svelte/icons/eye';
 
@@ -74,15 +81,16 @@
 	import { tick } from 'svelte';
 	import { invalidateAll, goto } from '$app/navigation';
 	import { slide } from 'svelte/transition';
-	import { redirect } from '@sveltejs/kit';
 
 	// data props
 	let { data }: PageProps = $props();
 
-	let DEPLOY_THRESHOLD = 2;
+	let DEPLOY_THRESHOLD = 1;
 
 	// state for the proposal
-	let editedTasks = $state(data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks);
+	let editedTasks = $state<Tasks>(
+		data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks
+	);
 	let testedTasks = $state<Tasks | undefined>(undefined);
 	let testCases = $state(data.testCases);
 	let upvotes = $state(data.edits.length > 0 ? data.edits[0].upvotes : []);
@@ -124,11 +132,40 @@
 	let overheated = $state(false);
 
 	let editScope = $state(
-		data.edits.length > 0
+		(data.edits.length > 0
 			? Object.keys(data.edits[0].tasks).filter(
-					(key) => !_.isEqual(data.edits[0].tasks[key], data.originalTasks.tasks[key])
+					(key) =>
+						!_.isEqualWith(
+							data.edits[0].tasks[key],
+							data.originalTasks.tasks[key],
+							trimTaskCustomizer
+						)
 				)
 			: []
+		).sort((a, b) => {
+			if (a === 'new') return 1;
+			if (b === 'new') return -1;
+			return a.localeCompare(b);
+		})
+	);
+
+	let tasksWithMissingFields = $derived(
+		Object.entries(editedTasks)
+			.filter(([taskId, task]) => !isTaskEmpty(task) && isTaskMissingField(task))
+			.map(([taskId, task]) => taskId)
+			.sort((a, b) => {
+				// Keep 'new' at the end
+				if (a === 'new') return 1;
+				if (b === 'new') return -1;
+				// Sort other taskIds alphabetically
+				return a.localeCompare(b);
+			})
+	);
+
+	let editedTasksWithoutEmptyNewTask = $derived(
+		'new' in editedTasks && isTaskEmpty(editedTasks['new'])
+			? _.omit(editedTasks, ['new'])
+			: editedTasks
 	);
 
 	let clearManualCasePanel = () => {
@@ -181,8 +218,8 @@
 		let resCase;
 		if (
 			data.edits.length > 0
-				? _.isEqual(tmpTasks, data.edits[0].tasks)
-				: _.isEqual(tmpTasks, data.originalTasks.tasks)
+				? _.isEqualWith(tmpTasks, data.edits[0].tasks, trimTaskCustomizer)
+				: _.isEqualWith(tmpTasks, data.originalTasks.tasks, trimTaskCustomizer)
 		) {
 			resCase = await fetch('/api/cases', {
 				method: 'POST',
@@ -248,8 +285,8 @@
 			testCases.push(newCase);
 			if (
 				data.edits.length > 0
-					? !_.isEqual(tmpTasks, data.edits[0].tasks)
-					: !_.isEqual(tmpTasks, data.originalTasks.tasks)
+					? !_.isEqualWith(tmpTasks, data.edits[0].tasks, trimTaskCustomizer)
+					: !_.isEqualWith(tmpTasks, data.originalTasks.tasks, trimTaskCustomizer)
 			) {
 				await tick();
 				const ref = testCaseRefs[testCaseRefs.length - 1];
@@ -287,7 +324,7 @@
 		thumbsDown: string[]
 	) => {
 		await createAndAddNewTestCase(
-			tmpTasks,
+			trimWhiteSpaceInTasks(tmpTasks),
 			channel,
 			userMessage,
 			triggeredTaskId,
@@ -306,7 +343,7 @@
 	// Run Tests
 	let runTest = async () => {
 		runningTest = true;
-		testedTasks = $state.snapshot(editedTasks);
+		testedTasks = $state.snapshot(trimWhiteSpaceInTasks(editedTasks));
 		const promise1 = runTestCases(testedTasks);
 		const promise2 = generateCases(testedTasks);
 		await Promise.all([promise1, promise2]);
@@ -327,7 +364,7 @@
 			method: 'POST',
 			body: JSON.stringify({
 				oldTasks: data.originalTasks.tasks,
-				newTasks: tasks
+				newTasks: trimWhiteSpaceInTasks(tasks)
 			}),
 			headers: {
 				'Content-Type': 'application/json'
@@ -342,7 +379,7 @@
 			generatedCaseRefs = generatedCaseRefs.slice(0, $state.snapshot(generatedCases.length));
 			generatedCaseRefs.forEach((ref, i) => {
 				ref.setTmpBotResponse(
-					tasks,
+					trimWhiteSpaceInTasks(tasks),
 					$state.snapshot(generatedCases[i].triggeredTask),
 					$state.snapshot(generatedCases[i].botResponse),
 					[],
@@ -365,12 +402,22 @@
 		testCaseRefs.forEach((ref) => ref.resetTestForCase());
 		testedTasks = undefined;
 		generatedCases = [];
-		editScope =
+		editScope = (
 			data.edits.length > 0
 				? Object.keys(data.edits[0].tasks).filter(
-						(key) => !_.isEqual(data.edits[0].tasks[key], data.originalTasks.tasks[key])
+						(key) =>
+							!_.isEqualWith(
+								data.edits[0].tasks[key],
+								data.originalTasks.tasks[key],
+								trimTaskCustomizer
+							)
 					)
-				: [];
+				: []
+		).sort((a, b) => {
+			if (a === 'new') return 1;
+			if (b === 'new') return -1;
+			return a.localeCompare(b);
+		});
 	};
 
 	// Save Proposal
@@ -379,7 +426,7 @@
 		const resEdit = await fetch(`/api/proposals/${data.proposal.id}/edits`, {
 			method: 'POST',
 			body: JSON.stringify({
-				tasks: editedTasks,
+				tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask),
 				editor: data.user?.userId
 			}),
 			headers: {
@@ -417,12 +464,20 @@
 		if (data.edits.length === 0 || upvotes.length < DEPLOY_THRESHOLD || _.isNil(data.user.userId)) {
 			return;
 		}
+
+		const changedTasks = _.pickBy(
+			data.edits[0].tasks,
+			(task, taskId) => !_.isEqualWith(task, data.originalTasks.tasks[taskId], trimTaskCustomizer)
+		);
+
+		return;
+
 		const resTaskHistory = await fetch('/api/taskHistory', {
 			method: 'POST',
 			body: JSON.stringify({
 				formTaskHistory: {
 					data: {
-						tasks: data.edits[0].tasks,
+						changedTasks: trimWhiteSpaceInTasks(changedTasks),
 						creator: data.user.userId
 					}
 				},
@@ -459,7 +514,7 @@
 			<Button
 				class="mr-1 hover:cursor-pointer"
 				onclick={() => {
-					console.log($state.snapshot(editedTasks));
+					console.log($state.snapshot(editedTasksWithoutEmptyNewTask));
 				}}><ExternalLinkIcon class="size-4" />Discuss</Button
 			>
 		</div>
@@ -534,27 +589,27 @@
 					{/if}
 				</div>
 				{#if !editMode}
-					{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
-						{#if !_.isEqual(data.originalTasks.tasks[taskId], editedTasks[taskId])}
-							<div class="pt-4">
+					<div class="flex flex-col gap-6 pt-4">
+						{#each [...Object.keys(_.omit( editedTasks, ['new'] )).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+							{#if !_.isEqualWith(data.originalTasks.tasks[taskId], editedTasks[taskId], trimTaskCustomizer)}
 								<TaskDiffSection
 									oldTask={data.originalTasks.tasks[taskId]}
 									newTask={editedTasks[taskId]}
 								/>
-							</div>
-						{/if}
-					{/each}
+							{/if}
+						{/each}
+					</div>
 				{:else}
-					{#each editScope as taskId (taskId)}
-						<div class="pt-4">
+					<div class="flex flex-col gap-6 pt-4">
+						{#each editScope as taskId (taskId)}
 							<TaskSection
 								id={taskId}
 								bind:name={editedTasks[taskId].name}
 								bind:trigger={editedTasks[taskId].trigger}
 								bind:action={editedTasks[taskId].action}
 							/>
-						</div>
-					{/each}
+						{/each}
+					</div>
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger class="my-2 w-full">
 							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
@@ -572,8 +627,16 @@
 										onclick={() => {
 											if (editScope.includes(taskId)) {
 												editScope = editScope.filter((i) => i !== taskId);
+												if (
+													taskId === 'new' &&
+													'new' in editedTasks &&
+													isTaskEmpty(editedTasks['new'])
+												) {
+													editedTasks = _.omit(editedTasks, ['new']);
+												}
 											} else {
 												if (!(taskId in editedTasks)) {
+													// taskId can only be 'new'
 													editedTasks[taskId] = {
 														name: '',
 														trigger: '',
@@ -581,26 +644,39 @@
 													};
 												}
 												editScope.push(taskId);
-												editScope = editScope
-													.filter((i) => i !== 'new') // Remove 'new' from the array
-													.sort() // Sort the remaining keys
-													.concat(editScope.includes('new') ? ['new'] : []); // Add 'new' at the end if it exists
+												editScope = editScope.sort((a, b) => {
+													if (a === 'new') return 1;
+													if (b === 'new') return -1;
+													return a.localeCompare(b);
+												});
 											}
 										}}
 									>
-										<div class="flex w-full items-center justify-between">
-											{#if taskId in editedTasks && editedTasks[taskId].name.trim() !== ''}
-												<p class="mr-2">Task: {editedTasks[taskId].name}</p>
-											{:else if taskId in editedTasks && editedTasks[taskId].name.trim() === ''}
-												<p class="mr-2">Task: (deleted task)</p>
-											{:else if taskId === 'new'}
-												<p class="mr-2">New Task</p>
+										<div
+											class={`${tasksWithMissingFields.includes(taskId) ? 'text-my-pink' : ''} flex w-full items-center justify-between`}
+										>
+											{#if taskId !== 'new'}
+												{#if isTaskEmpty(editedTasks[taskId])}
+													<p class="mr-2">
+														Task: {data.originalTasks.tasks[taskId].name} (deleted)
+													</p>
+												{:else if editedTasks[taskId].name.trim() === ''}
+													<p class="mr-2">Task: (no task name entered)</p>
+												{:else}
+													<p class="mr-2">Task: {editedTasks[taskId].name.trim()}</p>
+												{/if}
+											{:else if !('new' in editedTasks)}
+												<p class="mr-2">Add New Task</p>
+											{:else if isTaskEmpty(editedTasks['new'])}
+												<p class="mr-2">New Task: (no content entered)</p>
+											{:else if editedTasks['new'].name.trim() === ''}
+												<p class="mr-2">New Task: (no task name entered)</p>
 											{:else}
-												<p class="mr-2">Task: {data.originalTasks.tasks[taskId].name} (deleted)</p>
+												<p class="mr-2">New Task: {editedTasks[taskId].name.trim()}</p>
 											{/if}
 											{#if editScope.includes(taskId)}
 												<EyeIcon />
-											{:else if !editScope.includes(taskId) && taskId !== 'new'}
+											{:else}
 												<EyeClosedIcon />
 											{/if}
 										</div>
@@ -610,14 +686,6 @@
 						</DropdownMenu.Content>
 					</DropdownMenu.Root>
 				{/if}
-				<!-- {#if editMode}
-					{#if (_.isNil(testedTasks) && (data.edits.length > 0 ? !_.isEqual(editedTasks, data.edits[0].tasks) : !_.isEqual(editedTasks, data.originalTasks.tasks))) || (!_.isNil(testedTasks) && !_.isEqual(testedTasks, editedTasks))}
-						<div class="text-primary my-1 flex items-center text-sm">
-							<TriangleAlertIcon class="mr-2 size-4" />
-							<p>Run test and generate before saving new edits to observe how the bot behaves</p>
-						</div>
-					{/if}
-				{/if} -->
 				{#if !editMode}
 					{#if data.edits.length > 0 && data.proposal.open}
 						<div class="mt-2 flex items-center justify-between">
@@ -679,52 +747,103 @@
 							</ToggleGroup.Root>
 							<AlertDialog.Root>
 								<AlertDialog.Trigger
-									class={buttonVariants()}
+									class={`${buttonVariants()} hover:cursor-pointer`}
 									disabled={upvotes.length < DEPLOY_THRESHOLD}
 								>
 									<LandPlotIcon class="size-4" />
 									Deploy
 								</AlertDialog.Trigger>
-								<AlertDialog.Content>
+								<AlertDialog.Content class="flex max-h-[80vh] flex-col">
 									<AlertDialog.Header>
 										<AlertDialog.Title>
-											Are you sure you want to deploy this proposed edit?
+											<h2 class="text-left">Are you sure you want to deploy this proposed edit?</h2>
 										</AlertDialog.Title>
-										<AlertDialog.Description>
-											Review the changes to the original and latest tasks below to ensure they are
-											correct. If you are satisfied, click the submit button to confirm deployment.
-										</AlertDialog.Description>
 									</AlertDialog.Header>
-									<Tabs.Root value="original" class="mt-2 w-full">
-										<Tabs.List class="w-full">
-											<Tabs.Trigger value="original">Compare with Original Tasks</Tabs.Trigger>
-											<Tabs.Trigger value="latest">Compare with Latest Tasks</Tabs.Trigger>
-										</Tabs.List>
-										<Tabs.Content value="original">
-											<ScrollArea class="h-[50vh] w-full">
-												{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
-													<div class="pt-4">
-														<TaskDiffSection
-															oldTask={data.originalTasks.tasks[taskId]}
-															newTask={data.edits[0].tasks[taskId]}
-														/>
+									<div class="min-h-0 flex-1 overflow-y-auto">
+										<AlertDialog.Description class="text-foreground text-sm md:text-base">
+											Review the changes to the original tasks and latest tasks below to ensure they
+											are correct. If you are satisfied, click the submit button to confirm
+											deployment. Once deployed, the bot will behave according to the proposed edit
+											on Discord.
+										</AlertDialog.Description>
+										<Accordion.Root type="single" class="my-2">
+											<Accordion.Item value="item-1">
+												<Accordion.Trigger class="text-muted-foreground py-1">
+													<div class="flex items-center">
+														<InfoIcon class="mr-2 size-4" />
+														<p>What's the difference between the original and latest tasks?</p>
 													</div>
-												{/each}
-											</ScrollArea>
-										</Tabs.Content>
-										<Tabs.Content value="latest">
-											<ScrollArea class="h-[50vh] w-full">
-												{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
-													<div class="pt-4">
-														<TaskDiffSection
-															oldTask={data.latestTasks.tasks[taskId]}
-															newTask={data.edits[0].tasks[taskId]}
-														/>
+												</Accordion.Trigger>
+												<Accordion.Content class="text-muted-foreground pl-6">
+													The original task refers to the version in place when this proposal was
+													first initiated, while the latest task is the currently deployed version
+													that determines how the bot behaves on Discord now. They might be
+													different if another proposal has been deployed in the time between the
+													initiation of this proposal and now.
+												</Accordion.Content>
+											</Accordion.Item>
+											<Accordion.Item value="item-2">
+												<Accordion.Trigger class="text-muted-foreground py-1">
+													<div class="flex items-center">
+														<InfoIcon class="mr-2 size-4" />
+														<p>Tasks that have not been edited are not shown.</p>
 													</div>
-												{/each}
-											</ScrollArea>
-										</Tabs.Content>
-									</Tabs.Root>
+												</Accordion.Trigger>
+												<Accordion.Content class="text-muted-foreground pl-6">
+													The following list only includes tasks that are edited by this proposal.
+													Any new tasks introduced in the latest tasks that are not part of this
+													proposal are also not shown.
+												</Accordion.Content>
+											</Accordion.Item>
+										</Accordion.Root>
+										<Tabs.Root value="original" class="mt-1">
+											<Tabs.List class="w-full">
+												<Tabs.Trigger value="original">
+													<span class="hidden md:inline">Compare with </span>Original Tasks
+												</Tabs.Trigger>
+												<Tabs.Trigger value="latest">
+													<span class="hidden md:inline">Compare with </span>Latest Tasks
+												</Tabs.Trigger>
+											</Tabs.List>
+											<Tabs.Content value="original">
+												<div class="mt-2 flex flex-col gap-6 text-sm">
+													{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
+														{#if !_.isEqualWith(data.originalTasks.tasks[taskId], data.edits[0].tasks[taskId], trimTaskCustomizer)}
+															<TaskDiffSection
+																oldTask={data.originalTasks.tasks[taskId]}
+																newTask={data.edits[0].tasks[taskId]}
+															/>
+														{/if}
+													{/each}
+												</div>
+											</Tabs.Content>
+											<Tabs.Content value="latest">
+												{#if _.isEqualWith(data.originalTasks.tasks, _.pick(data.latestTasks.tasks, Object.keys(data.originalTasks.tasks)), trimTaskCustomizer)}
+													<Alert.Root class="border-primary text-primary">
+														<SmileIcon />
+														<Alert.Description class="text-primary">
+															The original tasks in this proposal are identical to the latest tasks{#if _.difference(Object.keys(data.latestTasks.tasks), Object.keys(data.originalTasks.tasks)).length > 0}
+																(excluding any new tasks that were added recently and are not part
+																of this proposal){/if}. There's no need to review them again if
+															you've already done so.
+														</Alert.Description>
+													</Alert.Root>
+												{/if}
+												<div class="mt-2 flex flex-col gap-6 text-sm">
+													<!-- Ignore new tasks introduced in the latest tasks that are not part of this
+													proposal -->
+													{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in data.edits[0].tasks ? ['new'] : [])] as taskId (taskId)}
+														{#if !_.isEqualWith(data.latestTasks.tasks[taskId], data.edits[0].tasks[taskId], trimTaskCustomizer) && !_.isEqualWith(data.originalTasks.tasks[taskId], data.edits[0].tasks[taskId], trimTaskCustomizer)}
+															<TaskDiffSection
+																oldTask={data.latestTasks.tasks[taskId]}
+																newTask={data.edits[0].tasks[taskId]}
+															/>
+														{/if}
+													{/each}
+												</div>
+											</Tabs.Content>
+										</Tabs.Root>
+									</div>
 									<AlertDialog.Footer>
 										<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
 										<AlertDialog.Action
@@ -739,25 +858,51 @@
 						</div>
 					{/if}
 				{:else}
-					{#if checkEmptyTask(editedTasks)}
+					{#if tasksWithMissingFields.length > 0}
 						<Alert.Root class="border-my-pink text-my-pink my-1">
 							<TriangleAlertIcon />
 							<Alert.Description class="text-my-pink">
-								Task fields must not be left empty.
+								<h4>Task fields must not be left empty.</h4>
+								<ul class="list-inside list-disc text-sm">
+									{#each tasksWithMissingFields as taskId (taskId)}
+										{#if taskId === 'new'}
+											<li>
+												New Task: {editedTasks[taskId].name.trim() === ''
+													? '(no task name entered)'
+													: editedTasks[taskId].name}
+											</li>
+										{:else}
+											<li>
+												Task: {editedTasks[taskId].name.trim() === ''
+													? '(no task name entered)'
+													: editedTasks[taskId].name}
+											</li>
+										{/if}
+									{/each}
+								</ul>
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
 					<div class="mt-2 flex items-center justify-between">
 						<!-- Test Button -->
 						<Button
+							class="hover:cursor-pointer"
 							disabled={(data.edits.length > 0
-								? _.isEqual(editedTasks, data.edits[0].tasks)
-								: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-								_.isEqual(editedTasks, testedTasks) ||
+								? _.isEqualWith(
+										editedTasksWithoutEmptyNewTask,
+										data.edits[0].tasks,
+										trimTaskCustomizer
+									)
+								: _.isEqualWith(
+										editedTasksWithoutEmptyNewTask,
+										data.originalTasks.tasks,
+										trimTaskCustomizer
+									)) ||
+								_.isEqualWith(editedTasksWithoutEmptyNewTask, testedTasks, trimTaskCustomizer) ||
 								runningTest ||
 								generatingCase ||
 								savingEdit ||
-								checkEmptyTask(editedTasks)}
+								tasksWithMissingFields.length > 0}
 							onclick={async () => {
 								await runTest();
 							}}
@@ -769,42 +914,9 @@
 							{/if}
 						</Button>
 						<div class="flex items-center gap-2">
-							<!-- Diff Button -->
-							<Dialog.Root>
-								<Dialog.Trigger
-									class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
-									disabled={(data.edits.length > 0
-										? _.isEqual(editedTasks, data.edits[0].tasks)
-										: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-										runningTest ||
-										generatingCase ||
-										savingEdit}
-								>
-									<DiffIcon />
-									Diff
-								</Dialog.Trigger>
-								<Dialog.Content class="max-h-[80vh]">
-									<Dialog.Header>
-										<Dialog.Title>Compare the differences</Dialog.Title>
-										<Dialog.Description>
-											The highlighted and strikethrough text indicates the edits you made to the
-											current bot instructions.
-										</Dialog.Description>
-									</Dialog.Header>
-									<ScrollArea class="h-[50vh] w-full">
-										{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
-											<div class="pt-4">
-												<TaskDiffSection
-													oldTask={data.originalTasks.tasks[taskId]}
-													newTask={editedTasks[taskId]}
-												/>
-											</div>
-										{/each}
-									</ScrollArea>
-								</Dialog.Content>
-							</Dialog.Root>
 							<!-- Reset Button -->
 							<Button
+								class="hover:cursor-pointer"
 								variant="secondary"
 								disabled={(data.edits.length > 0
 									? _.isEqual(editedTasks, data.edits[0].tasks)
@@ -818,14 +930,90 @@
 							>
 								<UndoIcon class="size-4" />Reset
 							</Button>
+							<!-- Diff Button -->
+							<Dialog.Root>
+								<Dialog.Trigger
+									class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+									disabled={(data.edits.length > 0
+										? _.isEqualWith(
+												editedTasksWithoutEmptyNewTask,
+												data.edits[0].tasks,
+												trimTaskCustomizer
+											)
+										: _.isEqualWith(
+												editedTasksWithoutEmptyNewTask,
+												data.originalTasks.tasks,
+												trimTaskCustomizer
+											)) ||
+										runningTest ||
+										generatingCase ||
+										savingEdit}
+								>
+									<DiffIcon />
+									Diff
+								</Dialog.Trigger>
+								<Dialog.Content class="flex max-h-[80vh] flex-col">
+									<Dialog.Header class="text-left">
+										<Dialog.Title><h2>Compare the differences</h2></Dialog.Title>
+										<Dialog.Description class="text-foreground text-sm md:text-base">
+											The highlighted and strikethrough text indicates the edits you made, either to
+											the most recent proposed edit or to the original tasks in place when this
+											proposal was first initiated. Tasks that have not been edited are not shown.
+										</Dialog.Description>
+									</Dialog.Header>
+									<div class="min-h-0 flex-1 overflow-y-auto">
+										<Tabs.Root value="edit">
+											<Tabs.List class="w-full">
+												<Tabs.Trigger value="edit">
+													<span class="hidden md:inline">Compare with</span>Proposed Edit
+												</Tabs.Trigger>
+												<Tabs.Trigger value="original">
+													<span class="hidden md:inline">Compare with</span>Original Tasks
+												</Tabs.Trigger>
+											</Tabs.List>
+											<Tabs.Content value="edit">
+												{#if data.edits.length > 0}
+													<div class="mt-2 flex flex-col gap-6 text-sm">
+														{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+															{#if !_.isEqualWith(data.edits[0].tasks[taskId], editedTasks[taskId], trimTaskCustomizer)}
+																<TaskDiffSection
+																	oldTask={data.edits[0].tasks[taskId]}
+																	newTask={editedTasks[taskId]}
+																/>
+															{/if}
+														{/each}
+													</div>
+												{:else}
+													<p class="text-muted-foreground text-sm">
+														No edits have been proposed yet.
+													</p>
+												{/if}
+											</Tabs.Content>
+											<Tabs.Content value="original">
+												<div class="mt-2 flex flex-col gap-6 text-sm">
+													{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+														{#if !_.isEqualWith(data.originalTasks.tasks[taskId], editedTasks[taskId], trimTaskCustomizer)}
+															<TaskDiffSection
+																oldTask={data.originalTasks.tasks[taskId]}
+																newTask={editedTasks[taskId]}
+															/>
+														{/if}
+													{/each}
+												</div>
+											</Tabs.Content>
+										</Tabs.Root>
+									</div>
+								</Dialog.Content>
+							</Dialog.Root>
 							<!-- Save Button -->
 							<Button
+								class="hover:cursor-pointer"
 								variant="secondary"
 								disabled={(data.edits.length > 0
-									? _.isEqual(editedTasks, data.edits[0].tasks)
-									: _.isEqual(editedTasks, data.originalTasks.tasks)) ||
+									? _.isEqualWith(editedTasks, data.edits[0].tasks, trimTaskCustomizer)
+									: _.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) ||
 									_.isNil(testedTasks) ||
-									!_.isEqual(testedTasks, editedTasks) ||
+									!_.isEqualWith(testedTasks, editedTasks, trimTaskCustomizer) ||
 									runningTest ||
 									generatingCase ||
 									savingEdit}
@@ -896,68 +1084,68 @@
 														view
 													{/if}
 												</Dialog.Trigger>
-												<Dialog.Content>
-													<Dialog.Header>
-														<Dialog.Title>Edit made by {edit.editor}</Dialog.Title>
-														<Dialog.Description>
-															<p>
-																{new Date(edit.createAt).toLocaleString([], {
-																	year: 'numeric',
-																	month: 'numeric',
-																	day: 'numeric',
-																	hour: '2-digit',
-																	minute: '2-digit',
-																	hour12: false
-																})}
-															</p>
-															<p class="mt-2">
-																<Alert.Root>
-																	<InfoIcon />
-																	<Alert.Title><h4>Original Task v.s. Latest Task</h4></Alert.Title>
-																	<Alert.Description>
-																		The original task refers to the version in place when this
-																		proposal was first initiated, while the latest task is the
-																		currently deployed version that determines how the bot behaves
-																		within your community platform now.
-																	</Alert.Description>
-																</Alert.Root>
-															</p>
-															<Tabs.Root value="original" class="mt-2 w-full">
-																<Tabs.List class="w-full">
-																	<Tabs.Trigger value="original">
-																		Compare with Original Tasks
-																	</Tabs.Trigger>
-																	<Tabs.Trigger value="latest">
-																		Compare with Latest Tasks
-																	</Tabs.Trigger>
-																</Tabs.List>
-																<Tabs.Content value="original">
-																	<ScrollArea class="h-[50vh] w-full">
-																		{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
-																			<div class="pt-4">
-																				<TaskDiffSection
-																					oldTask={data.originalTasks.tasks[taskId]}
-																					newTask={edit.tasks[taskId]}
-																				/>
-																			</div>
-																		{/each}
-																	</ScrollArea>
-																</Tabs.Content>
-																<Tabs.Content value="latest">
-																	<ScrollArea class="h-[50vh] w-full">
-																		{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
-																			<div class="pt-4">
-																				<TaskDiffSection
-																					oldTask={data.latestTasks.tasks[taskId]}
-																					newTask={edit.tasks[taskId]}
-																				/>
-																			</div>
-																		{/each}
-																	</ScrollArea>
-																</Tabs.Content>
-															</Tabs.Root>
+												<Dialog.Content class="flex max-h-[80vh] flex-col">
+													<Dialog.Header class="text-left">
+														<Dialog.Title><h2>Edit made by {edit.editor}</h2></Dialog.Title>
+														<p>
+															{new Date(edit.createAt).toLocaleString([], {
+																year: 'numeric',
+																month: 'numeric',
+																day: 'numeric',
+																hour: '2-digit',
+																minute: '2-digit',
+																hour12: false
+															})}
+														</p>
+														<Dialog.Description class="text-foreground text-sm md:text-base">
+															The highlighted and strikethrough text indicates the edits you made,
+															either to the previous edit or to the original tasks in place when
+															this proposal was first initiated. Tasks that have not been edited are
+															not shown.
 														</Dialog.Description>
 													</Dialog.Header>
+													<div class="min-h-0 flex-1 overflow-y-auto">
+														<Tabs.Root value="previous">
+															<Tabs.List class="w-full">
+																<Tabs.Trigger value="previous">
+																	<span class="hidden md:inline">Compare with</span>Previous Edit
+																</Tabs.Trigger>
+																<Tabs.Trigger value="original">
+																	<span class="hidden md:inline">Compare with</span>Original Tasks
+																</Tabs.Trigger>
+															</Tabs.List>
+															<Tabs.Content value="previous">
+																{#if i === data.edits.length - 1}
+																	<p class="text-muted-foreground text-sm">
+																		This is the very first edit. There are no previous edits.
+																	</p>
+																{:else}
+																	<div class="mt-2 flex flex-col gap-6 text-sm">
+																		{#each [...Object.keys(_.omit( data.edits[i + 1].tasks, ['new'] )).sort(), ...('new' in edit.tasks || 'new' in data.edits[i + 1].tasks ? ['new'] : [])] as taskId (taskId)}
+																			{#if !_.isEqualWith(data.edits[i + 1].tasks[taskId], edit.tasks[taskId], trimTaskCustomizer)}
+																				<TaskDiffSection
+																					oldTask={data.edits[i + 1].tasks[taskId]}
+																					newTask={edit.tasks[taskId]}
+																				/>
+																			{/if}
+																		{/each}
+																	</div>
+																{/if}
+															</Tabs.Content>
+															<Tabs.Content value="original">
+																<div class="mt-2 flex flex-col gap-6 text-sm">
+																	{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in edit.tasks ? ['new'] : [])] as taskId (taskId)}
+																		{#if !_.isEqualWith(data.originalTasks.tasks[taskId], edit.tasks[taskId], trimTaskCustomizer)}
+																			<TaskDiffSection
+																				oldTask={data.originalTasks.tasks[taskId]}
+																				newTask={edit.tasks[taskId]}
+																			/>
+																		{/if}
+																	{/each}
+																</div>
+															</Tabs.Content>
+														</Tabs.Root>
+													</div>
 												</Dialog.Content>
 											</Dialog.Root>
 										</Table.Cell>
@@ -1031,21 +1219,9 @@
 						</Popover.Content>
 					</Popover.Root>
 				</div>
-				{#if (data.edits.length > 0 ? _.isEqual(editedTasks, data.edits[0].tasks) : _.isEqual(editedTasks, data.originalTasks.tasks)) || _.isEqual(editedTasks, testedTasks)}
-					<!-- <Alert.Root class="text-muted-foreground mt-1">
-						<InfoIcon />
-						<Alert.Title>Heads up!</Alert.Title>
-						<Alert.Description>
-							For each case, give a thumbs up if the bot's response is good, or a thumbs down if
-							it's not. If you notice any issues, try editing the prompt to address them. If the
-							bot's responses are already satisfactory, feel free to upvote the proposed edit to
-							support its deployment.
-						</Alert.Description>
-					</Alert.Root> -->
-				{:else}
+				{#if (data.edits.length > 0 ? !_.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer) : !_.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) && !_.isEqualWith(editedTasksWithoutEmptyNewTask, testedTasks, trimTaskCustomizer)}
 					<Alert.Root class="border-primary text-primary mt-1">
 						<TriangleAlertIcon />
-						<!-- <Alert.Title>Heads up!</Alert.Title> -->
 						<Alert.Description class="text-primary">
 							Before saving new edits, run test + generate to see the bot's updated responses and
 							review generated cases to identify any potential issues with your edit.
@@ -1088,6 +1264,7 @@
 												testCaseBadge={true}
 												tasks={editedTasks}
 												edits={data.edits}
+												originalTasks={data.originalTasks.tasks}
 												taskHistoryId={data.proposal.taskHistoryId}
 												user={data.user}
 												removeCaseFunction={data.proposal.open ? removeCaseFunction : undefined}
@@ -1125,8 +1302,13 @@
 							variant="secondary"
 							class="hover:cursor-pointer"
 							disabled={generatingCase ||
-								(data.edits.length === 0 && _.isEqual(editedTasks, data.originalTasks.tasks)) ||
-								checkEmptyTask(editedTasks)}
+								(data.edits.length === 0 &&
+									_.isEqualWith(
+										editedTasksWithoutEmptyNewTask,
+										data.originalTasks.tasks,
+										trimTaskCustomizer
+									)) ||
+								tasksWithMissingFields.length > 0}
 							hidden={!data.proposal.open}
 							onclick={async () => {
 								await generateCases($state.snapshot(editedTasks));
@@ -1344,7 +1526,7 @@
 										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel) ||
 										runningTest ||
 										savingEdit ||
-										checkEmptyTask(editedTasks)}
+										tasksWithMissingFields.length > 0}
 									onclick={async () => {
 										checkingCaseManually = true;
 										showCaseError = false;
