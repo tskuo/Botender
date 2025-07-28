@@ -146,7 +146,7 @@
 		{ value: 'overall', label: 'All Tasks' },
 		// { value: 'triggers', label: 'Triggers' },
 		...[
-			...Object.keys(_.omit(playgroundTasks, ['new'])).sort(),
+			...Object.keys(_.pickBy(data.latestTasks.tasks, (task) => !isTaskEmpty(task))).sort(),
 			...('new' in playgroundTasks ? ['new'] : [])
 		].map((taskId) => {
 			let label;
@@ -214,10 +214,12 @@
 								<div class="min-h-0 flex-1 overflow-y-auto text-sm">
 									<div class="flex flex-col gap-6">
 										{#each Object.keys(data.latestTasks.tasks).sort() as taskId (taskId)}
-											<TaskDiffSection
-												oldTask={data.latestTasks.tasks[taskId]}
-												newTask={playgroundTasks[taskId]}
-											/>
+											{#if !isTaskEmpty(data.latestTasks.tasks[taskId])}
+												<TaskDiffSection
+													oldTask={data.latestTasks.tasks[taskId]}
+													newTask={playgroundTasks[taskId]}
+												/>
+											{/if}
 										{/each}
 										{#if 'new' in playgroundTasks}
 											{#if !isTaskEmpty(playgroundTasks['new'])}
@@ -233,7 +235,7 @@
 				<div class="pt-2">
 					<Select.Root type="single" name="playgroundScope" bind:value={scope}>
 						<Select.Trigger class="w-full">
-							{scopes.find((s) => s.value === scope)?.label ?? 'Select the scope'}
+							{scopes.find((s) => s.value === scope)?.label ?? 'Select a task'}
 						</Select.Trigger>
 						<Select.Content>
 							<Select.Group>
@@ -245,9 +247,9 @@
 					</Select.Root>
 				</div>
 				<div class="flex flex-col gap-6 pt-4">
-					{#each [...Object.keys(_.omit( playgroundTasks, ['new'] )).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
+					{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === taskId}
-							<div>
+							{#if taskId === 'new' || (taskId in data.latestTasks.tasks && !isTaskEmpty(data.latestTasks.tasks[taskId]))}
 								<TaskSection
 									id={taskId}
 									bind:name={playgroundTasks[taskId].name}
@@ -255,7 +257,7 @@
 									bind:action={playgroundTasks[taskId].action}
 									triggersOnly={scope === 'triggers'}
 								/>
-							</div>
+							{/if}
 						{/if}
 					{/each}
 				</div>
@@ -318,7 +320,7 @@
 					</Alert.Root>
 				{/if}
 				{#if showCase}
-					{#if displayedBotResponse === '' && triggeredTaskId !== '0'}
+					{#if displayedBotResponse === '' && triggeredTaskId !== '0' && !running}
 						<Alert.Root class="mb-2">
 							<InfoIcon />
 							<Alert.Title><h4>Tips: The bot chose not to respond.</h4></Alert.Title>
@@ -333,7 +335,7 @@
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
-					{#if displayedBotResponse === '' && triggeredTaskId === '0'}
+					{#if displayedBotResponse === '' && triggeredTaskId === '0' && !running}
 						<Alert.Root class="mb-2">
 							<InfoIcon />
 							<Alert.Title><h4>Tips: No task is triggered.</h4></Alert.Title>
@@ -486,7 +488,7 @@
 								<Dialog.Content class="flex max-h-[80vh] flex-col">
 									<Dialog.Header>
 										<Dialog.Title><h2>Initiate a new proposal</h2></Dialog.Title>
-										<Dialog.Description>
+										<Dialog.Description class="text-foreground text-sm md:text-base">
 											{#if isTaskChanged}
 												Describe why you are proposing this edit to the bot. For example, you might
 												want to address an issue you've noticed or suggest new edits to improve its
@@ -502,27 +504,27 @@
 											<Form.Field form={formProposal} name="title">
 												<Form.Control>
 													{#snippet children({ props })}
-														<Form.Label><h4>Proposal title</h4></Form.Label>
+														<Form.Label><h3>Proposal title</h3></Form.Label>
 														<Input {...props} bind:value={$formDataProposal.title} />
 													{/snippet}
 												</Form.Control>
 												<Form.Description></Form.Description>
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field form={formProposal} name="initiator">
+											<Form.Field form={formProposal} name="initiator" class="mt-4">
 												<Form.Control>
 													{#snippet children({ props })}
-														<Form.Label><h4>Initiator</h4></Form.Label>
+														<Form.Label><h3>Initiator</h3></Form.Label>
 														<Input {...props} value={data.user?.userName} readonly />
 													{/snippet}
 												</Form.Control>
 												<Form.Description></Form.Description>
 												<Form.FieldErrors />
 											</Form.Field>
-											<Form.Field form={formProposal} name="description">
+											<Form.Field form={formProposal} name="description" class="mt-4">
 												<Form.Control>
 													{#snippet children({ props })}
-														<Form.Label><h4>Description</h4></Form.Label>
+														<Form.Label><h3>Description</h3></Form.Label>
 														<Textarea {...props} bind:value={$formDataProposal.description} />
 													{/snippet}
 												</Form.Control>
@@ -612,11 +614,11 @@
 												<Form.FieldErrors />
 											</Form.Field>
 											{#if isTaskChanged}
-												<Label class="mt-4"><h4>Review your proposed edits:</h4></Label>
-												<p class="text-muted-foreground mt-1 text-sm">
+												<Label class="mt-4"><h3>Review your proposed edits:</h3></Label>
+												<p class="text-muted-foreground mt-1">
 													Tasks that have not been edited are not shown.
 												</p>
-												<div class="flex flex-col gap-6 pt-4">
+												<div class="flex flex-col gap-6 pt-4 text-sm">
 													{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks && !isTaskEmpty(playgroundTasks['new']) ? ['new'] : [])] as taskId (taskId)}
 														{#if !_.isEqualWith(data.latestTasks.tasks[taskId], playgroundTasks[taskId], trimTaskCustomizer)}
 															<TaskDiffSection
