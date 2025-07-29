@@ -623,64 +623,66 @@
 								</DropdownMenu.Label>
 								<DropdownMenu.Separator />
 								{#each [...Object.keys(data.originalTasks.tasks).sort(), 'new'] as taskId (taskId)}
-									<DropdownMenu.Item
-										onclick={() => {
-											if (editScope.includes(taskId)) {
-												editScope = editScope.filter((i) => i !== taskId);
-												if (
-													taskId === 'new' &&
-													'new' in editedTasks &&
-													isTaskEmpty(editedTasks['new'])
-												) {
-													editedTasks = _.omit(editedTasks, ['new']);
+									{#if taskId === 'new' ? true : !isTaskEmpty(data.originalTasks.tasks[taskId])}
+										<DropdownMenu.Item
+											onclick={() => {
+												if (editScope.includes(taskId)) {
+													editScope = editScope.filter((i) => i !== taskId);
+													if (
+														taskId === 'new' &&
+														'new' in editedTasks &&
+														isTaskEmpty(editedTasks['new'])
+													) {
+														editedTasks = _.omit(editedTasks, ['new']);
+													}
+												} else {
+													if (!(taskId in editedTasks)) {
+														// taskId can only be 'new'
+														editedTasks[taskId] = {
+															name: '',
+															trigger: '',
+															action: ''
+														};
+													}
+													editScope.push(taskId);
+													editScope = editScope.sort((a, b) => {
+														if (a === 'new') return 1;
+														if (b === 'new') return -1;
+														return a.localeCompare(b);
+													});
 												}
-											} else {
-												if (!(taskId in editedTasks)) {
-													// taskId can only be 'new'
-													editedTasks[taskId] = {
-														name: '',
-														trigger: '',
-														action: ''
-													};
-												}
-												editScope.push(taskId);
-												editScope = editScope.sort((a, b) => {
-													if (a === 'new') return 1;
-													if (b === 'new') return -1;
-													return a.localeCompare(b);
-												});
-											}
-										}}
-									>
-										<div
-											class={`${tasksWithMissingFields.includes(taskId) ? 'text-my-pink' : ''} flex w-full items-center justify-between`}
+											}}
 										>
-											{#if taskId !== 'new'}
-												{#if isTaskEmpty(editedTasks[taskId])}
-													<p class="mr-2">
-														Task: {data.originalTasks.tasks[taskId].name} (deleted)
-													</p>
-												{:else if editedTasks[taskId].name.trim() === ''}
-													<p class="mr-2">Task: (no task name entered)</p>
+											<div
+												class={`${tasksWithMissingFields.includes(taskId) ? 'text-my-pink' : ''} flex w-full items-center justify-between`}
+											>
+												{#if taskId !== 'new'}
+													{#if isTaskEmpty(editedTasks[taskId])}
+														<p class="mr-2">
+															Task: {data.originalTasks.tasks[taskId].name} (deleted)
+														</p>
+													{:else if editedTasks[taskId].name.trim() === ''}
+														<p class="mr-2">Task: (no task name entered)</p>
+													{:else}
+														<p class="mr-2">Task: {editedTasks[taskId].name.trim()}</p>
+													{/if}
+												{:else if !('new' in editedTasks)}
+													<p class="mr-2">Add New Task</p>
+												{:else if isTaskEmpty(editedTasks['new'])}
+													<p class="mr-2">New Task: (no content entered)</p>
+												{:else if editedTasks['new'].name.trim() === ''}
+													<p class="mr-2">New Task: (no task name entered)</p>
 												{:else}
-													<p class="mr-2">Task: {editedTasks[taskId].name.trim()}</p>
+													<p class="mr-2">New Task: {editedTasks[taskId].name.trim()}</p>
 												{/if}
-											{:else if !('new' in editedTasks)}
-												<p class="mr-2">Add New Task</p>
-											{:else if isTaskEmpty(editedTasks['new'])}
-												<p class="mr-2">New Task: (no content entered)</p>
-											{:else if editedTasks['new'].name.trim() === ''}
-												<p class="mr-2">New Task: (no task name entered)</p>
-											{:else}
-												<p class="mr-2">New Task: {editedTasks[taskId].name.trim()}</p>
-											{/if}
-											{#if editScope.includes(taskId)}
-												<EyeIcon />
-											{:else}
-												<EyeClosedIcon />
-											{/if}
-										</div>
-									</DropdownMenu.Item>
+												{#if editScope.includes(taskId)}
+													<EyeIcon />
+												{:else}
+													<EyeClosedIcon />
+												{/if}
+											</div>
+										</DropdownMenu.Item>
+									{/if}
 								{/each}
 							</DropdownMenu.Group>
 						</DropdownMenu.Content>
