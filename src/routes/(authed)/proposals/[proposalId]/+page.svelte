@@ -344,7 +344,7 @@
 	// Run Tests
 	let runTest = async () => {
 		runningTest = true;
-		testedTasks = $state.snapshot(trimWhiteSpaceInTasks(editedTasks));
+		testedTasks = $state.snapshot(trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask));
 		const promise1 = runTestCases(testedTasks);
 		const promise2 = generateCases(testedTasks);
 		await Promise.all([promise1, promise2]);
@@ -1321,7 +1321,7 @@
 								tasksWithMissingFields.length > 0}
 							hidden={!data.proposal.open}
 							onclick={async () => {
-								await generateCases($state.snapshot(editedTasks));
+								await generateCases($state.snapshot(editedTasksWithoutEmptyNewTask));
 							}}
 						>
 							<FolderCogIcon class="size-4" />
@@ -1742,7 +1742,7 @@
 
 											if (!fetchCase) {
 												await createAndAddNewTestCase(
-													editedTasks,
+													editedTasksWithoutEmptyNewTask,
 													displayedChannel,
 													displayedUserMessage,
 													displayedTaskId,
@@ -1772,7 +1772,7 @@
 														await tick();
 														const ref = testCaseRefs[testCaseRefs.length - 1];
 														ref.setTmpBotResponse(
-															$state.snapshot(editedTasks),
+															$state.snapshot(editedTasksWithoutEmptyNewTask),
 															displayedTaskId,
 															displayedBotResponse,
 															displayedThumbsUp,

@@ -26,15 +26,18 @@
 	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
+	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 
 	// import svelte features
 	import { onMount } from 'svelte';
 
 	// import svelte stores
 	import { page } from '$app/state';
+	import { trimTaskCustomizer, isTaskEmpty } from '$lib/tasks';
 
 	let {
-		id = 'N/A',
+		id = '',
 		channel = '',
 		createdAt = new Date(),
 		realUserMessage = false,
@@ -58,12 +61,17 @@
 	let botResponses = $state([]);
 	let removing = $state(false);
 	let adding = $state(false);
+	$effect(() => {
+		if (tmpTasks && 'new' in tmpTasks && isTaskEmpty(tmpTasks['new'])) {
+			console.log('tmpTasks has an empty new task:', id, tmpTasks);
+		}
+	});
 
-	const textLengthCap = 66;
+	const textLengthCap = 100;
 
 	export async function runTestForCase(editedTasks: Tasks) {
 		loadingBotResponse = true;
-		if (!_.isEqual(editedTasks, tmpTasks)) {
+		if (!_.isEqualWith(editedTasks, tmpTasks, trimTaskCustomizer)) {
 			const resBot = await fetch('/api/bot', {
 				method: 'POST',
 				body: JSON.stringify({
@@ -225,32 +233,34 @@
 	});
 </script>
 
-{#snippet botResponseSection(botResponse: BotResponse, lengthCap = 0)}
-	<div class="mb-2 flex w-full items-center">
+{#snippet botResponseSection(botResponse: BotResponse, renderTasks: Tasks = tasks, lengthCap = 0)}
+	<div class="flex w-full items-center">
 		<WrenchIcon class="mr-2 size-4" />
 		<h4 class="font-medium">
-			{botResponse.triggeredTask in tasks
-				? tasks[botResponse.triggeredTask].name
+			{botResponse.triggeredTask in renderTasks
+				? renderTasks[botResponse.triggeredTask].name
 				: 'No Task is Triggered'}
 		</h4>
 	</div>
-	<div class="flex w-full">
-		{#if botResponse.botResponse !== ''}
-			<BotIcon class="mt-1 mr-2 size-4 flex-none" />
-			{#if lengthCap !== 0}
-				{#if botResponse.botResponse.length <= lengthCap}
-					{botResponse.botResponse}
+	{#if botResponse.triggeredTask !== '0'}
+		<div class="mt-2 flex w-full">
+			{#if botResponse.botResponse !== ''}
+				<BotIcon class="mt-1 mr-2 size-4 flex-none" />
+				{#if lengthCap !== 0}
+					{#if botResponse.botResponse.length <= lengthCap}
+						{botResponse.botResponse}
+					{:else}
+						{botResponse.botResponse.substring(0, lengthCap)}...
+					{/if}
 				{:else}
-					{botResponse.botResponse.substring(0, lengthCap)}...
+					<p>{botResponse.botResponse}</p>
 				{/if}
-			{:else}
-				<p>{botResponse.botResponse}</p>
+			{:else if botResponse.botResponse === '' && botResponse.triggeredTask !== '0'}
+				<BotOffIcon class="mr-2 size-4 flex-none" />
+				<p>The bot chose not to respond.</p>
 			{/if}
-		{:else if botResponse.botResponse === '' && botResponse.triggeredTask !== '0'}
-			<BotOffIcon class="mt-1 mr-2 size-4 flex-none" />
-			<p>The bot chose not to respond.</p>
-		{/if}
-	</div>
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet thumbsUpDownButtons(botResponse: BotResponse)}
@@ -292,10 +302,10 @@
 			}
 		}}
 	>
-		<ToggleGroup.Item value="thumbsUp" class="data-[state=on]:bg-my-green">
+		<ToggleGroup.Item value="thumbsUp" class="data-[state=on]:bg-my-green hover:cursor-pointer">
 			<ThumbsUpIcon class="size-4" />good response
 		</ToggleGroup.Item>
-		<ToggleGroup.Item value="thumbsDown" class="data-[state=on]:bg-my-pink">
+		<ToggleGroup.Item value="thumbsDown" class="data-[state=on]:bg-my-pink hover:cursor-pointer">
 			<ThumbsDownIcon class="size-4" />bad response
 		</ToggleGroup.Item>
 	</ToggleGroup.Root>
@@ -320,7 +330,7 @@
 
 <Dialog.Root>
 	<Dialog.Trigger class="hover:cursor-pointer">
-		<Card.Root class="hover:bg-muted/50 h-full w-full text-left">
+		<Card.Root class="hover:bg-muted/50 h-full w-full gap-3 text-left text-sm">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
 				<Card.Description class="flex justify-between">
@@ -370,12 +380,12 @@
 								</Alert.Description>
 							</Alert.Root>
 						{:else}
-							{@render botResponseSection(response, textLengthCap)}
+							{@render botResponseSection(response, tasks, textLengthCap)}
 						{/if}
 					{/if}
 					{#if page.url.pathname.startsWith('/proposals/')}
 						{#if !_.isNil(tmpBotResponse)}
-							{@render botResponseSection(tmpBotResponse, textLengthCap)}
+							{@render botResponseSection(tmpBotResponse, tmpTasks, textLengthCap)}
 						{:else if edits.length > 0}
 							{@const response = botResponses.find(
 								(r: BotResponse) => r.proposalEditId === edits[0].id
@@ -387,7 +397,7 @@
 									</Alert.Description>
 								</Alert.Root>
 							{:else}
-								{@render botResponseSection(response, textLengthCap)}
+								{@render botResponseSection(response, edits[0].tasks, textLengthCap)}
 							{/if}
 						{:else}
 							{@const response = botResponses.find(
@@ -400,14 +410,14 @@
 									</Alert.Description>
 								</Alert.Root>
 							{:else}
-								{@render botResponseSection(response, textLengthCap)}
+								{@render botResponseSection(response, originalTasks, textLengthCap)}
 							{/if}
 						{/if}
 					{/if}
 				{/if}
 			</Card.Content>
 			{#if !loadingBotResponse}
-				<Card.Footer class="mt-auto">
+				<Card.Footer>
 					{#if page.url.pathname === '/cases'}
 						{@const response = botResponses.find(
 							(r: BotResponse) => r.taskHistoryId === taskHistoryId
@@ -439,8 +449,8 @@
 			{/if}
 		</Card.Root>
 	</Dialog.Trigger>
-	<Dialog.Content>
-		<Dialog.Header>
+	<Dialog.Content class="flex h-[80vh] flex-col overflow-y-auto">
+		<Dialog.Header class="text-left">
 			<Dialog.Title class="mb-2 flex gap-2">
 				{#if checkingBadge}
 					<Badge class="bg-discord-yellow text-black">worth checking</Badge>
@@ -450,147 +460,185 @@
 				{/if}
 			</Dialog.Title>
 			<Dialog.Description class="text-left">
-				<div class="mb-2 flex items-center">
-					<HashIcon class="mr-2 size-4" />
-					<h4 class="font-medium">
-						{channel.startsWith('#') ? channel.slice(1) : channel}
-					</h4>
-				</div>
-				<div class="mb-4 flex">
-					{#if realUserMessage}
-						<UserCheckIcon class="mt-1 mr-2 size-4 flex-none" />
-					{:else}
-						<UserIcon class="mt-1 mr-2 size-4 flex-none" />
-					{/if}
-					<p>{userMessage}</p>
-				</div>
-				{#if loadingBotResponse}
+				<div class="text-foreground w-full text-base">
 					<div class="mb-2 flex items-center">
-						<LoaderIcon class="mr-2 size-4 animate-spin" />
-						<p>Loading bot response...</p>
+						<HashIcon class="mr-2 size-4" />
+						<h4 class="font-medium">
+							{channel.startsWith('#') ? channel.slice(1) : channel}
+						</h4>
 					</div>
-				{:else}
-					{#if page.url.pathname === '/cases'}
-						{@const response = botResponses.find(
-							(r: BotResponse) => r.taskHistoryId === taskHistoryId
-						)}
-						{#if response === undefined}
-							<Alert.Root>
-								<Alert.Description>
-									No response has been generated by the most recent version of the bot.
-								</Alert.Description>
-							</Alert.Root>
+					<div class="mb-4 flex">
+						{#if realUserMessage}
+							<UserCheckIcon class="mt-1 mr-2 size-4 flex-none" />
 						{:else}
-							{@render botResponseSection(response)}
-							{@render thumbsUpDownButtons(response)}
+							<UserIcon class="mt-1 mr-2 size-4 flex-none" />
 						{/if}
-					{/if}
-					{#if page.url.pathname.startsWith('/proposals/')}
-						{#if !_.isNil(tmpBotResponse)}
-							{@render botResponseSection(tmpBotResponse)}
-							{@render thumbsUpDownButtons(tmpBotResponse)}
-						{:else if edits.length > 0}
-							{@const response = botResponses.find(
-								(r: BotResponse) => r.proposalEditId === edits[0].id
-							)}
-							{#if response === undefined}
-								<Button
-									class="w-full"
-									onclick={async () =>
-										await generateBotResponse(
-											edits[0].tasks,
-											edits[0].id,
-											page.params.proposalId,
-											''
-										)}
-								>
-									<BotMessageSquareIcon class="size-4" />Bot Response
-								</Button>
-							{:else}
-								{@render botResponseSection(response)}
-								{@render thumbsUpDownButtons(response)}
-							{/if}
-						{:else}
+						<p>{userMessage}</p>
+					</div>
+					{#if loadingBotResponse}
+						<div class="mb-2 flex items-center">
+							<LoaderIcon class="mr-2 size-4 animate-spin" />
+							<p>Loading bot response...</p>
+						</div>
+					{:else}
+						{#if page.url.pathname === '/cases'}
 							{@const response = botResponses.find(
 								(r: BotResponse) => r.taskHistoryId === taskHistoryId
 							)}
 							{#if response === undefined}
-								<Button
-									class="w-full"
-									onclick={async () =>
-										await generateBotResponse(originalTasks, '', '', taskHistoryId)}
-								>
-									<BotMessageSquareIcon class="size-4" />Bot Response
-								</Button>
+								<Alert.Root>
+									<Alert.Description>
+										No response has been generated by the most recent version of the bot.
+									</Alert.Description>
+								</Alert.Root>
 							{:else}
-								{@render botResponseSection(response)}
+								{@render botResponseSection(response, tasks)}
 								{@render thumbsUpDownButtons(response)}
 							{/if}
 						{/if}
-					{/if}
-				{/if}
-				{#if page.url.pathname.startsWith('/proposals/')}
-					<h4 class="mt-6">Bot responses from all edits and the original prompt:</h4>
-					<ScrollArea class="h-64 w-full">
-						<Accordion.Root type="single" class="w-full">
+						{#if page.url.pathname.startsWith('/proposals/')}
 							{#if !_.isNil(tmpBotResponse)}
-								<Accordion.Item value="edit-tmp">
-									<Accordion.Trigger>Proposed edit (current)</Accordion.Trigger>
-									<Accordion.Content class="flex flex-col gap-4 text-balance">
-										{#if loadingBotResponse}
-											<div class="mb-2 flex items-center">
-												<LoaderIcon class="mr-2 size-4 animate-spin" />
-												<p>Loading bot response...</p>
-											</div>
-										{:else}
-											{@render botResponseSection(tmpBotResponse)}
-										{/if}
-									</Accordion.Content>
-								</Accordion.Item>
+								{@render botResponseSection(tmpBotResponse, tmpTasks)}
+								{@render thumbsUpDownButtons(tmpBotResponse)}
+							{:else if edits.length > 0}
+								{@const response = botResponses.find(
+									(r: BotResponse) => r.proposalEditId === edits[0].id
+								)}
+								{#if response === undefined}
+									<Button
+										class="w-full hover:cursor-pointer"
+										onclick={async () =>
+											await generateBotResponse(
+												edits[0].tasks,
+												edits[0].id,
+												page.params.proposalId,
+												''
+											)}
+									>
+										<BotMessageSquareIcon class="size-4" />Bot Response
+									</Button>
+								{:else}
+									{@render botResponseSection(response, edits[0].tasks)}
+									{@render thumbsUpDownButtons(response)}
+								{/if}
+							{:else}
+								{@const response = botResponses.find(
+									(r: BotResponse) => r.taskHistoryId === taskHistoryId
+								)}
+								{#if response === undefined}
+									<Button
+										class="w-full hover:cursor-pointer"
+										onclick={async () =>
+											await generateBotResponse(originalTasks, '', '', taskHistoryId)}
+									>
+										<BotMessageSquareIcon class="size-4" />Bot Response
+									</Button>
+								{:else}
+									{@render botResponseSection(response, originalTasks)}
+									{@render thumbsUpDownButtons(response)}
+								{/if}
 							{/if}
-							{#if generatedId === undefined}
-								{#each edits as edit, i (edit.id)}
-									<Accordion.Item value="edit-{edit.id}">
-										<Accordion.Trigger>
-											{edit.editor}'s edit {#if i === 0 && _.isNil(tmpBotResponse)}(current){/if}
-										</Accordion.Trigger>
-										<Accordion.Content class="flex flex-col gap-4 text-balance">
-											{#if loadingBotResponse}
-												<div class="mb-2 flex items-center">
-													<LoaderIcon class="mr-2 size-4 animate-spin" />
-													<p>Loading bot response...</p>
-												</div>
-											{:else}
-												{@const response = botResponses.find(
-													(r: BotResponse) => r.proposalEditId === edit.id
-												)}
-												{#if response === undefined}
-													<div class="flex items-center justify-between">
-														<p>No response has been generated from this edit</p>
-														<Button
-															class="text-muted-foreground px-2 hover:cursor-pointer"
-															variant="secondary"
-															onclick={async () =>
-																await generateBotResponse(
-																	edit.tasks,
-																	edit.id,
-																	page.params.proposalId,
-																	''
-																)}
-														>
-															generate
-														</Button>
-													</div>
-												{:else}
-													{@render botResponseSection(response)}
-												{/if}
-											{/if}
-										</Accordion.Content>
-									</Accordion.Item>
-								{/each}
-								<Accordion.Item value="task-{taskHistoryId}">
+						{/if}
+					{/if}
+				</div>
+			</Dialog.Description>
+		</Dialog.Header>
+		<!-- <Separator class="my-3" /> -->
+		<div class="mt-6 flex-1">
+			{#if page.url.pathname.startsWith('/proposals/') && generatedId === undefined}
+				<div class="text-muted-foreground min-h-0 flex-1 text-sm">
+					<Tabs.Root value="edit">
+						<Tabs.List class="w-full">
+							<Tabs.Trigger value="edit">
+								<span class="hidden md:inline">Response by</span>Proposed Edit
+							</Tabs.Trigger>
+							<Tabs.Trigger value="original">
+								<span class="hidden md:inline">Response by</span>Original Tasks
+							</Tabs.Trigger>
+						</Tabs.List>
+						<Tabs.Content value="edit" class="mt-1 rounded-md border p-4">
+							{#if edits.length === 0}
+								<p>No edits have been proposed yet.</p>
+							{:else if _.isNil(tmpBotResponse)}
+								<p>The response above is the version generated by the proposed edit.</p>
+							{:else if loadingBotResponse}
+								<div class="flex items-center">
+									<LoaderIcon class="mr-2 size-4 animate-spin" />
+									<p>Loading bot response...</p>
+								</div>
+							{:else}
+								{@const response = botResponses.find(
+									(r: BotResponse) => r.proposalEditId === edits[0].id
+								)}
+								{#if response === undefined}
+									<Button
+										class="w-full hover:cursor-pointer"
+										variant="outline"
+										onclick={async () =>
+											await generateBotResponse(
+												edits[0].tasks,
+												edits[0].id,
+												page.params.proposalId,
+												''
+											)}
+									>
+										<BotMessageSquareIcon class="size-4" />Bot Response
+									</Button>
+								{:else}
+									{@render botResponseSection(response, edits[0].tasks)}
+								{/if}
+							{/if}
+						</Tabs.Content>
+						<Tabs.Content value="original" class="mt-1 rounded-md border p-4">
+							{#if edits.length === 0 && _.isNil(tmpBotResponse)}
+								<p>The response above is the version generated by the original tasks.</p>
+							{:else if loadingBotResponse}
+								<div class="flex items-center">
+									<LoaderIcon class="mr-2 size-4 animate-spin" />
+									<p>Loading bot response...</p>
+								</div>
+							{:else}
+								{@const response = botResponses.find(
+									(r: BotResponse) => r.taskHistoryId === taskHistoryId
+								)}
+								{#if response === undefined}
+									<Button
+										class="w-full hover:cursor-pointer"
+										variant="secondary"
+										onclick={async () =>
+											await generateBotResponse(originalTasks, '', '', taskHistoryId)}
+									>
+										<BotMessageSquareIcon class="size-4" />Bot Response
+									</Button>
+								{:else}
+									{@render botResponseSection(response, originalTasks)}
+								{/if}
+							{/if}
+						</Tabs.Content>
+					</Tabs.Root>
+					<!-- 
+					<h4 class="mt-6">Bot responses from all edits and the original prompt:</h4>
+					<Accordion.Root type="single" class="w-full">
+						{#if !_.isNil(tmpBotResponse)}
+							<Accordion.Item value="edit-tmp">
+								<Accordion.Trigger>Proposed edit (current)</Accordion.Trigger>
+								<Accordion.Content class="flex flex-col gap-4 text-balance">
+									{#if loadingBotResponse}
+										<div class="mb-2 flex items-center">
+											<LoaderIcon class="mr-2 size-4 animate-spin" />
+											<p>Loading bot response...</p>
+										</div>
+									{:else}
+										{@render botResponseSection(tmpBotResponse, tmpTasks)}
+									{/if}
+								</Accordion.Content>
+							</Accordion.Item>
+						{/if}
+						{#if generatedId === undefined}
+							{#each edits as edit, i (edit.id)}
+								<Accordion.Item value="edit-{edit.id}">
 									<Accordion.Trigger>
-										original prompt {#if edits.length === 0 && _.isNil(tmpBotResponse)}(current){/if}
+										{edit.editor}'s edit {#if i === 0 && _.isNil(tmpBotResponse)}(current){/if}
 									</Accordion.Trigger>
 									<Accordion.Content class="flex flex-col gap-4 text-balance">
 										{#if loadingBotResponse}
@@ -600,79 +648,124 @@
 											</div>
 										{:else}
 											{@const response = botResponses.find(
-												(r: BotResponse) => r.taskHistoryId === taskHistoryId
+												(r: BotResponse) => r.proposalEditId === edit.id
 											)}
 											{#if response === undefined}
 												<div class="flex items-center justify-between">
-													<p>No response has been generated from the original prompt</p>
+													<p>No response has been generated from this edit</p>
 													<Button
 														class="text-muted-foreground px-2 hover:cursor-pointer"
 														variant="secondary"
 														onclick={async () =>
-															await generateBotResponse(originalTasks, '', '', taskHistoryId)}
+															await generateBotResponse(
+																edit.tasks,
+																edit.id,
+																page.params.proposalId,
+																''
+															)}
 													>
 														generate
 													</Button>
 												</div>
 											{:else}
-												{@render botResponseSection(response)}
+												{@render botResponseSection(response, edit.tasks)}
 											{/if}
 										{/if}
 									</Accordion.Content>
 								</Accordion.Item>
-							{/if}
-						</Accordion.Root>
-					</ScrollArea>
-					{#if testCaseBadge && page.url.pathname.startsWith('/proposals/') && removeCaseFunction !== undefined}
-						<Button
-							disabled={removing}
-							variant="secondary"
-							class="mt-4 w-full"
-							onclick={async () => {
-								removing = true;
-								await removeCaseFunction(id);
-							}}
-						>
-							{#if removing}
-								<LoaderCircleIcon class="size-4 animate-spin" />
-							{:else}
-								<Trash2Icon class="size-4" />
-							{/if}
-							remove from saved test cases
-						</Button>
+							{/each}
+						{/if}
+						{#if generatedId === undefined}
+							<Accordion.Item value="task-{taskHistoryId}">
+								<Accordion.Trigger>
+									original prompt {#if edits.length === 0 && _.isNil(tmpBotResponse)}(current){/if}
+								</Accordion.Trigger>
+								<Accordion.Content class="flex flex-col gap-4 text-balance">
+									{#if loadingBotResponse}
+										<div class="mb-2 flex items-center">
+											<LoaderIcon class="mr-2 size-4 animate-spin" />
+											<p>Loading bot response...</p>
+										</div>
+									{:else}
+										{@const response = botResponses.find(
+											(r: BotResponse) => r.taskHistoryId === taskHistoryId
+										)}
+										{#if response === undefined}
+											<div class="flex items-center justify-between">
+												<p>No response has been generated from the original prompt</p>
+												<Button
+													class="text-muted-foreground px-2 hover:cursor-pointer"
+													variant="secondary"
+													onclick={async () =>
+														await generateBotResponse(originalTasks, '', '', taskHistoryId)}
+												>
+													generate
+												</Button>
+											</div>
+										{:else}
+											{@render botResponseSection(response, originalTasks)}
+										{/if}
+									{/if}
+								</Accordion.Content>
+							</Accordion.Item>
+						{/if}
+					</Accordion.Root>
+					 -->
+				</div>
+			{/if}
+		</div>
+		<div class="mt-auto">
+			{#if page.url.pathname.startsWith('/proposals/') && testCaseBadge && removeCaseFunction !== undefined}
+				<Button
+					disabled={removing}
+					variant="secondary"
+					class="mt-4 w-full hover:cursor-pointer"
+					onclick={async () => {
+						removing = true;
+						await removeCaseFunction(id);
+					}}
+				>
+					{#if removing}
+						<LoaderCircleIcon class="size-4 animate-spin" />
+					{:else}
+						<Trash2Icon class="size-4" />
 					{/if}
-					{#if generatedId !== undefined && tmpBotResponse && page.url.pathname.startsWith('/proposals/')}
-						<Button
-							disabled={adding ||
-								(tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0)}
-							class="mt-4 w-full"
-							onclick={async () => {
-								adding = true;
-								if (tmpBotResponse) {
-									await addGeneratedCaseFunction(
-										generatedId,
-										tmpTasks,
-										channel,
-										userMessage,
-										tmpBotResponse.triggeredTask,
-										tmpBotResponse.botResponse,
-										tmpBotResponse.thumbsUp,
-										tmpBotResponse.thumbsDown
-									);
-								}
-							}}
-						>
-							{#if adding}
-								<LoaderCircleIcon class="size-4 animate-spin" />
-							{:else}
-								<FolderPlusIcon class="size-4" />
-							{/if}
-							save as a test case
-						</Button>
+					remove from saved test cases
+				</Button>
+			{/if}
+			{#if page.url.pathname.startsWith('/proposals/') && generatedId !== undefined && tmpBotResponse}
+				<Button
+					disabled={adding ||
+						(tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0)}
+					class="mt-4 w-full hover:cursor-pointer"
+					onclick={async () => {
+						adding = true;
+						if (tmpBotResponse) {
+							await addGeneratedCaseFunction(
+								generatedId,
+								tmpTasks,
+								channel,
+								userMessage,
+								tmpBotResponse.triggeredTask,
+								tmpBotResponse.botResponse,
+								tmpBotResponse.thumbsUp,
+								tmpBotResponse.thumbsDown
+							);
+						}
+					}}
+				>
+					{#if adding}
+						<LoaderCircleIcon class="size-4 animate-spin" />
+					{:else}
+						<FolderPlusIcon class="size-4" />
 					{/if}
-				{/if}
-				<p class="mx-auto mt-4">Case ID: {id}</p>
-			</Dialog.Description>
-		</Dialog.Header>
+					save as a test case
+				</Button>
+				<p class="text-muted-foreground mt-2 w-full text-center text-sm">
+					To save as a test case, first label the bot's response as good or bad.
+				</p>
+			{/if}
+		</div>
+		<p class="text-muted-foreground mt-1 text-center text-xs" hidden={id === ''}>Case ID: {id}</p>
 	</Dialog.Content>
 </Dialog.Root>
