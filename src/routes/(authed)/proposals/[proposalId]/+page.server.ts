@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 			originalTasks,
 			latestTasks,
 			testCases,
-			user: locals.user
+			user: locals.user,
+			discordChannels: ['#introducion', '#general', '#random', '#faq', '#celebrate', '#job']
 		};
 	} catch {
 		throw error(404, 'Fail to fetch the proposal.');

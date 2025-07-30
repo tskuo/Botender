@@ -103,7 +103,6 @@
 		downvotes = data.edits.length > 0 ? data.edits[0].downvotes : [];
 	};
 
-	// state for checking cases manually
 	let enteredCaseId = $state('');
 	let selectedChannel = $state('');
 	let enteredUserMessage = $state('');
@@ -1249,25 +1248,26 @@
 							</Popover.Trigger>
 							<Popover.Content class="text-sm">
 								Cases saved collectively by everyone to observe how the bot behaves based on the
-								proposed edits.
+								proposed edits. These cases are intended to help people decide whether to upvote or
+								downvote a proposed edit for deployment.
 							</Popover.Content>
 						</Popover.Root>
 					</div>
 					{#if testCases.length === 0}
 						<div class="flex flex-1 items-center justify-center rounded-md border-1">
-							<p class="text-muted-foreground">No cases have been saved to the test suite yet</p>
+							<p class="text-muted-foreground">No cases have been saved to the test suite.</p>
 						</div>
 					{:else}
-						<Carousel.Root
-							opts={{
-								align: 'start'
-							}}
-							class="mx-auto w-4/5 max-w-screen md:w-5/6"
-						>
-							<Carousel.Content>
-								{#each testCases as testCase, i (`${testCase.id}-${data.edits.length}`)}
-									<Carousel.Item class="xl:basis-1/2">
-										<div class="p-1">
+						<div class="flex-1">
+							<Carousel.Root
+								opts={{
+									align: 'start'
+								}}
+								class="mx-auto h-full w-4/5 max-w-screen md:w-5/6"
+							>
+								<Carousel.Content class="h-full">
+									{#each testCases as testCase, i (`${testCase.id}-${data.edits.length}`)}
+										<Carousel.Item class="xl:basis-1/2">
 											<CaseCard
 												bind:this={testCaseRefs[i]}
 												{...testCase}
@@ -1279,13 +1279,13 @@
 												user={data.user}
 												removeCaseFunction={data.proposal.open ? removeCaseFunction : undefined}
 											/>
-										</div>
-									</Carousel.Item>
-								{/each}
-							</Carousel.Content>
-							<Carousel.Previous />
-							<Carousel.Next />
-						</Carousel.Root>
+										</Carousel.Item>
+									{/each}
+								</Carousel.Content>
+								<Carousel.Previous />
+								<Carousel.Next />
+							</Carousel.Root>
+						</div>
 					{/if}
 				</div>
 				<div class="flex flex-col p-4 md:h-1/2">
@@ -1304,7 +1304,8 @@
 								</Popover.Trigger>
 								<Popover.Content class="text-sm">
 									Cases generated to uncover potential issues with the proposed edits. You can save
-									relevant ones as test cases.
+									any relevant cases as test cases, making them visible and available for anyone
+									visiting this proposal page to give a thumbs up or down.
 								</Popover.Content>
 							</Popover.Root>
 						</div>
@@ -1329,11 +1330,12 @@
 						</Button>
 					</div>
 					{#if generatingCase}
-						<div
-							class="flex flex-1 flex-col items-center justify-center gap-y-2 rounded-md border-1"
-						>
+						<div class="flex flex-1 flex-col items-center justify-center rounded-md border-1">
 							<CogIcon class="stroke-muted-foreground mr-2 size-10 animate-spin" />
-							<p class="text-muted-foreground">generating cases ...</p>
+							<p class="text-muted-foreground mt-2">Generating cases ...</p>
+							<p class="text-muted-foreground text-sm">
+								This typically takes 10-20 seconds. Please wait.
+							</p>
 						</div>
 					{:else if overheated}
 						<div
@@ -1346,30 +1348,28 @@
 						</div>
 					{:else if generatedCases.length === 0}
 						<div class="flex flex-1 items-center justify-center rounded-md border-1">
-							<p class="text-muted-foreground">No cases have been generated</p>
+							<p class="text-muted-foreground">No cases have been generated.</p>
 						</div>
 					{/if}
 					<Carousel.Root
 						opts={{
 							align: 'start'
 						}}
-						class="mx-auto w-4/5 max-w-screen md:w-5/6"
+						class="mx-auto min-h-0 w-4/5 max-w-screen md:w-5/6"
 					>
 						<Carousel.Content>
 							{#each generatedCases as generatedCase, i (generatedCase.tmpId)}
 								<Carousel.Item class="xl:basis-1/2">
-									<div class="p-1">
-										<CaseCard
-											bind:this={generatedCaseRefs[i]}
-											channel={generatedCase.channel}
-											userMessage={generatedCase.userMessage}
-											tasks={editedTasks}
-											checkingBadge={generatedCase.rating >= 2 ? true : false}
-											user={data.user}
-											generatedId={generatedCase.tmpId}
-											{addGeneratedCaseFunction}
-										/>
-									</div>
+									<CaseCard
+										bind:this={generatedCaseRefs[i]}
+										channel={generatedCase.channel}
+										userMessage={generatedCase.userMessage}
+										tasks={editedTasks}
+										checkingBadge={generatedCase.rating >= 2 ? true : false}
+										user={data.user}
+										generatedId={generatedCase.tmpId}
+										{addGeneratedCaseFunction}
+									/>
 								</Carousel.Item>
 							{/each}
 						</Carousel.Content>
@@ -1401,20 +1401,22 @@
 							<Sheet.Title><h3>Check other cases manually</h3></Sheet.Title>
 							<Sheet.Description>
 								{#if !showCase}
-									The system will search for an existing case using the entered case ID when it is
-									not empty. Leave the case ID field empty when trying a new case.
+									If you want to check a new case, simply leave the case ID field blank. When the
+									case ID field is not empty, the system will use the entered ID to search for an
+									existing case.
 								{/if}
 								{#if showCase && !showAddCaseSuccess}
 									{#if data.edits.length === 0}
-										{#if _.isEqual(editedTasks, data.originalTasks.tasks)}
-											The response is generated by the current bot
+										{#if _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
+											This response is generated based on the bot's original tasks prior to any
+											proposed edits.
 										{:else}
-											The response is generated based on your unsaved edit
+											This response is generated based on your current, unsaved edit.
 										{/if}
-									{:else if _.isEqual(editedTasks, data.edits[0].tasks)}
-										The response is generated by the bot according to the latest proposed edit
+									{:else if _.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer)}
+										This response is generated based on the most recent proposed edit to the bot.
 									{:else}
-										The response is generated based on your unsaved edit
+										This response is generated based on your current, unsaved edit.
 									{/if}
 								{/if}
 								{#if showCaseError}
@@ -1437,7 +1439,7 @@
 						</Sheet.Header>
 						{#if !showCase}
 							<div class="grid flex-1 auto-rows-min gap-3 px-4">
-								<Label class="text-right">Check an existing case</Label>
+								<Label class="text-right text-base"><h4>Check an existing case</h4></Label>
 								<Input
 									id="caseId"
 									placeholder="Case ID"
@@ -1451,16 +1453,15 @@
 									<p>OR</p>
 									<Separator class="flex-[0.48]" />
 								</div>
-								<Label class="text-right">Check a new case</Label>
+								<Label class="text-right text-base"><h4>Check a new case</h4></Label>
 								<Select.Root type="single" bind:value={selectedChannel}>
 									<Select.Trigger class="w-[180px]">
 										{selectedChannel === '' ? 'Select a channel' : selectedChannel}
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="#introducion" label="#introducion" />
-										<Select.Item value="#general" label="#general" />
-										<Select.Item value="#random" label="#random" />
-										<Select.Item value="#faq" label="#faq" />
+										{#each data.discordChannels.sort() as discordChannel (discordChannel)}
+											<Select.Item value={discordChannel} label={discordChannel} />
+										{/each}
 									</Select.Content>
 								</Select.Root>
 								<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
@@ -1534,6 +1535,8 @@
 									disabled={showCase ||
 										checkingCaseManually ||
 										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel) ||
+										(enteredCaseId.trim() === '' &&
+											(!enteredUserMessage.trim() || !selectedChannel)) ||
 										runningTest ||
 										savingEdit ||
 										tasksWithMissingFields.length > 0}
@@ -1554,8 +1557,16 @@
 														if (fetchCase) {
 															if (
 																data.edits.length > 0
-																	? _.isEqual(editedTasks, data.edits[0].tasks)
-																	: _.isEqual(editedTasks, data.originalTasks.tasks)
+																	? _.isEqualWith(
+																			editedTasksWithoutEmptyNewTask,
+																			data.edits[0].tasks,
+																			trimTaskCustomizer
+																		)
+																	: _.isEqualWith(
+																			editedTasksWithoutEmptyNewTask,
+																			data.originalTasks.tasks,
+																			trimTaskCustomizer
+																		)
 															) {
 																let botResponses = [];
 																try {
@@ -1645,7 +1656,7 @@
 																	body: JSON.stringify({
 																		channel: fetchCase.channel,
 																		userMessage: fetchCase.userMessage,
-																		tasks: editedTasks,
+																		tasks: editedTasksWithoutEmptyNewTask,
 																		soures: 'proposal'
 																	}),
 																	headers: {
@@ -1666,7 +1677,7 @@
 													}
 												} catch (e) {
 													showCaseError = true;
-													showCaseErrorMessage = 'An error occurred. Please try again.';
+													showCaseErrorMessage = 'An error occurred. Please try again later.';
 												}
 											}
 										} else {
@@ -1682,13 +1693,21 @@
 												let tmpTasks;
 												if (
 													data.edits.length > 0
-														? _.isEqual(editedTasks, data.edits[0].tasks)
-														: _.isEqual(editedTasks, data.originalTasks.tasks)
+														? _.isEqualWith(
+																editedTasksWithoutEmptyNewTask,
+																data.edits[0].tasks,
+																trimTaskCustomizer
+															)
+														: _.isEqualWith(
+																editedTasksWithoutEmptyNewTask,
+																data.originalTasks.tasks,
+																trimTaskCustomizer
+															)
 												) {
 													tmpTasks =
 														data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks;
 												} else {
-													tmpTasks = editedTasks;
+													tmpTasks = editedTasksWithoutEmptyNewTask;
 												}
 
 												const resBot = await fetch('/api/bot', {
@@ -1766,8 +1785,16 @@
 													testCases.push(fetchCase);
 													if (
 														data.edits.length > 0
-															? !_.isEqual(editedTasks, data.edits[0].tasks)
-															: !_.isEqual(editedTasks, data.originalTasks.tasks)
+															? !_.isEqualWith(
+																	editedTasksWithoutEmptyNewTask,
+																	data.edits[0].tasks,
+																	trimTaskCustomizer
+																)
+															: !_.isEqualWith(
+																	editedTasksWithoutEmptyNewTask,
+																	data.originalTasks.tasks,
+																	trimTaskCustomizer
+																)
 													) {
 														await tick();
 														const ref = testCaseRefs[testCaseRefs.length - 1];
