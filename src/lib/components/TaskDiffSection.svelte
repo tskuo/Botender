@@ -21,7 +21,7 @@
 	let diffAction = $derived(diffWords(oldTask.action, newTask.action));
 </script>
 
-<div class="border-l">
+<div class="border-l-4">
 	<div class="pl-3">
 		<h4 class="text-base font-medium">
 			{#if oldTask.name === '' && oldTask.trigger === '' && oldTask.action === ''}

@@ -246,7 +246,7 @@
 						</Select.Content>
 					</Select.Root>
 				</div>
-				<div class="flex flex-col gap-6 pt-4">
+				<div class="flex flex-col gap-10 pt-4">
 					{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks ? ['new'] : [])] as taskId (taskId)}
 						{#if scope === 'overall' || scope === 'triggers' || scope === taskId}
 							{#if taskId === 'new' || (taskId in data.latestTasks.tasks && !isTaskEmpty(data.latestTasks.tasks[taskId]))}

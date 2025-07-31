@@ -19,7 +19,7 @@
 	} = $props();
 </script>
 
-<div class="border-l">
+<div class="border-l-4">
 	<div class="pl-3">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center">

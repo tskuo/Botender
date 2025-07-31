@@ -22,7 +22,7 @@ export const playgroundCreateProposalSchema = z.object({
 	initiator: z.string(),
 	taskHistoryId: z.string(),
 	testCases: z.string().array(),
-	title: z.string().trim().min(1).max(30),
+	title: z.string().trim().min(1).max(50),
 	// the following fields are used for case creation
 	botResponse: z.string(),
 	channel: z.string(),
