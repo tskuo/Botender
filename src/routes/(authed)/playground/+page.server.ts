@@ -17,7 +17,8 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 			latestTasks,
 			// form: await superValidate(zod(createCaseSchema)),
 			formProposal: await superValidate(zod(playgroundCreateProposalSchema)),
-			user: locals.user
+			user: locals.user,
+			discordChannels: ['#introduction', '#general', '#random', '#faq', '#celebrate', '#job']
 		};
 	} catch {
 		throw error(404, 'Fail to fetch the latest tasks.');

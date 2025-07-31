@@ -653,10 +653,9 @@
 							{selectedChannel === '' ? 'Select a channel' : selectedChannel}
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="#introducion" label="#introducion" />
-							<Select.Item value="#general" label="#general" />
-							<Select.Item value="#random" label="#random" />
-							<Select.Item value="#faq" label="#faq" />
+							{#each data.discordChannels.sort() as discordChannel (discordChannel)}
+								<Select.Item value={discordChannel} label={discordChannel} />
+							{/each}
 						</Select.Content>
 					</Select.Root>
 					<Textarea placeholder="Enter user message ... " bind:value={enteredUserMessage} />
