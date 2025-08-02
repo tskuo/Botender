@@ -1,4 +1,4 @@
-import { bot } from '$lib/bot';
+import { bot } from '$lib/server/openAI/bot';
 import { json, error } from '@sveltejs/kit';
 
 export const POST = async ({ request }) => {

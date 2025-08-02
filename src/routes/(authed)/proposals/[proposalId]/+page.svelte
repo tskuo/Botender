@@ -7,7 +7,6 @@
 	import TaskSection from '$lib/components/TaskSection.svelte';
 	import TaskDiffSection from '$lib/components/TaskDiffSection.svelte';
 	import {
-		checkEmptyTask,
 		trimTaskCustomizer,
 		trimWhiteSpaceInTasks,
 		isTaskEmpty,
@@ -513,7 +512,7 @@
 			<Button
 				class="mr-1 hover:cursor-pointer"
 				onclick={() => {
-					console.log($state.snapshot(editedTasksWithoutEmptyNewTask));
+					// console.log($state.snapshot(editedTasksWithoutEmptyNewTask));
 				}}><ExternalLinkIcon class="size-4" />Discuss</Button
 			>
 		</div>

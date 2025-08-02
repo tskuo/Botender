@@ -193,7 +193,7 @@
 							}}
 						>
 							<UndoIcon class="size-4" />
-							Reset
+							Reset All
 						</Button>
 						<Dialog.Root>
 							<Dialog.Trigger
@@ -285,7 +285,7 @@
 				{#if isTaskChanged}
 					<Alert.Root class="border-primary text-primary mb-2">
 						<PencilIcon />
-						<Alert.Title><h4>Heads up! You've edited the bot.</h4></Alert.Title>
+						<Alert.Title><h4>Heads up! Your edit is not saved yet.</h4></Alert.Title>
 						<Alert.Description class="text-primary">
 							The bot will now respond based on the edits you've made in this playground, which may
 							differ from its current behavior in your Discord server. To see the bot's new
@@ -616,7 +616,9 @@
 											{#if isTaskChanged}
 												<Label class="mt-4"><h3>Review your proposed edits:</h3></Label>
 												<p class="text-muted-foreground mt-1">
-													Tasks that have not been edited are not shown.
+													Check to make sure the edits are indeed what you'd like to propose. If
+													not, close the dialog and undo any unintended edits. Tasks that have not
+													been edited are not shown.
 												</p>
 												<div class="flex flex-col gap-6 pt-4 text-sm">
 													{#each [...Object.keys(data.latestTasks.tasks).sort(), ...('new' in playgroundTasks && !isTaskEmpty(playgroundTasks['new']) ? ['new'] : [])] as taskId (taskId)}

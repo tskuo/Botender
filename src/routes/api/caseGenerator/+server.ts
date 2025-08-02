@@ -1,7 +1,7 @@
-import { underspecifiedPipeline } from '$lib/pipelines/underspecifiedPipeline';
-import { overspecifiedPipeline } from '$lib/pipelines/overspecifiedPipeline';
-import { consequencePipeline } from '$lib/pipelines/consequencePipeline';
-import { generalEvaluator } from '$lib/pipelines/generalEvaluator';
+import { underspecifiedPipeline } from '$lib/server/openAI/underspecifiedPipeline';
+import { overspecifiedPipeline } from '$lib/server/openAI/overspecifiedPipeline';
+import { consequencePipeline } from '$lib/server/openAI/consequencePipeline';
+import { generalEvaluator } from '$lib/server/openAI/generalEvaluator';
 import { json, error } from '@sveltejs/kit';
 import _ from 'lodash';
 import { isTaskEmpty, trimTaskCustomizer } from '$lib/tasks';
@@ -32,37 +32,56 @@ export const POST = async ({ request }) => {
 			}
 		}
 
-		const underspecifiedPromise = Promise.all(
+		const underspecifiedPromise = Promise.allSettled(
 			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
 		);
 
-		// const overspecifiedPromise = Promise.all(
-		// 	diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
-		// );
+		const overspecifiedPromise = Promise.allSettled(
+			diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
+		);
 
-		// const consequencePromise = Promise.all(
-		// 	diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
-		// );
+		const consequencePromise = Promise.allSettled(
+			diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
+		);
 
-		// Await in parallel
-		// const [underspecifiedResults, overspecifiedResults, consequenceResults] = await Promise.all([
-		// 	underspecifiedPromise,
-		// 	overspecifiedPromise,
-		// 	consequencePromise
-		// ]);
+		const [underspecifiedSettled, overspecifiedSettled, consequenceSettled] = await Promise.all([
+			underspecifiedPromise,
+			overspecifiedPromise,
+			consequencePromise
+		]);
 
-		const underspecifiedResults = await underspecifiedPromise;
-		// const overspecifiedResults = await overspecifiedPromise;
-		// const consequenceResults = await consequencePromise;
+		// Filter out rejected promises and extract the values from fulfilled ones.
+		const underspecifiedResults = underspecifiedSettled
+			.filter((result) => {
+				if (result.status === 'rejected')
+					console.error('Underspecified pipeline failed:', result.reason);
+				return result.status === 'fulfilled';
+			})
+			.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+		const overspecifiedResults = overspecifiedSettled
+			.filter((result) => {
+				if (result.status === 'rejected')
+					console.error('Overspecified pipeline failed:', result.reason);
+				return result.status === 'fulfilled';
+			})
+			.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+		const consequenceResults = consequenceSettled
+			.filter((result) => {
+				if (result.status === 'rejected')
+					console.error('Consequence pipeline failed:', result.reason);
+				return result.status === 'fulfilled';
+			})
+			.map((result) => (result as PromiseFulfilledResult<any>).value);
+
 		const underspecifiedCases = underspecifiedResults.flat();
-		// const overspecifiedCases = overspecifiedResults.flat();
-		// const consequenceCases = consequenceResults.flat();
+		const overspecifiedCases = overspecifiedResults.flat();
+		const consequenceCases = consequenceResults.flat();
 
 		// Combine arrays
-		// const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
-		const allRawCases = underspecifiedCases;
+		const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
-
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
