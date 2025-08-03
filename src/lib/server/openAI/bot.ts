@@ -26,15 +26,18 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		model: 'gpt-4.1',
 		input: [
 			{ role: 'system', content: orchestratorSysPrompt },
-			{
-				role: 'user',
-				content: orchestratorUserPrompt
-			}
+			{ role: 'user', content: orchestratorUserPrompt }
 		],
 		text: {
 			format: zodTextFormat(z.object({ taskId: z.string() }), 'orchestratorResult')
 		}
 	});
+
+	// console.log(`========== orchestratorSysPrompt ==========`);
+	// console.log(orchestratorSysPrompt);
+
+	// console.log(`========== orchestratorUserPrompt ==========`);
+	// console.log(orchestratorUserPrompt);
 
 	let triggeredTaskId = orchestratorResponse.output_parsed?.taskId ?? '0';
 	let botResponse = '';
@@ -51,15 +54,18 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 			model: 'gpt-4.1',
 			input: [
 				{ role: 'system', content: agentSysPrompt },
-				{
-					role: 'user',
-					content: agentUserPrompt
-				}
+				{ role: 'user', content: agentUserPrompt }
 			],
 			text: {
 				format: zodTextFormat(z.object({ response: z.string() }), 'agentResult')
 			}
 		});
+
+		// console.log(`========== agentSysPrompt ==========`);
+		// console.log(agentSysPrompt);
+
+		// console.log(`========== agentUserPrompt ==========`);
+		// console.log(agentUserPrompt);
 
 		const agentResult = agentResponse.output_parsed?.response;
 
