@@ -15,20 +15,22 @@
 	// import logo
 	import logo from '$lib/img/botender_logo.png';
 
+	import { page } from '$app/state';
+
 	const items = [
 		{
 			title: 'Dashboard',
-			url: '/',
+			url: `/guilds/${page.params.guildId}`,
 			icon: LayoutDashboardIcon
 		},
 		{
 			title: 'Tasks',
-			url: '/tasks',
+			url: `/guilds/${page.params.guildId}/tasks`,
 			icon: WrenchIcon
 		},
 		{
 			title: 'Proposals',
-			url: '/proposals',
+			url: `/guilds/${page.params.guildId}/proposals`,
 			icon: LightbulbIcon
 		},
 		// {
@@ -38,7 +40,7 @@
 		// },
 		{
 			title: 'Playground',
-			url: '/playground',
+			url: `/guilds/${page.params.guildId}/playground`,
 			icon: WebhookIcon
 		}
 	];

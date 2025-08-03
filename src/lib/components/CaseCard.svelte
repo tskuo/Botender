@@ -131,21 +131,24 @@
 
 	export async function saveTmpBotResponse(proposalId: string, proposalEditId: string) {
 		if (tmpBotResponse) {
-			const resBotResponse = await fetch(`/api/cases/${id}/botResponses`, {
-				method: 'POST',
-				body: JSON.stringify({
-					botResponse: tmpBotResponse.botResponse,
-					proposalEditId: proposalEditId,
-					proposalId: proposalId,
-					taskHistoryId: '',
-					thumbsDown: tmpBotResponse.thumbsDown,
-					thumbsUp: tmpBotResponse.thumbsUp,
-					triggeredTaskId: tmpBotResponse.triggeredTask
-				}),
-				headers: {
-					'Content-Type': 'application/json'
+			const resBotResponse = await fetch(
+				`/api/guilds/${page.params.guildId}/cases/${id}/botResponses`,
+				{
+					method: 'POST',
+					body: JSON.stringify({
+						botResponse: tmpBotResponse.botResponse,
+						proposalEditId: proposalEditId,
+						proposalId: proposalId,
+						taskHistoryId: '',
+						thumbsDown: tmpBotResponse.thumbsDown,
+						thumbsUp: tmpBotResponse.thumbsUp,
+						triggeredTaskId: tmpBotResponse.triggeredTask
+					}),
+					headers: {
+						'Content-Type': 'application/json'
+					}
 				}
-			});
+			);
 			resetTestForCase();
 		}
 	}
@@ -153,23 +156,26 @@
 	const loadBotResponses = async () => {
 		if (generatedId !== undefined) {
 			botResponses = [];
-		} else if (page.url.pathname === '/cases') {
-			const res = await fetch(`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`, {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json'
+		} else if (page.url.pathname.includes('/cases')) {
+			const res = await fetch(
+				`/api/guilds/${page.params.guildId}/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json'
+					}
 				}
-			});
+			);
 			if (!res.ok) {
 				console.error(`Failed to fetch the latest bot response of case #${id}`, res.statusText);
 				return;
 			}
 			const data = await res.json();
 			botResponses = data.botResponses;
-		} else if (page.url.pathname.startsWith('/proposals/')) {
+		} else if (page.url.pathname.includes('/proposals/')) {
 			const proposalId = page.params.proposalId;
 			const res = await fetch(
-				`/api/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}&proposalId=${proposalId}`,
+				`/api/guilds/${page.params.guildId}/cases/${id}/botResponses?taskHistoryId=${taskHistoryId}&proposalId=${proposalId}`,
 				{
 					method: 'GET',
 					headers: {
@@ -209,19 +215,22 @@
 		});
 		const { taskId, botResponse } = await resBot.json();
 
-		const resBotResponse = await fetch(`/api/cases/${id}/botResponses`, {
-			method: 'POST',
-			body: JSON.stringify({
-				botResponse: botResponse,
-				proposalEditId: proposalEditId,
-				proposalId: proposalId,
-				taskHistoryId: taskHistoryId,
-				triggeredTaskId: taskId
-			}),
-			headers: {
-				'Content-Type': 'application/json'
+		const resBotResponse = await fetch(
+			`/api/guilds/${page.params.guildId}/cases/${id}/botResponses`,
+			{
+				method: 'POST',
+				body: JSON.stringify({
+					botResponse: botResponse,
+					proposalEditId: proposalEditId,
+					proposalId: proposalId,
+					taskHistoryId: taskHistoryId,
+					triggeredTaskId: taskId
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
 			}
-		});
+		);
 
 		if (resBotResponse.ok) {
 			loadBotResponses();
@@ -286,15 +295,18 @@
 					botResponse.thumbsDown = [];
 				}
 			} else {
-				const resBotResponse = await fetch(`/api/cases/${id}/botResponses/${botResponse.id}`, {
-					method: 'PATCH',
-					body: JSON.stringify({
-						value: value
-					}),
-					headers: {
-						'Content-Type': 'application/json'
+				const resBotResponse = await fetch(
+					`/api/guilds/${page.params.guildId}/cases/${id}/botResponses/${botResponse.id}`,
+					{
+						method: 'PATCH',
+						body: JSON.stringify({
+							value: value
+						}),
+						headers: {
+							'Content-Type': 'application/json'
+						}
 					}
-				});
+				);
 
 				if (resBotResponse.ok) {
 					loadBotResponses();
@@ -369,7 +381,7 @@
 						<p>Loading bot response...</p>
 					</div>
 				{:else}
-					{#if page.url.pathname === '/cases'}
+					{#if page.url.pathname.includes('/cases')}
 						{@const response = botResponses.find(
 							(r: BotResponse) => r.taskHistoryId === taskHistoryId
 						)}
@@ -383,7 +395,7 @@
 							{@render botResponseSection(response, tasks, textLengthCap)}
 						{/if}
 					{/if}
-					{#if page.url.pathname.startsWith('/proposals/')}
+					{#if page.url.pathname.includes('/proposals/')}
 						{#if !_.isNil(tmpBotResponse)}
 							{@render botResponseSection(tmpBotResponse, tmpTasks, textLengthCap)}
 						{:else if edits.length > 0}
@@ -418,7 +430,7 @@
 			</Card.Content>
 			{#if !loadingBotResponse}
 				<Card.Footer>
-					{#if page.url.pathname === '/cases'}
+					{#if page.url.pathname.includes('/cases')}
 						{@const response = botResponses.find(
 							(r: BotResponse) => r.taskHistoryId === taskHistoryId
 						)}
@@ -426,7 +438,7 @@
 							{@render thumbsUpDownIcons(response)}
 						{/if}
 					{/if}
-					{#if page.url.pathname.startsWith('/proposals/')}
+					{#if page.url.pathname.includes('/proposals/')}
 						{#if !_.isNil(tmpBotResponse)}
 							{@render thumbsUpDownIcons(tmpBotResponse)}
 						{:else if edits.length > 0}
@@ -496,7 +508,7 @@
 								{@render thumbsUpDownButtons(response)}
 							{/if}
 						{/if}
-						{#if page.url.pathname.startsWith('/proposals/')}
+						{#if page.url.pathname.includes('/proposals/')}
 							{#if !_.isNil(tmpBotResponse)}
 								{@render botResponseSection(tmpBotResponse, tmpTasks)}
 								{@render thumbsUpDownButtons(tmpBotResponse)}
@@ -545,7 +557,7 @@
 		</Dialog.Header>
 		<!-- <Separator class="my-3" /> -->
 		<div class="mt-6 flex-1">
-			{#if page.url.pathname.startsWith('/proposals/') && generatedId === undefined}
+			{#if page.url.pathname.includes('/proposals/') && generatedId === undefined}
 				<div class="text-muted-foreground min-h-0 flex-1 text-sm">
 					<Tabs.Root value="edit">
 						<Tabs.List class="w-full">
@@ -715,7 +727,7 @@
 			{/if}
 		</div>
 		<div class="mt-auto">
-			{#if page.url.pathname.startsWith('/proposals/') && testCaseBadge && removeCaseFunction !== undefined}
+			{#if page.url.pathname.includes('/proposals/') && testCaseBadge && removeCaseFunction !== undefined}
 				<Button
 					disabled={removing}
 					variant="secondary"
@@ -733,7 +745,7 @@
 					remove from saved test cases
 				</Button>
 			{/if}
-			{#if page.url.pathname.startsWith('/proposals/') && generatedId !== undefined && tmpBotResponse}
+			{#if page.url.pathname.includes('/proposals/') && generatedId !== undefined && tmpBotResponse}
 				<Button
 					disabled={adding ||
 						(tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0)}
