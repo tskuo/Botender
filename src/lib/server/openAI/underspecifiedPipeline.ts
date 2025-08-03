@@ -24,7 +24,7 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			`Prioritize ambiguities that could lead to reasonable differences in human interpretation, especially those where people might disagree about whether the bot's behavior is desirable. Focus on ambiguities that could cause visible inconsistencies in the bot's behavior. Do not list trivial ambiguities, style differences, or issues that would not affect how real users experience the bot.`,
 			`Output Format:`,
 			`Return a JSON object containing an array of ambiguities. Each ambiguity should have a unique key starting from 0 and include the following two properties:`,
-			`\t- underspecified_phrase: a specific snippet from the prompt that is ambiguous`,
+			`\t- underspecified_phrase: a specific quote or snippet from the prompt that is ambiguous`,
 			`\t- description: a 1-2 sentence explanation of what makes it ambiguous or open to multiple interpretations`,
 			`All values must be JSON-safe: wrap any field that contains commas in quotes, and avoid newlines. Do not include any extra text, formatting, or commentary outside the JSON object.`
 		].join('\n');
@@ -38,14 +38,13 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			)
 		});
 
+		const detectorUserPrompt = `Prompt:\n\t- Trigger: ${prompt.trigger}\n\t- Action: ${prompt.action}`;
+
 		const detectorResponse = await openAIClient.responses.parse({
 			model: 'gpt-4.1',
 			input: [
 				{ role: 'system', content: detectorSysPrompt },
-				{
-					role: 'user',
-					content: `Prompt\n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`
-				}
+				{ role: 'user', content: detectorUserPrompt }
 			],
 			text: {
 				format: zodTextFormat(DetectorOutputSchema, 'detectorResult')
@@ -58,15 +57,20 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			return [];
 		}
 
-		// Generator Module
+		// console.log(`========== detectorSysPrompt ==========`);
+		// console.log(detectorSysPrompt);
 
+		// console.log(`========== detectorUserPrompt ==========`);
+		// console.log(detectorUserPrompt);
+
+		// Generator Module
 		const generatorSysPrompt = [
 			`You are a helpful assistant tasked with generating input test cases that explore how ambiguous phrases in a bot's prompt could be interpreted in different, plausible ways. This prompt defines:`,
 			`\t- A trigger: when the bot should take action.`,
 			`\t- An action: what the bot should do when triggered.`,
 			bot_capability,
 			`You will be provided with:`,
-			`\t- prompt: The full prompt for the bot, containing one or more ambiguous phrases.`,
+			`\t- prompt: the full prompt for the bot, containing one or more ambiguous phrases.`,
 			`\t- underspecified_phrase: a specific snippet from the prompt that is ambiguous.`,
 			`\t- description: a 1-2 sentence explanation describing why the phrase is ambiguous or can be interpreted in multiple ways.`,
 			`Your Task:`,
@@ -99,13 +103,16 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			)
 		});
 
+		let generatorUserPromptPrint = '';
+
 		const generatorPromises = detectorResult.ambiguities.map(
 			(ambiguity: { underspecified_phrase: string; description: string }) => {
 				const generatorUserPrompt = [
-					`prompt: \n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`,
+					`prompt:\n\t- Trigger: ${prompt.trigger}\n\t- Action: ${prompt.action}`,
 					`underspecified_phrase: ${ambiguity.underspecified_phrase}`,
 					`description: ${ambiguity.description}`
 				].join('\n');
+				if (generatorUserPromptPrint === '') generatorUserPromptPrint = generatorUserPrompt;
 				return openAIClient.responses.parse({
 					model: 'gpt-4.1',
 					input: [
@@ -129,6 +136,12 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 				console.error('A underspecified generator promise failed:', result.reason);
 			}
 		}
+
+		// console.log(`========== generatorSysPrompt ==========`);
+		// console.log(generatorSysPrompt);
+
+		// console.log(`========== generatorUserPrompt ==========`);
+		// console.log(generatorUserPromptPrint);
 
 		// Bot Module
 		const generatorCases = generatorResults.flatMap((gr) => gr.cases);
@@ -162,15 +175,15 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 
 		// Evaluator Modudle
 		const evaluatorSysPrompt = [
-			`You are a helpful assistant tasked with evaluating whether a test case clearly demonstrates a plausible and critical alternative interpretation of an ambiguous phrase in a bot’s prompt. This prompt defines:`,
+			`You are a helpful assistant tasked with evaluating whether a test case clearly demonstrates a plausible and critical alternative interpretation of an ambiguous phrase in a bot's prompt. This prompt defines:`,
 			`\t- A trigger: when the bot should take action.`,
 			`\t- An action: what the bot should do when triggered.`,
 			bot_capability,
 			`You will be provided with:`,
-			`\t- prompt: The full prompt for the bot, including both the trigger and action components.`,
+			`\t- prompt: the full prompt for the bot, including both the trigger and action components.`,
 			`\t- underspecified_phrase: a specific snippet from the prompt that is ambiguous.`,
 			`\t- interpretation: a plausible alternative interpretation of the phrase that the test case is intended to illustrate.`,
-			`\t- reasoning: a brief explanation describing how the test case could demonstrate this interpretation`,
+			`\t- reasoning: a brief explanation describing how the test case could demonstrate this interpretation.`,
 			`\t- case: the test case itself, including the user message in a specific channel, the specific task triggered for the bot (if any), and the corresponding bot response to that task.`,
 			`It is possible that the user input does not trigger any task, or that the bot chooses not to respond even if a task is triggered.`,
 			`Your Task:`,
@@ -179,8 +192,9 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			`If the ambiguity involves how the bot should respond—meaning the action within the prompt is underspecified—consider the following additional steps: First, infer the generalized or default response the bot would typically give based on the prompt and input. Next, compare this default response to the bot's actual response in the test case. Approve the case only if the actual response shows a clear and noticeable difference from the default in terms of tone, structure, or content, such that the change would be obvious to a human observer. Minor shifts in tone, phrasing, or politeness do not count unless they lead to a significant change in the bot's observable behavior.`,
 			`Output Format:`,
 			`Return a JSON object with the following two properties:`,
-			`\t- label: A boolean value—true if the test case visibly and meaningfully demonstrates the intended interpretation of the underspecified phrase; false if it does not, or if it is rejected.`,
-			`\t- label_explanation: A brief, 1 to 2 sentence explanation supporting your decision.`
+			`\t- label: a boolean value—true if the test case visibly and meaningfully demonstrates the intended interpretation of the underspecified phrase; false if it does not, or if it is rejected.`,
+			`\t- label_explanation: a brief, 1 to 2 sentence explanation supporting your decision.`,
+			`All values must be JSON-safe: wrap any field that contains commas in quotes, and avoid newlines. Do not include any extra text, formatting, or commentary outside the JSON object.`
 		].join('\n');
 
 		const EvaluatorOutputSchema = z.object({
@@ -188,18 +202,22 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			label_explanation: z.string()
 		});
 
+		let evaluatorUserPromptPrint = '';
+
 		const evaluatorPromises = botResponseResults.map(async (testCase) => {
 			const evaluatorUserPrompt = [
-				`prompt: \n\t Trigger: ${prompt.trigger}\n\t Action: ${prompt.action}`,
+				`prompt:\n\t- Trigger: ${prompt.trigger}\n\t- Action: ${prompt.action}`,
 				`underspecified_phrase: ${testCase.underspecified_phrase}`,
 				`interpretation: ${testCase.interpretation}`,
 				`reasoning: ${testCase.reasoning}`,
 				`case:`,
 				`\t- channel: ${testCase.channel}`,
 				`\t- user message: ${testCase.userMessage}`,
-				`\t- trigger task: ${testCase.triggeredTask === '0' ? 'No task is trigger' : newTasks[testCase.triggeredTask]}`,
+				`\t- triggered task: ${testCase.triggeredTask === '0' ? 'No task is trigger' : newTasks[testCase.triggeredTask].name}`,
 				`\t- bot response: ${testCase.botResponse}`
 			].join('\n');
+
+			if (evaluatorUserPromptPrint === '') evaluatorUserPromptPrint = evaluatorUserPrompt;
 
 			return openAIClient.responses.parse({
 				model: 'gpt-4.1',
@@ -227,6 +245,12 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 				console.error('An evaluator promise failed:', result.reason);
 			}
 		}
+
+		// console.log(`========== evaluatorSysPrompt ==========`);
+		// console.log(evaluatorSysPrompt);
+
+		// console.log(`========== evaluatorUserPrompt ==========`);
+		// console.log(evaluatorUserPromptPrint);
 
 		return allCases;
 	} catch (error) {
