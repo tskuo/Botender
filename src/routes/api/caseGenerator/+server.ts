@@ -2,6 +2,7 @@ import { underspecifiedPipeline } from '$lib/server/openAI/underspecifiedPipelin
 import { overspecifiedPipeline } from '$lib/server/openAI/overspecifiedPipeline';
 import { consequencePipeline } from '$lib/server/openAI/consequencePipeline';
 import { generalEvaluator } from '$lib/server/openAI/generalEvaluator';
+import { baselinePipeline } from '$lib/server/openAI/baselinePipeline';
 import { json, error } from '@sveltejs/kit';
 import _ from 'lodash';
 import { isTaskEmpty, trimTaskCustomizer } from '$lib/tasks';
@@ -32,6 +33,7 @@ export const POST = async ({ request }) => {
 			}
 		}
 
+		// Botender's Pipeline Starts Here
 		const underspecifiedPromise = Promise.allSettled(
 			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
 		);
@@ -50,7 +52,6 @@ export const POST = async ({ request }) => {
 			consequencePromise
 		]);
 
-		// Filter out rejected promises and extract the values from fulfilled ones.
 		const underspecifiedResults = underspecifiedSettled
 			.filter((result) => {
 				if (result.status === 'rejected')
@@ -79,12 +80,30 @@ export const POST = async ({ request }) => {
 		const overspecifiedCases = overspecifiedResults.flat();
 		const consequenceCases = consequenceResults.flat();
 
-		// Combine arrays
 		const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
 		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
 		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
+		// Botender's Pipeline Ends Here
+
+		// Baseline Pipeline Starts Here
+		// const baselinePromise = Promise.allSettled(
+		// 	diffTasks.map((diffTask: Task) => baselinePipeline(diffTask, newTasks))
+		// );
+		// const baselineSettled = await baselinePromise;
+
+		// const baselineResults = baselineSettled
+		// 	.filter((result) => {
+		// 		if (result.status === 'rejected') console.error('Baseline pipeline failed:', result.reason);
+		// 		return result.status === 'fulfilled';
+		// 	})
+		// 	.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+		// const allCases = baselineResults.flat().map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
+
+		// return json({ cases: allCases }, { status: 201 });
+		// Baseline Pipeline Ends Here
 	} catch {
 		throw error(400, 'Fail to generate cases');
 	}
