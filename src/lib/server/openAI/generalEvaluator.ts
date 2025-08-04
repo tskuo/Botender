@@ -1,4 +1,4 @@
-import { bot_capability } from '$lib/pipelines/prompts';
+import { bot_capability } from '$lib/sharedPrompts';
 import { openAIClient } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';

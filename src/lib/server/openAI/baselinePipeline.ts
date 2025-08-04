@@ -1,10 +1,15 @@
 import { bot } from '$lib/server/openAI/bot';
-import { bot_capability, input_specification, community_tone } from '$lib/pipelines/prompts';
+import { bot_capability } from '$lib/sharedPrompts';
 import { openAIClient } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
-export async function baselinePipeline(diffTask: Task, newTasks: Tasks) {
+export async function baselinePipeline(
+	diffTask: Task,
+	newTasks: Tasks,
+	community_tone: string,
+	input_specification: string
+) {
 	const prompt = diffTask;
 
 	// One-Step Generator Module
@@ -58,11 +63,11 @@ export async function baselinePipeline(diffTask: Task, newTasks: Tasks) {
 		return [];
 	}
 
-	console.log(`========== generatorSysPrompt ==========`);
-	console.log(generatorSysPrompt);
+	// console.log(`========== generatorSysPrompt ==========`);
+	// console.log(generatorSysPrompt);
 
-	console.log(`========== generatorUserPrompt ==========`);
-	console.log(generatorUserPrompt);
+	// console.log(`========== generatorUserPrompt ==========`);
+	// console.log(generatorUserPrompt);
 
 	const botResponsePromises = generatorResult.cases.map(async (testCase) => {
 		const { taskId, botResponse } = await bot(

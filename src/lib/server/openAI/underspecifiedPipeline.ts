@@ -1,10 +1,15 @@
 import { bot } from '$lib/server/openAI/bot';
-import { bot_capability, input_specification, community_tone } from '$lib/pipelines/prompts';
+import { bot_capability } from '$lib/sharedPrompts';
 import { openAIClient } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
-export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
+export async function underspecifiedPipeline(
+	diffTask: Task,
+	newTasks: Tasks,
+	community_tone: string,
+	input_specification: string
+) {
 	try {
 		const prompt = diffTask;
 
@@ -137,11 +142,11 @@ export async function underspecifiedPipeline(diffTask: Task, newTasks: Tasks) {
 			}
 		}
 
-		// console.log(`========== generatorSysPrompt ==========`);
-		// console.log(generatorSysPrompt);
+		console.log(`========== generatorSysPrompt ==========`);
+		console.log(generatorSysPrompt);
 
-		// console.log(`========== generatorUserPrompt ==========`);
-		// console.log(generatorUserPromptPrint);
+		console.log(`========== generatorUserPrompt ==========`);
+		console.log(generatorUserPromptPrint);
 
 		// Bot Module
 		const generatorCases = generatorResults.flatMap((gr) => gr.cases);

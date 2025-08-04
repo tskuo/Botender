@@ -4,10 +4,24 @@ import { consequencePipeline } from '$lib/server/openAI/consequencePipeline';
 import { generalEvaluator } from '$lib/server/openAI/generalEvaluator';
 import { baselinePipeline } from '$lib/server/openAI/baselinePipeline';
 import { json, error } from '@sveltejs/kit';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '$lib/firebase';
 import _ from 'lodash';
 import { isTaskEmpty, trimTaskCustomizer } from '$lib/tasks';
 
-export const POST = async ({ request }) => {
+const formatChannelList = (arr: string[]) => {
+	if (arr.length === 0) {
+		return '';
+	} else if (arr.length === 1) {
+		return `${arr[0]}.`;
+	} else if (arr.length === 2) {
+		return `${arr[0]} or ${arr[1]}.`;
+	} else {
+		return `${arr.slice(0, -1).join(', ')}, or ${arr[arr.length - 1]}.`;
+	}
+};
+
+export const POST = async ({ request, params }) => {
 	try {
 		const { oldTasks, newTasks } = await request.json();
 
@@ -33,17 +47,39 @@ export const POST = async ({ request }) => {
 			}
 		}
 
+		// Get Guild Specific Info
+		if (!params.guildId) {
+			throw error(400, 'Error: Guild ID is required');
+		}
+		const guildDocRef = doc(db, 'guilds', params.guildId);
+		const guildDocSnap = await getDoc(guildDocRef);
+		if (!guildDocSnap.exists()) {
+			throw error(400, `Error: Fail to fetch guild settings (guildId: ${params.guildId})`);
+		}
+		const community_tone = guildDocSnap.data().community_tone;
+		const channels = guildDocSnap
+			.data()
+			.channels.map((channel: string) => (channel.startsWith('#') ? channel : `#${channel}`))
+			.sort();
+		const input_specification = `The input should consist of a Discord channel name and a user message. The channel name must begin with a hash (#) followed by a valid channel identifier, chosen from the following available channels on the server: ${formatChannelList(channels)} The user message should be a single string that realistically represents something a user might post in that channel. It must not include explicit formatting instructions, metadata, or explanations of its purpose. The message should be plausible and use natural language typical of a real Discord community, and the input must not contain bot commands, markup syntax, or JSON structures.`;
+
 		// Botender's Pipeline Starts Here
 		const underspecifiedPromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) => underspecifiedPipeline(diffTask, newTasks))
+			diffTasks.map((diffTask: Task) =>
+				underspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
+			)
 		);
 
 		const overspecifiedPromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) => overspecifiedPipeline(diffTask, newTasks))
+			diffTasks.map((diffTask: Task) =>
+				overspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
+			)
 		);
 
 		const consequencePromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) => consequencePipeline(diffTask, newTasks))
+			diffTasks.map((diffTask: Task) =>
+				consequencePipeline(diffTask, newTasks, community_tone, input_specification)
+			)
 		);
 
 		const [underspecifiedSettled, overspecifiedSettled, consequenceSettled] = await Promise.all([
@@ -89,7 +125,7 @@ export const POST = async ({ request }) => {
 
 		// Baseline Pipeline Starts Here
 		// const baselinePromise = Promise.allSettled(
-		// 	diffTasks.map((diffTask: Task) => baselinePipeline(diffTask, newTasks))
+		// 	diffTasks.map((diffTask: Task) => baselinePipeline(diffTask, newTasks, community_tone, input_specification))
 		// );
 		// const baselineSettled = await baselinePromise;
 

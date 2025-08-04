@@ -360,7 +360,7 @@
 		overheated = false;
 		generatedCases = [];
 		if (_.isNil(tasks)) return;
-		const resCaseGenerator = await fetch(`/api/caseGenerator`, {
+		const resCaseGenerator = await fetch(`/api/guilds/${page.params.guildId}/caseGenerator`, {
 			method: 'POST',
 			body: JSON.stringify({
 				oldTasks: data.originalTasks.tasks,
