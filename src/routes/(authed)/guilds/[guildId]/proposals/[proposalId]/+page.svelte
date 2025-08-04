@@ -1373,7 +1373,7 @@
 										channel={generatedCase.channel}
 										userMessage={generatedCase.userMessage}
 										tasks={editedTasks}
-										checkingBadge={generatedCase.rating >= 2 ? true : false}
+										checkingBadge={generatedCase.rating >= 3 ? true : false}
 										user={data.user}
 										generatedId={generatedCase.tmpId}
 										{addGeneratedCaseFunction}
