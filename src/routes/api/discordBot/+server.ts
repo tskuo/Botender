@@ -11,6 +11,9 @@ export const POST = async ({ request }) => {
 		if (!guildId || !channel || !userMessage) {
 			throw error(400, 'Missing required fields: guildId, channel, userMessage');
 		}
+		console.log('guildId: ', guildId);
+		console.log('channel: ', channel);
+		console.log('userMessage: ', userMessage);
 
 		// Fetch the tasks for the guild from Firestore
 		const querySnapshot = await getDocs(
@@ -18,9 +21,12 @@ export const POST = async ({ request }) => {
 		);
 
 		const tasks = querySnapshot.docs[0].data().tasks;
+		console.log(tasks);
 
 		// Call the core bot logic with the fetched tasks
 		const { taskId, botResponse } = await bot(channel, userMessage, tasks);
+		console.log('taskId: ', taskId);
+		console.log('botResponse: ', botResponse);
 
 		return json(botResponse);
 	} catch (e) {
