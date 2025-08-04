@@ -28,7 +28,7 @@ export const POST = async ({ request }) => {
 		console.log('taskId: ', taskId);
 		console.log('botResponse: ', botResponse);
 
-		return json(botResponse);
+		return json({ taskId: taskId, botResponse: botResponse }, { status: 201 });
 	} catch (e) {
 		console.error('Error in bot API:', e);
 		throw error(500, 'Failed to process bot request.');
