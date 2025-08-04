@@ -29,6 +29,9 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 			}
 		}
 
+		const resGuild = await fetch(`/api/guilds/${params.guildId}`);
+		const guild = await resGuild.json();
+
 		return {
 			proposal,
 			edits: edits.edits,
@@ -36,7 +39,7 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 			latestTasks,
 			testCases,
 			user: locals.user,
-			discordChannels: ['#introduction', '#general', '#random', '#faq', '#celebrate', '#job']
+			guild
 		};
 	} catch {
 		throw error(404, 'Fail to fetch the proposal.');

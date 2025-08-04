@@ -13,12 +13,15 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 		const res = await fetch(`/api/guilds/${params.guildId}/taskHistory?latest=true`);
 		const latestTasks = await res.json();
 
+		const resGuild = await fetch(`/api/guilds/${params.guildId}`);
+		const guild = await resGuild.json();
+
 		return {
 			latestTasks,
+			guild,
 			// form: await superValidate(zod(createCaseSchema)),
 			formProposal: await superValidate(zod(playgroundCreateProposalSchema)),
-			user: locals.user,
-			discordChannels: ['#introduction', '#general', '#random', '#faq', '#celebrate', '#job']
+			user: locals.user
 		};
 	} catch {
 		throw error(404, 'Fail to fetch the latest tasks.');

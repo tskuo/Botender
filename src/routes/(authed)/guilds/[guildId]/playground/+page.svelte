@@ -655,7 +655,9 @@
 							{selectedChannel === '' ? 'Select a channel' : selectedChannel}
 						</Select.Trigger>
 						<Select.Content>
-							{#each data.discordChannels.sort() as discordChannel (discordChannel)}
+							{#each data.guild.channels
+								.map((channel: string) => (channel.startsWith('#') ? channel : `#${channel}`))
+								.sort() as discordChannel (discordChannel)}
 								<Select.Item value={discordChannel} label={discordChannel} />
 							{/each}
 						</Select.Content>
