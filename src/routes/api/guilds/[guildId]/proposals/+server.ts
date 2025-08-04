@@ -1,6 +1,16 @@
 import { json, error } from '@sveltejs/kit';
-import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	addDoc,
+	serverTimestamp,
+	updateDoc,
+	doc
+} from 'firebase/firestore';
 import { db } from '$lib/firebase';
+import { createProposalThread } from '$lib/server/discord/api';
 
 export const GET = async ({ params }) => {
 	try {
@@ -43,6 +53,21 @@ export const POST = async ({ request, params }) => {
 			testCases: caseId ? [caseId] : [],
 			title: formProposal.data.title
 		});
+
+		// After successfully creating the proposal, create a thread on Discord.
+		const threadId = await createProposalThread(
+			params.guildId,
+			docRef.id,
+			formProposal.data.title,
+			formProposal.data.description
+		);
+
+		// If the thread was created, update the proposal doc with the thread ID
+		if (threadId) {
+			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', docRef.id), {
+				threadId: threadId
+			});
+		}
 
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {

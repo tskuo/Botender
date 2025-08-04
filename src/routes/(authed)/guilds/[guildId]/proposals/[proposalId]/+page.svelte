@@ -508,17 +508,19 @@
 	<div class="sticky top-0 z-10 bg-white">
 		<div class="flex items-center justify-between p-3">
 			<div class="flex items-center">
-				<Button href="/proposals" variant="ghost" size="icon">
+				<Button href={`/guilds/${page.params.guildId}/proposals`} variant="ghost" size="icon">
 					<ChevronLeftIcon />
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
 			<Button
+				href={`https://discord.com/channels/${page.params.guildId}/${data.proposal.threadId}`}
+				target="_blank"
+				rel="noopener noreferrer"
 				class="mr-1 hover:cursor-pointer"
-				onclick={() => {
-					// console.log($state.snapshot(editedTasksWithoutEmptyNewTask));
-				}}><ExternalLinkIcon class="size-4" />Discuss</Button
 			>
+				<ExternalLinkIcon class="size-4" />Discuss on Discord
+			</Button>
 		</div>
 		<Separator />
 	</div>
