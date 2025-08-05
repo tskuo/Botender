@@ -33,7 +33,7 @@ const customHandle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Get session from Auth.js
-	const session = await event.locals.getSession?.();
+	const session = await event.locals.auth();
 
 	if (session?.user) {
 		event.locals.user = {

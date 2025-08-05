@@ -142,11 +142,11 @@ export async function underspecifiedPipeline(
 			}
 		}
 
-		console.log(`========== generatorSysPrompt ==========`);
-		console.log(generatorSysPrompt);
+		// console.log(`========== generatorSysPrompt ==========`);
+		// console.log(generatorSysPrompt);
 
-		console.log(`========== generatorUserPrompt ==========`);
-		console.log(generatorUserPromptPrint);
+		// console.log(`========== generatorUserPrompt ==========`);
+		// console.log(generatorUserPromptPrint);
 
 		// Bot Module
 		const generatorCases = generatorResults.flatMap((gr) => gr.cases);

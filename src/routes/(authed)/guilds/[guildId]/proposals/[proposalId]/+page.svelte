@@ -28,7 +28,6 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -54,7 +53,6 @@
 	import UserIcon from '@lucide/svelte/icons/user';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import PlusIcon from '@lucide/svelte/icons/plus';
 	import CogIcon from '@lucide/svelte/icons/cog';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import XIcon from '@lucide/svelte/icons/x';
@@ -64,7 +62,6 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import FolderCogIcon from '@lucide/svelte/icons/folder-cog';
 	import FlameIcon from '@lucide/svelte/icons/flame';
-	import CheckIcon from '@lucide/svelte/icons/check';
 	import DiffIcon from '@lucide/svelte/icons/diff';
 	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
 	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
@@ -429,7 +426,8 @@
 				method: 'POST',
 				body: JSON.stringify({
 					tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask),
-					editor: data.user?.userId
+					editor: data.user?.userName,
+					editorId: data.user?.userId
 				}),
 				headers: {
 					'Content-Type': 'application/json'
@@ -442,8 +440,9 @@
 				ref.saveTmpBotResponse(data.proposal.id, resEditData.id)
 			);
 			await Promise.all(promises);
-			await invalidateAll();
-			reloadProposalState();
+			goto(page.url.href, { invalidateAll: true });
+			// await invalidateAll();
+			// reloadProposalState();
 		}
 		generatedCases = [];
 		editMode = false;
@@ -465,7 +464,11 @@
 
 	let deployProposal = async () => {
 		deployingProposal = true;
-		if (data.edits.length === 0 || upvotes.length < DEPLOY_THRESHOLD || _.isNil(data.user.userId)) {
+		if (
+			data.edits.length === 0 ||
+			upvotes.length < DEPLOY_THRESHOLD ||
+			_.isNil(data.user?.userId)
+		) {
 			return;
 		}
 
@@ -479,8 +482,7 @@
 			body: JSON.stringify({
 				formTaskHistory: {
 					data: {
-						changedTasks: trimWhiteSpaceInTasks(changedTasks),
-						creator: data.user.userId
+						changedTasks: trimWhiteSpaceInTasks(changedTasks)
 					}
 				},
 				caseOnly: true

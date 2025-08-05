@@ -82,7 +82,8 @@ export const actions: Actions = {
 					method: 'POST',
 					body: JSON.stringify({
 						tasks: JSON.parse(editedTasks),
-						editor: formProposal.data.initiator
+						editor: formProposal.data.initiator,
+						editorId: formProposal.data.initiatorId
 					}),
 					headers: {
 						'Content-Type': 'application/json'

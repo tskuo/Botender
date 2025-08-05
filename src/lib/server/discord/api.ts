@@ -116,5 +116,5 @@ export async function createProposalThread(
 	console.log(
 		`Successfully created thread ${threadData.id} for proposal ${proposalId} in guild ${guildId}`
 	);
-	return threadData.id; // Return the new thread's ID
+	return { messageId: messageData.id, threadId: threadData.id }; // Return the new message's and thread's ID
 }

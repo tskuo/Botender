@@ -34,13 +34,14 @@ export const GET = async ({ params, url }) => {
 
 export const POST = async ({ request, params }) => {
 	try {
-		const { tasks, editor } = await request.json();
+		const { tasks, editor, editorId } = await request.json();
 		const docRef = await addDoc(
 			collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'edits'),
 			{
 				createAt: serverTimestamp(),
 				downvotes: [],
 				editor: editor,
+				editorId: editorId,
 				tasks: tasks,
 				upvotes: []
 			}

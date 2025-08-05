@@ -48,6 +48,7 @@ export const POST = async ({ request, params }) => {
 			description: formProposal.data.description,
 			discussionSummary: '',
 			initiator: formProposal.data.initiator,
+			initiatorId: formProposal.data.initiatorId,
 			open: true,
 			taskHistoryId: formProposal.data.taskHistoryId,
 			testCases: caseId ? [caseId] : [],
@@ -55,7 +56,7 @@ export const POST = async ({ request, params }) => {
 		});
 
 		// After successfully creating the proposal, create a thread on Discord.
-		const threadId = await createProposalThread(
+		const discordThreadInfo = await createProposalThread(
 			params.guildId,
 			docRef.id,
 			formProposal.data.title,
@@ -63,9 +64,10 @@ export const POST = async ({ request, params }) => {
 		);
 
 		// If the thread was created, update the proposal doc with the thread ID
-		if (threadId) {
+		if (discordThreadInfo) {
 			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', docRef.id), {
-				threadId: threadId
+				threadId: discordThreadInfo.threadId,
+				messageId: discordThreadInfo.messageId
 			});
 		}
 

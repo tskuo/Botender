@@ -3,11 +3,6 @@
 
 import type { DefaultSession } from '@auth/core/types';
 
-type User = {
-	userId: string;
-	userName: string;
-};
-
 declare global {
 	namespace App {
 		// interface Error {}
@@ -18,7 +13,7 @@ declare global {
 				guilds?: { id: string; name: string }[];
 				accessToken?: string;
 			};
-			getSession?: () => Promise<any>;
+			auth: () => Promise<Session | null>;
 		}
 		// interface PageData {}
 		// interface PageState {}
@@ -67,9 +62,12 @@ declare global {
 		description: string;
 		discussionSummary: string;
 		initiator: string;
+		initiatorId: string;
+		messageId: string;
 		open: boolean;
 		taskHistoryId: string;
 		testCases: string[];
+		threadId: string;
 		title: string;
 	};
 }
@@ -77,6 +75,7 @@ declare global {
 declare module '@auth/core/types' {
 	interface Session {
 		user: {
+			id: string;
 			guilds?: { id: string; name: string }[];
 			accessToken?: string;
 		} & DefaultSession['user'];

@@ -75,9 +75,16 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			if (account?.access_token) {
 				token.accessToken = account.access_token;
 			}
+			if (token.sub) {
+				token.id = token.sub;
+			}
 			return token;
 		},
 		async session({ session, token }) {
+			if (token.id && session.user) {
+				session.user.id = token.id as string;
+			}
+
 			if (token.accessToken) {
 				const [userGuilds, botGuilds] = await Promise.all([
 					getUserGuilds(token.accessToken as string),

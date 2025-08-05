@@ -521,6 +521,15 @@
 												<Form.Description></Form.Description>
 												<Form.FieldErrors />
 											</Form.Field>
+											<Form.Field form={formProposal} name="initiatorId">
+												<Form.Control>
+													{#snippet children({ props })}
+														<Input type="hidden" {...props} value={data.user?.userId} />
+													{/snippet}
+												</Form.Control>
+												<Form.Description />
+												<Form.FieldErrors />
+											</Form.Field>
 											<Form.Field form={formProposal} name="description" class="mt-4">
 												<Form.Control>
 													{#snippet children({ props })}

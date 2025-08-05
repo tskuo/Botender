@@ -48,7 +48,10 @@ export const GET = async ({ url, params }) => {
 	}
 };
 
-export const POST = async ({ request, params }) => {
+export const POST = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		throw error(400, 'User authentication error.');
+	}
 	try {
 		const { formTaskHistory } = await request.json();
 		const changedTasks: Tasks = { ...formTaskHistory.data.changedTasks };
@@ -82,7 +85,8 @@ export const POST = async ({ request, params }) => {
 		const docRef = await addDoc(collection(db, 'guilds', params.guildId, 'taskHistory'), {
 			createAt: serverTimestamp(),
 			tasks: newTasks,
-			creator: formTaskHistory.data.creator
+			deployer: locals.user.userName,
+			deployerId: locals.user.userId
 		});
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
