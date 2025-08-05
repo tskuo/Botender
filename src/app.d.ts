@@ -44,7 +44,7 @@ declare global {
 	type Case = {
 		id: string;
 		channel: string;
-		createAt: date;
+		createAt: Date;
 		realUserMessage: boolean;
 		userMessage: string;
 	};
@@ -52,7 +52,7 @@ declare global {
 	type BotResponse = {
 		id: string;
 		botResponse: string;
-		createAt: date;
+		createAt: Date;
 		proposalEditId: string;
 		proposalId: string;
 		taskHistoryId: string;
@@ -63,7 +63,7 @@ declare global {
 
 	type Proposal = {
 		id: string;
-		createAt: date;
+		createAt: Date;
 		description: string;
 		discussionSummary: string;
 		initiator: string;

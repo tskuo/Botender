@@ -57,6 +57,7 @@ async function getUserGuilds(accessToken: string): Promise<{ id: string; name: s
 }
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
+	trustHost: true,
 	providers: [
 		Discord({
 			clientId: DISCORD_CLIENT_ID,
