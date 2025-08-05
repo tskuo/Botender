@@ -1,5 +1,5 @@
 import { isTaskEmpty } from '$lib/tasks';
-import { openAIClient } from '$lib/server/openAI/client';
+import { openAIClient, openAIModel } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
@@ -23,7 +23,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 	);
 
 	const orchestratorResponse = await openAIClient.responses.parse({
-		model: 'gpt-4.1',
+		model: openAIModel,
 		input: [
 			{ role: 'system', content: orchestratorSysPrompt },
 			{ role: 'user', content: orchestratorUserPrompt }
@@ -51,7 +51,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		].join('\n');
 
 		const agentResponse = await openAIClient.responses.parse({
-			model: 'gpt-4.1',
+			model: openAIModel,
 			input: [
 				{ role: 'system', content: agentSysPrompt },
 				{ role: 'user', content: agentUserPrompt }

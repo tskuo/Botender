@@ -1,6 +1,6 @@
 import { bot } from '$lib/server/openAI/bot';
 import { bot_capability } from '$lib/sharedPrompts';
-import { openAIClient } from '$lib/server/openAI/client';
+import { openAIClient, openAIModel } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
@@ -47,7 +47,7 @@ export async function baselinePipeline(
 	const generatorUserPrompt = `Prompt:\n\t- Trigger: ${prompt.trigger}\n\t- Action: ${prompt.action}`;
 
 	const generatorResponse = await openAIClient.responses.parse({
-		model: 'gpt-4.1',
+		model: openAIModel,
 		input: [
 			{ role: 'system', content: generatorSysPrompt },
 			{ role: 'user', content: generatorUserPrompt }

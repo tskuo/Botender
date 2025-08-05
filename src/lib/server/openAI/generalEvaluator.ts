@@ -1,5 +1,5 @@
 import { bot_capability } from '$lib/sharedPrompts';
-import { openAIClient } from '$lib/server/openAI/client';
+import { openAIClient, openAIModel } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
@@ -71,7 +71,7 @@ export async function generalEvaluator(newTasks: Tasks, testCases) {
 			generalEvaluatorUserPromptPrint = generalEvaluatorUserPrompt;
 
 		return openAIClient.responses.parse({
-			model: 'gpt-4.1',
+			model: openAIModel,
 			input: [
 				{ role: 'system', content: generalEvaluatorSysPrompt },
 				{ role: 'user', content: generalEvaluatorUserPrompt }

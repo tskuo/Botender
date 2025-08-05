@@ -1,6 +1,6 @@
 import { bot } from '$lib/server/openAI/bot';
 import { bot_capability } from '$lib/sharedPrompts';
-import { openAIClient } from '$lib/server/openAI/client';
+import { openAIClient, openAIModel } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import _ from 'lodash';
@@ -47,7 +47,7 @@ export async function overspecifiedPipeline(
 	const detectorUserPrompt = `Prompt:\n\t- Trigger: ${prompt.trigger}\n\t- Action: ${prompt.action}`;
 
 	const detectorResponse = await openAIClient.responses.parse({
-		model: 'gpt-4.1',
+		model: openAIModel,
 		input: [
 			{ role: 'system', content: detectorSysPrompt },
 			{ role: 'user', content: detectorUserPrompt }
@@ -123,7 +123,7 @@ export async function overspecifiedPipeline(
 			].join('\n');
 			if (generatorUserPromptPrint === '') generatorUserPromptPrint = generatorUserPrompt;
 			return openAIClient.responses.parse({
-				model: 'gpt-4.1',
+				model: openAIModel,
 				input: [
 					{ role: 'system', content: generatorSysPrompt },
 					{ role: 'user', content: generatorUserPrompt }
@@ -248,7 +248,7 @@ export async function overspecifiedPipeline(
 		if (evaluatorUserPromptPrint === '') evaluatorUserPromptPrint = evaluatorUserPrompt;
 
 		return openAIClient.responses.parse({
-			model: 'gpt-4.1',
+			model: openAIModel,
 			input: [
 				{ role: 'system', content: evaluatorSysPrompt },
 				{ role: 'user', content: evaluatorUserPrompt }

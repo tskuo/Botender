@@ -703,6 +703,18 @@
 										? 'downvote'
 										: undefined}
 								onValueChange={async (value) => {
+									// if (resVote.ok) {
+									if (value === 'upvote') {
+										upvotes.push(data.user?.userId);
+										downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+									} else if (value === 'downvote') {
+										downvotes.push(data.user?.userId);
+										upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+									} else {
+										upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
+										downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
+									}
+									// }
 									const resVote = await fetch(
 										`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}`,
 										{
@@ -717,18 +729,6 @@
 											}
 										}
 									);
-									if (resVote.ok) {
-										if (value === 'upvote') {
-											upvotes.push(data.user?.userId);
-											downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
-										} else if (value === 'downvote') {
-											downvotes.push(data.user?.userId);
-											upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
-										} else {
-											upvotes = upvotes.filter((u: string) => u !== data.user?.userId);
-											downvotes = downvotes.filter((u: string) => u !== data.user?.userId);
-										}
-									}
 								}}
 							>
 								<ToggleGroup.Item
