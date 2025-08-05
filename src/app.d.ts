@@ -1,6 +1,8 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 
+import type { DefaultSession } from '@auth/core/types';
+
 type User = {
 	userId: string;
 	userName: string;
@@ -10,7 +12,13 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			user: User;
+			user?: {
+				userId: string;
+				userName: string;
+				guilds?: { id: string; name: string }[];
+				accessToken?: string;
+			};
+			getSession?: () => Promise<any>;
 		}
 		// interface PageData {}
 		// interface PageState {}
@@ -64,6 +72,15 @@ declare global {
 		testCases: string[];
 		title: string;
 	};
+}
+
+declare module '@auth/core/types' {
+	interface Session {
+		user: {
+			guilds?: { id: string; name: string }[];
+			accessToken?: string;
+		} & DefaultSession['user'];
+	}
 }
 
 export {};

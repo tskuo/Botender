@@ -12,10 +12,11 @@
 	import WebhookIcon from '@lucide/svelte/icons/webhook';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 
-	// import logo
-	import logo from '$lib/img/botender_logo.png';
+	import { signOut } from '@auth/sveltekit/client';
 
 	import { page } from '$app/state';
+
+	let { data } = $props();
 
 	const items = [
 		{
@@ -52,7 +53,7 @@
 			<Sidebar.MenuItem>
 				<div class="flex items-center px-2 pt-1">
 					<Avatar.Root class="mr-4">
-						<Avatar.Image class="rounded-none" src={logo} alt="Botender logo" />
+						<Avatar.Image class="rounded-none" src="/img/botender_logo.png" alt="Botender logo" />
 					</Avatar.Root>
 					<h1 class="text-2xl font-bold">Botender</h1>
 				</div>
@@ -89,7 +90,7 @@
 								{...props}
 								class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
-								tzusheng
+								{data.user.userName}
 								<ChevronUpIcon class="ml-auto" />
 							</Sidebar.MenuButton>
 						{/snippet}
@@ -98,7 +99,7 @@
 						<!-- <DropdownMenu.Item>
 							<span>Account</span>
 						</DropdownMenu.Item> -->
-						<DropdownMenu.Item>
+						<DropdownMenu.Item onclick={() => signOut()} class="cursor-pointer">
 							<span>Sign out</span>
 						</DropdownMenu.Item>
 					</DropdownMenu.Content>
