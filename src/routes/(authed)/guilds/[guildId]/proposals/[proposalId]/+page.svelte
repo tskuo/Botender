@@ -425,9 +425,7 @@
 			{
 				method: 'POST',
 				body: JSON.stringify({
-					tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask),
-					editor: data.user?.userName,
-					editorId: data.user?.userId
+					tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask)
 				}),
 				headers: {
 					'Content-Type': 'application/json'

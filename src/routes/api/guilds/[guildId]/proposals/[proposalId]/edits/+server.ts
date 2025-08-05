@@ -1,6 +1,16 @@
 import { json, error } from '@sveltejs/kit';
-import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import {
+	serverTimestamp,
+	addDoc,
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	doc,
+	getDoc
+} from 'firebase/firestore';
 import { db } from '$lib/firebase';
+import { sendEditNotificationToThread } from '$lib/server/discord/api';
 
 export const GET = async ({ params, url }) => {
 	try {
@@ -32,20 +42,40 @@ export const GET = async ({ params, url }) => {
 	}
 };
 
-export const POST = async ({ request, params }) => {
+export const POST = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		throw error(401, 'You must be logged in to edit a proposal.');
+	}
 	try {
-		const { tasks, editor, editorId } = await request.json();
+		const { tasks } = await request.json();
 		const docRef = await addDoc(
 			collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'edits'),
 			{
 				createAt: serverTimestamp(),
 				downvotes: [],
-				editor: editor,
-				editorId: editorId,
+				editor: locals.user.userName,
+				editorId: locals.user.userId,
 				tasks: tasks,
 				upvotes: []
 			}
 		);
+
+		const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+		const proposalSnap = await getDoc(proposalRef);
+
+		if (proposalSnap.exists()) {
+			const proposalData = proposalSnap.data();
+			// 2. If a threadId exists, call the notification function
+			if (proposalData.threadId) {
+				await sendEditNotificationToThread(
+					params.guildId,
+					proposalData.threadId,
+					locals.user.userName,
+					params.proposalId
+				);
+			}
+		}
+
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
 		throw error(400, 'Fail to save a new edit in the database.');

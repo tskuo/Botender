@@ -1,6 +1,8 @@
 import { DISCORD_TOKEN, VERCEL_WEB_APP_URL } from '$env/static/private';
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
+const PRIMARY_COLOR_HEX = '#5865f2';
+const PRIMARY_COLOR_DECIMAL = parseInt(PRIMARY_COLOR_HEX.replace('#', ''), 16);
 
 /**
  * Finds a text channel by name within a specific guild.
@@ -61,7 +63,7 @@ export async function createProposalThread(
 				{
 					title: proposalTitle,
 					description: `${proposalDescription}`,
-					color: 14738431
+					color: PRIMARY_COLOR_DECIMAL
 					// footer: {
 					// 	text: `Proposal ID: ${proposalId}`
 					// }
@@ -117,4 +119,60 @@ export async function createProposalThread(
 		`Successfully created thread ${threadData.id} for proposal ${proposalId} in guild ${guildId}`
 	);
 	return { messageId: messageData.id, threadId: threadData.id }; // Return the new message's and thread's ID
+}
+
+/**
+ * Sends a notification message to a specific Discord thread when a proposal is edited.
+ * @param threadId The ID of the thread to post the message in.
+ * @param editorName The name of the user who made the edit.
+ * @param guildId The ID of the guild.
+ * @param proposalId The ID of the proposal.
+ */
+export async function sendEditNotificationToThread(
+	guildId: string,
+	threadId: string,
+	editorName: string,
+	proposalId: string
+) {
+	const proposalUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/proposals/${proposalId}`;
+
+	try {
+		const response = await fetch(`${DISCORD_API_BASE}/channels/${threadId}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `A new edit has been submitted by **${editorName}**.`,
+				embeds: [
+					{
+						title: 'View the Latest Edit',
+						description: `You can review the changes by visiting the proposal page.`,
+						color: PRIMARY_COLOR_DECIMAL, // 3447003 // Blue color
+						url: proposalUrl
+					}
+				],
+				components: [
+					{
+						type: 1, // Action Row
+						components: [
+							{
+								type: 2, // Button
+								style: 5, // Link style
+								label: 'View Proposal',
+								url: proposalUrl
+							}
+						]
+					}
+				]
+			})
+		});
+
+		if (!response.ok) {
+			console.error('Failed to send edit notification to Discord thread:', await response.text());
+		}
+	} catch (error) {
+		console.error('Error sending edit notification:', error);
+	}
 }
