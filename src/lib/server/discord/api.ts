@@ -131,7 +131,7 @@ export async function createProposalThread(
 export async function sendEditNotificationToThread(
 	guildId: string,
 	threadId: string,
-	editorName: string,
+	editorId: string,
 	proposalId: string
 ) {
 	const proposalUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/proposals/${proposalId}`;
@@ -144,7 +144,7 @@ export async function sendEditNotificationToThread(
 				Authorization: `Bot ${DISCORD_TOKEN}`
 			},
 			body: JSON.stringify({
-				content: `A new edit has been submitted by **${editorName}**.`,
+				content: `A new edit has been submitted by <@${editorId}>.`,
 				embeds: [
 					{
 						title: 'View the Latest Edit',

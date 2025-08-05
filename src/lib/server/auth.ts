@@ -72,11 +72,9 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	},
 	callbacks: {
 		async jwt({ token, account }) {
-			if (account?.access_token) {
+			if (account) {
+				token.id = account.providerAccountId;
 				token.accessToken = account.access_token;
-			}
-			if (token.sub) {
-				token.id = token.sub;
 			}
 			return token;
 		},

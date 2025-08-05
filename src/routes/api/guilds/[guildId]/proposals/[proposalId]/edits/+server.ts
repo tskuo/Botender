@@ -70,7 +70,7 @@ export const POST = async ({ request, params, locals }) => {
 				await sendEditNotificationToThread(
 					params.guildId,
 					proposalData.threadId,
-					locals.user.userName,
+					locals.user.userId,
 					params.proposalId
 				);
 			}

@@ -75,7 +75,7 @@
 	// import svelte features
 	import { onMount } from 'svelte';
 	import { tick } from 'svelte';
-	import { invalidateAll, goto } from '$app/navigation';
+	import { invalidateAll, goto, invalidate } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 
@@ -438,9 +438,11 @@
 				ref.saveTmpBotResponse(data.proposal.id, resEditData.id)
 			);
 			await Promise.all(promises);
-			goto(page.url.href, { invalidateAll: true });
+			await invalidate('app:proposal-page-data');
+			// window.location.reload();
+			// goto(page.url.href, { invalidateAll: true });
 			// await invalidateAll();
-			// reloadProposalState();
+			reloadProposalState();
 		}
 		generatedCases = [];
 		editMode = false;
@@ -1327,7 +1329,8 @@
 										data.originalTasks.tasks,
 										trimTaskCustomizer
 									)) ||
-								tasksWithMissingFields.length > 0}
+								tasksWithMissingFields.length > 0 ||
+								savingEdit}
 							hidden={!data.proposal.open}
 							onclick={async () => {
 								await generateCases($state.snapshot(editedTasksWithoutEmptyNewTask));
