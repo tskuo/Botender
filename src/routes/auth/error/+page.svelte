@@ -1,8 +1,8 @@
 <script>
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
-	const error = $page.url.searchParams.get('error');
+	const error = page.url.searchParams.get('error');
 </script>
 
 <div class="flex min-h-screen items-center justify-center">
@@ -17,6 +17,6 @@
 				An unexpected error occurred during sign-in.
 			{/if}
 		</p>
-		<Button href="/auth/signin">Try Again</Button>
+		<Button href="/">Try Again</Button>
 	</div>
 </div>
