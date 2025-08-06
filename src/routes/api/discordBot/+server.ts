@@ -11,9 +11,6 @@ export const POST = async ({ request }) => {
 		if (!guildId || !channel || !userMessage) {
 			throw error(400, 'Missing required fields: guildId, channel, userMessage');
 		}
-		console.log('guildId: ', guildId);
-		console.log('channel: ', channel);
-		console.log('userMessage: ', userMessage);
 
 		// Fetch the tasks for the guild from Firestore
 		const querySnapshot = await getDocs(
@@ -21,14 +18,12 @@ export const POST = async ({ request }) => {
 		);
 
 		const tasks = querySnapshot.docs[0].data().tasks;
-		console.log(tasks);
 
 		// Call the core bot logic with the fetched tasks
 		const { taskId, botResponse } = await bot(channel, userMessage, tasks);
-		console.log('taskId: ', taskId);
-		console.log('botResponse: ', botResponse);
+		const taskName = taskId in tasks ? tasks[taskId].name : '';
 
-		return json({ taskId: taskId, botResponse: botResponse }, { status: 201 });
+		return json({ taskId: taskId, taskName: taskName, botResponse: botResponse }, { status: 201 });
 	} catch (e) {
 		console.error('Error in bot API:', e);
 		throw error(500, 'Failed to process bot request.');
