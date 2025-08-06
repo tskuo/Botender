@@ -1,8 +1,6 @@
 import { DISCORD_TOKEN, VERCEL_WEB_APP_URL } from '$env/static/private';
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
-const PRIMARY_COLOR_HEX = '#5865f2';
-const PRIMARY_COLOR_DECIMAL = parseInt(PRIMARY_COLOR_HEX.replace('#', ''), 16);
 
 /**
  * Finds a text channel by name within a specific guild.
@@ -39,7 +37,8 @@ export async function createProposalThread(
 	guildId: string,
 	proposalId: string,
 	proposalTitle: string,
-	proposalDescription: string
+	proposalDescription: string,
+	initiatorId: string
 ) {
 	const channel = await findChannelByName(guildId, 'botender');
 
@@ -58,12 +57,12 @@ export async function createProposalThread(
 			Authorization: `Bot ${DISCORD_TOKEN}`
 		},
 		body: JSON.stringify({
-			content: `A new proposal has been created! You can view the proposal and join the discussion right here in this thread.\n`,
+			content: `💡 A new proposal has been initiated by <@${initiatorId}>!`,
 			embeds: [
 				{
 					title: proposalTitle,
 					description: `${proposalDescription}`,
-					color: PRIMARY_COLOR_DECIMAL
+					color: parseInt('#5865f2'.replace('#', ''), 16)
 					// footer: {
 					// 	text: `Proposal ID: ${proposalId}`
 					// }
@@ -115,9 +114,42 @@ export async function createProposalThread(
 	}
 
 	const threadData = await threadResponse.json();
+
+	// --- Step 3: Send a welcome message inside the thread ---
+	const welcomeResponse = await fetch(`${DISCORD_API_BASE}/channels/${threadData.id}/messages`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bot ${DISCORD_TOKEN}`
+		},
+		body: JSON.stringify({
+			content: `👋 **Welcome to the discussion thread for this proposal!**
+
+🗣️ **Use this thread to:**
+- Discuss the proposal
+- Collaborate on edits
+- Share feedback and suggestions
+
+🔔 **Follow this thread to receive updates when:**
+- New edits are saved
+- The proposal is deployed
+- The proposal is closed
+
+📝 You can view the full proposal details and submit edits on the proposal page using the "View Proposal" button above.
+
+Let's get the discussion started! 🚀`
+		})
+	});
+
+	if (!welcomeResponse.ok) {
+		console.error('Failed to send welcome message to thread:', await welcomeResponse.text());
+		// Don't return null here since the thread was still created successfully
+	}
+
 	console.log(
 		`Successfully created thread ${threadData.id} for proposal ${proposalId} in guild ${guildId}`
 	);
+
 	return { messageId: messageData.id, threadId: threadData.id }; // Return the new message's and thread's ID
 }
 
@@ -144,26 +176,13 @@ export async function sendEditNotificationToThread(
 				Authorization: `Bot ${DISCORD_TOKEN}`
 			},
 			body: JSON.stringify({
-				content: `A new edit has been submitted by <@${editorId}>.`,
+				content: `✏️ A new edit has been saved by <@${editorId}>!`,
 				embeds: [
 					{
 						title: 'View the Latest Edit',
-						description: `You can review the changes by visiting the proposal page.`,
-						color: PRIMARY_COLOR_DECIMAL, // 3447003 // Blue color
+						description: `You can review and upvote the edit for deployment by visiting the proposal page.`,
+						color: parseInt('#e0e3ff'.replace('#', ''), 16),
 						url: proposalUrl
-					}
-				],
-				components: [
-					{
-						type: 1, // Action Row
-						components: [
-							{
-								type: 2, // Button
-								style: 5, // Link style
-								label: 'View Proposal',
-								url: proposalUrl
-							}
-						]
 					}
 				]
 			})

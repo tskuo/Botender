@@ -39,7 +39,10 @@ export const GET = async ({ params }) => {
 	}
 };
 
-export const POST = async ({ request, params }) => {
+export const POST = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		throw error(401, 'You must be logged in to initiate a proposal.');
+	}
 	try {
 		const { formProposal, caseId } = await request.json();
 
@@ -47,8 +50,8 @@ export const POST = async ({ request, params }) => {
 			createAt: serverTimestamp(),
 			description: formProposal.data.description,
 			discussionSummary: '',
-			initiator: formProposal.data.initiator,
-			initiatorId: formProposal.data.initiatorId,
+			initiator: locals.user.userName,
+			initiatorId: locals.user.userId,
 			open: true,
 			taskHistoryId: formProposal.data.taskHistoryId,
 			testCases: caseId ? [caseId] : [],
@@ -60,7 +63,8 @@ export const POST = async ({ request, params }) => {
 			params.guildId,
 			docRef.id,
 			formProposal.data.title,
-			formProposal.data.description
+			formProposal.data.description,
+			locals.user.userId
 		);
 
 		// If the thread was created, update the proposal doc with the thread ID
