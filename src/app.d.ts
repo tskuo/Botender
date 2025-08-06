@@ -10,6 +10,7 @@ declare global {
 			user?: {
 				userId: string;
 				userName: string;
+				userImage: string;
 				guilds?: { id: string; name: string }[];
 				accessToken?: string;
 			};

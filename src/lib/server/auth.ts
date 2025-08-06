@@ -71,35 +71,40 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		error: '/auth/error'
 	},
 	callbacks: {
-		async jwt({ token, account }) {
-			if (account) {
+		async jwt({ token, user, account }) {
+			// This block runs only on initial sign-in
+			if (account && user) {
+				// 1. Perform the guild check ONCE
+				const [userGuilds, botGuilds] = await Promise.all([
+					getUserGuilds(account.access_token!),
+					getBotGuilds()
+				]);
+
+				const botGuildIds = new Set(botGuilds.map((g) => g.id));
+				const validGuilds = userGuilds.filter((guild) => botGuildIds.has(guild.id));
+
+				// 2. Store the result and user info in the JWT
 				token.id = account.providerAccountId;
 				token.accessToken = account.access_token;
+				token.name = user.name;
+				token.image = user.image;
+				token.guilds = validGuilds; // Store the valid guilds
 			}
 			return token;
 		},
 		async session({ session, token }) {
-			if (token.id && session.user) {
+			// This block runs on every request to build the client-side session object
+			// It reads directly from the token, without making new API calls.
+			if (session.user) {
 				session.user.id = token.id as string;
-			}
-
-			if (token.accessToken) {
-				const [userGuilds, botGuilds] = await Promise.all([
-					getUserGuilds(token.accessToken as string),
-					getBotGuilds()
-				]);
-
-				// Find the intersection of the two lists
-				const botGuildIds = new Set(botGuilds.map((g) => g.id));
-				const validGuilds = userGuilds.filter((guild) => botGuildIds.has(guild.id));
-
-				session.user.guilds = validGuilds;
 				session.user.accessToken = token.accessToken as string;
+				session.user.name = token.name;
+				session.user.image = token.image as string;
+				session.user.guilds = token.guilds as { id: string; name: string }[];
 			}
 			return session;
 		},
 		async redirect({ url, baseUrl }) {
-			// After successful sign-in, redirect to the intended page or the guilds page
 			if (url.startsWith(baseUrl)) {
 				return url;
 			}

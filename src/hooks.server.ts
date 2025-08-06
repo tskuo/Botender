@@ -39,6 +39,7 @@ const customHandle: Handle = async ({ event, resolve }) => {
 		event.locals.user = {
 			userId: session.user.id!,
 			userName: session.user.name!,
+			userImage: session.user.image!,
 			guilds: session.user.guilds || [],
 			accessToken: session.user.accessToken
 		};
