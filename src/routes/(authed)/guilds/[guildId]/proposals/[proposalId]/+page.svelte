@@ -532,10 +532,10 @@
 						<Alert.Root class="border-my-green text-my-green mb-2">
 							<CircleCheckBigIcon />
 							<Alert.Title>
-								<h4>This proposal has been successfully deployed and is now permanently closed.</h4>
+								<h4>This proposal has been successfully deployed!</h4>
 							</Alert.Title>
 							<Alert.Description class="text-my-green">
-								<p>This proposal is now available for viewing only.</p>
+								<p>This proposal is now permanently closed and is available for viewing only.</p>
 							</Alert.Description>
 						</Alert.Root>
 					{:else}
