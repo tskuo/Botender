@@ -51,7 +51,6 @@
 	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
 	import FolderCheckIcon from '@lucide/svelte/icons/folder-check';
 	import UserIcon from '@lucide/svelte/icons/user';
-	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import CogIcon from '@lucide/svelte/icons/cog';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
@@ -66,6 +65,7 @@
 	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
 	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
 	import SmileIcon from '@lucide/svelte/icons/smile';
+	import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
 
 	import EyeIcon from '@lucide/svelte/icons/eye';
 
@@ -75,7 +75,7 @@
 	// import svelte features
 	import { onMount } from 'svelte';
 	import { tick } from 'svelte';
-	import { invalidateAll, goto, invalidate } from '$app/navigation';
+	import { invalidateAll, goto } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 
@@ -492,7 +492,8 @@
 			await fetch(`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}`, {
 				method: 'PATCH',
 				body: JSON.stringify({
-					action: 'closeProposal'
+					action: 'deployProposal',
+					proposalEditId: data.edits[0].id
 				}),
 				headers: {
 					'Content-Type': 'application/json'
@@ -518,7 +519,7 @@
 				rel="noopener noreferrer"
 				class="mr-1 hover:cursor-pointer"
 			>
-				<ExternalLinkIcon class="size-4" />Discuss on Discord
+				<ExternalLinkIcon class="size-4" />Discuss
 			</Button>
 		</div>
 		<Separator />
@@ -527,27 +528,38 @@
 		<div class="overflow-auto border-r p-2 md:col-span-2">
 			<div class="mb-4 p-2">
 				{#if !data.proposal.open}
-					<Alert.Root class="border-my-pink text-my-pink mb-2">
-						<TriangleAlertIcon />
-						<Alert.Title><h4>This proposal has been closed.</h4></Alert.Title>
-						<Alert.Description class="text-my-pink">
-							<p>This proposal is now available for viewing only.</p>
-						</Alert.Description>
-					</Alert.Root>
+					{#if data.proposal.deployed}
+						<Alert.Root class="border-my-green text-my-green mb-2">
+							<CircleCheckBigIcon />
+							<Alert.Title>
+								<h4>This proposal has been successfully deployed and is now permanently closed.</h4>
+							</Alert.Title>
+							<Alert.Description class="text-my-green">
+								<p>This proposal is now available for viewing only.</p>
+							</Alert.Description>
+						</Alert.Root>
+					{:else}
+						<Alert.Root class="border-my-pink text-my-pink mb-2">
+							<TriangleAlertIcon />
+							<Alert.Title><h4>This proposal has been closed.</h4></Alert.Title>
+							<Alert.Description class="text-my-pink">
+								<p>This proposal is now available for viewing only.</p>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
 				{/if}
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
-					{data.proposal.initiator} initiated at {new Date(data.proposal.createAt).toLocaleString(
-						[],
-						{
-							year: 'numeric',
-							month: 'numeric',
-							day: 'numeric',
-							hour: '2-digit',
-							minute: '2-digit',
-							hour12: false
-						}
-					)}
+					Initiated by {data.proposal.initiator} at {new Date(
+						data.proposal.createAt
+					).toLocaleString([], {
+						year: 'numeric',
+						month: 'numeric',
+						day: 'numeric',
+						hour: '2-digit',
+						minute: '2-digit',
+						hour12: false
+					})}
 				</p>
 				<p>{data.proposal.description}</p>
 			</div>
@@ -561,7 +573,16 @@
 							<p class="text-muted-foreground text-sm">No edits have been proposed yet</p>
 						{:else}
 							<p class="text-muted-foreground text-sm">
-								Last edited by {data.edits[0].editor}
+								Last edited by {data.edits[0].editor} at {new Date(
+									data.edits[0].createAt
+								).toLocaleString([], {
+									year: 'numeric',
+									month: 'numeric',
+									day: 'numeric',
+									hour: '2-digit',
+									minute: '2-digit',
+									hour12: false
+								})}
 							</p>
 						{/if}
 					</div>
@@ -584,10 +605,10 @@
 							disabled={generatingCase || runningTest}
 							hidden={!data.proposal.open}
 							variant="secondary"
-							class="hover:cursor-pointer"
+							class="w-24 justify-start hover:cursor-pointer"
 							onclick={() => (editMode = true)}
 						>
-							<PencilIcon class="size-4" />Edit
+							<PencilIcon class="mr-2 size-4" />Edit
 						</Button>
 					{/if}
 				</div>
@@ -755,7 +776,7 @@
 							</ToggleGroup.Root>
 							<AlertDialog.Root>
 								<AlertDialog.Trigger
-									class={`${buttonVariants()} hover:cursor-pointer`}
+									class={`${buttonVariants({ variant: 'secondary' })} w-24 justify-start hover:cursor-pointer`}
 									disabled={upvotes.length < DEPLOY_THRESHOLD}
 								>
 									<LandPlotIcon class="size-4" />
@@ -981,7 +1002,7 @@
 										<Tabs.Root value="edit">
 											<Tabs.List class="w-full">
 												<Tabs.Trigger value="edit">
-													<span class="hidden md:inline">Compare with</span>Proposed Edit
+													<span class="hidden md:inline">Compare with</span>Latest Edit
 												</Tabs.Trigger>
 												<Tabs.Trigger value="original">
 													<span class="hidden md:inline">Compare with</span>Original Tasks
@@ -1067,10 +1088,10 @@
 					{:else}
 						<Button
 							variant="secondary"
-							class="hover:cursor-pointer"
+							class="w-24 justify-start hover:cursor-pointer"
 							onclick={() => (viewHistory = true)}
 						>
-							<BookOpenIcon class="size-4" />View
+							<BookOpenIcon class="mr-2 size-4" />View
 						</Button>
 					{/if}
 				</div>
@@ -1095,7 +1116,7 @@
 											<Dialog.Root>
 												<Dialog.Trigger class="hover:cursor-pointer hover:underline">
 													{#if i === 0}
-														current
+														latest
 													{:else}
 														view
 													{/if}

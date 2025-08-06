@@ -57,12 +57,12 @@ export async function createProposalThread(
 			Authorization: `Bot ${DISCORD_TOKEN}`
 		},
 		body: JSON.stringify({
-			content: `💡 A new proposal has been initiated by <@${initiatorId}>!`,
+			content: `💡 **New Proposal!**\n\nA new proposal has been initiated by <@${initiatorId}>!`,
 			embeds: [
 				{
 					title: proposalTitle,
 					description: `${proposalDescription}`,
-					color: parseInt('#5865f2'.replace('#', ''), 16)
+					color: parseInt('5865f2', 16)
 					// footer: {
 					// 	text: `Proposal ID: ${proposalId}`
 					// }
@@ -176,12 +176,12 @@ export async function sendEditNotificationToThread(
 				Authorization: `Bot ${DISCORD_TOKEN}`
 			},
 			body: JSON.stringify({
-				content: `✏️ A new edit has been saved by <@${editorId}>!`,
+				content: `✏️ **Proposal Edited!**\n\nA new edit has been saved by <@${editorId}>!`,
 				embeds: [
 					{
 						title: 'View the Latest Edit',
 						description: `You can review and upvote the edit for deployment by visiting the proposal page.`,
-						color: parseInt('#e0e3ff'.replace('#', ''), 16),
+						color: parseInt('e0e3ff', 16),
 						url: proposalUrl
 					}
 				]
@@ -193,5 +193,119 @@ export async function sendEditNotificationToThread(
 		}
 	} catch (error) {
 		console.error('Error sending edit notification:', error);
+	}
+}
+
+export async function sendDeployNotificationToThread(
+	guildId: string,
+	threadId: string,
+	deployerId: string,
+	proposalId: string,
+	upvotes: string[]
+) {
+	const tasksURL = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/tasks`;
+	const proposalUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/proposals/${proposalId}`;
+	const mentions = upvotes.map((userId) => `<@${userId}>`).join(' ');
+
+	try {
+		const deployResponse = await fetch(`${DISCORD_API_BASE}/channels/${threadId}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `🚀 **Proposal Deployed!**\n\nThe latest proposed edit has been successfully deployed by <@${deployerId}>!\n\nSpecial thanks to ${mentions} for upvoting the deployment, and to everyone who contributed to this proposal.`,
+				embeds: [
+					{
+						title: 'View Current Tasks',
+						description: `You can review all currently active tasks for the bot.`,
+						color: parseInt('35ed7e', 16),
+						url: tasksURL
+					}
+				]
+			})
+		});
+
+		if (!deployResponse.ok) {
+			console.error(
+				`Failed to send deployment message to thread ${threadId}:`,
+				await deployResponse.text()
+			);
+			// We can choose to stop here or continue to the closing message
+		}
+
+		const closeResponse = await fetch(`${DISCORD_API_BASE}/channels/${threadId}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `🔒 **Proposal Closed**\n\n`,
+				embeds: [
+					{
+						title: 'View the Closed Proposal',
+						description: `This proposal is now permanently closed, as it has been successfully deployed.`,
+						color: parseInt('ff4cd2', 16),
+						url: proposalUrl
+					}
+				]
+			})
+		});
+
+		if (!closeResponse.ok) {
+			console.error(
+				`Failed to send closing message to thread ${threadId}:`,
+				await closeResponse.text()
+			);
+		}
+	} catch (error) {
+		console.error(`Error sending message to thread ${threadId}:`, error);
+	}
+}
+
+/**
+ * Sends a notification to the #botender channel when tasks are updated directly.
+ * @param guildId The ID of the guild where tasks were updated.
+ * @param deployerId The ID of the user who deployed the changes.
+ */
+export async function sendTaskUpdateNotification(guildId: string, deployerId: string) {
+	const channel = await findChannelByName(guildId, 'botender');
+	if (!channel) {
+		console.error(`Could not find a text channel named #botender in guild ${guildId}`);
+		return null;
+	}
+
+	const tasksUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/tasks`;
+
+	try {
+		const response = await fetch(`${DISCORD_API_BASE}/channels/${channel.id}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `✅ **Tasks Updated!**\n\nThe bot's tasks have been updated by <@${deployerId}>!`,
+				embeds: [
+					{
+						title: 'View Current Tasks',
+						description: `You can review all currently active tasks for the bot.`,
+						color: parseInt('35ed7e', 16),
+						url: tasksUrl
+					}
+				]
+			})
+		});
+
+		if (!response.ok) {
+			console.error(
+				`Failed to send task update notification to channel ${channel.id}:`,
+				await response.text()
+			);
+		}
+	} catch (error) {
+		console.error('Error sending task update notification:', error);
 	}
 }

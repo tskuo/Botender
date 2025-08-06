@@ -53,6 +53,7 @@ export const POST = async ({ request, params, locals }) => {
 			initiator: locals.user.userName,
 			initiatorId: locals.user.userId,
 			open: true,
+			deployed: false,
 			taskHistoryId: formProposal.data.taskHistoryId,
 			testCases: caseId ? [caseId] : [],
 			title: formProposal.data.title

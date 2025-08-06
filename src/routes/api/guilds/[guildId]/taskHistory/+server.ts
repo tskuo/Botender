@@ -9,6 +9,7 @@ import {
 	serverTimestamp
 } from 'firebase/firestore';
 import { db } from '$lib/firebase';
+import { sendTaskUpdateNotification } from '$lib/server/discord/api';
 
 export const GET = async ({ url, params }) => {
 	try {
@@ -88,6 +89,9 @@ export const POST = async ({ request, params, locals }) => {
 			deployer: locals.user.userName,
 			deployerId: locals.user.userId
 		});
+
+		await sendTaskUpdateNotification(params.guildId, locals.user.userId);
+
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
 		throw error(400, 'Fail to create a new taskHistory in the database.');

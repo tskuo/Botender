@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-
 import { db } from '$lib/firebase';
+import { sendDeployNotificationToThread } from '$lib/server/discord/api';
 
 export const GET = async ({ params }) => {
 	const docRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
@@ -86,6 +86,43 @@ export const PATCH = async ({ params, request, locals }) => {
 			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
 				open: false
 			});
+		} else if (action === 'deployProposal') {
+			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+			const proposalSnap = await getDoc(proposalRef);
+
+			if (!proposalSnap.exists()) {
+				throw error(404, 'Proposal not found.');
+			}
+
+			const editRef = doc(
+				db,
+				'guilds',
+				params.guildId,
+				'proposals',
+				params.proposalId,
+				'edits',
+				proposalEditId
+			);
+			const editSnap = await getDoc(editRef);
+			if (!editSnap.exists()) {
+				throw error(404, 'Latest edit not found.');
+			}
+
+			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+				open: false,
+				deployed: true
+			});
+
+			const proposalData = proposalSnap.data();
+			if (proposalData.threadId) {
+				await sendDeployNotificationToThread(
+					params.guildId,
+					proposalData.threadId,
+					locals.user.userId,
+					params.proposalId,
+					editSnap.data().upvotes
+				);
+			}
 		}
 		return json({ status: 201 });
 	} catch {

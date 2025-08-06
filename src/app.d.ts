@@ -60,6 +60,7 @@ declare global {
 	type Proposal = {
 		id: string;
 		createAt: Date;
+		deployed: boolean;
 		description: string;
 		discussionSummary: string;
 		initiator: string;
