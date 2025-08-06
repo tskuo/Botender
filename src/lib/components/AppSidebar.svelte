@@ -90,6 +90,12 @@
 								{...props}
 								class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
+								<Avatar.Root>
+									<Avatar.Image src={data.user.userImage} alt="user image" />
+									<Avatar.Fallback>
+										{data.user.userName ? data.user.userName[0].toUpperCase() : ''}
+									</Avatar.Fallback>
+								</Avatar.Root>
 								{data.user.userName}
 								<ChevronUpIcon class="ml-auto" />
 							</Sidebar.MenuButton>
