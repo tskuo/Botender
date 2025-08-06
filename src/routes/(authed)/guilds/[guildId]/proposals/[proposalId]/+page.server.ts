@@ -1,8 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ params, fetch, locals, depends }) => {
-	depends('app:proposal-page-data');
+export const load: PageServerLoad = async ({ params, fetch, locals }) => {
 	try {
 		const resProposal = await fetch(`/api/guilds/${params.guildId}/proposals/${params.proposalId}`);
 		const proposal = await resProposal.json();

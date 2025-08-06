@@ -438,10 +438,7 @@
 				ref.saveTmpBotResponse(data.proposal.id, resEditData.id)
 			);
 			await Promise.all(promises);
-			await invalidate('app:proposal-page-data');
-			// window.location.reload();
-			// goto(page.url.href, { invalidateAll: true });
-			// await invalidateAll();
+			await invalidateAll();
 			reloadProposalState();
 		}
 		generatedCases = [];
