@@ -64,7 +64,7 @@ export const actions: Actions = {
 			method: 'POST',
 			body: JSON.stringify({ formProposal }),
 			headers: {
-				'Content-Type': 'appplication/json'
+				'Content-Type': 'application/json'
 			}
 		});
 		if (!resProposal.ok) {
@@ -81,9 +81,7 @@ export const actions: Actions = {
 				{
 					method: 'POST',
 					body: JSON.stringify({
-						tasks: JSON.parse(editedTasks),
-						editor: formProposal.data.initiator,
-						editorId: formProposal.data.initiatorId
+						tasks: JSON.parse(editedTasks)
 					}),
 					headers: {
 						'Content-Type': 'application/json'
@@ -111,13 +109,13 @@ export const actions: Actions = {
 						proposalId: editId === undefined ? '' : dataProposal.id,
 						taskHistoryId: editId === undefined ? formProposal.data.taskHistoryId : '',
 						triggeredTaskId: formProposal.data.triggeredTaskId,
-						thumbsUp: [], // TODO
-						thumbsDown: [] // TODo
+						thumbsUp: [],
+						thumbsDown: []
 					}
 				}
 			}),
 			headers: {
-				'Content-Type': 'appplication/json'
+				'Content-Type': 'application/json'
 			}
 		});
 		const dataCase = await resCase.json();

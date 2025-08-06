@@ -19,8 +19,6 @@ export const createCaseSchema = z.object({
 
 export const playgroundCreateProposalSchema = z.object({
 	description: z.string().trim().min(1),
-	initiator: z.string(),
-	initiatorId: z.string(),
 	taskHistoryId: z.string(),
 	testCases: z.string().array(),
 	title: z.string().trim().min(1).max(50),

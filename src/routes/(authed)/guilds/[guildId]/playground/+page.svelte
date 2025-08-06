@@ -500,34 +500,17 @@
 										</Dialog.Description>
 									</Dialog.Header>
 									<div class="min-h-0 flex-1 overflow-y-auto p-1">
+										<h3 class="mb-1">Initiator</h3>
+										<Input disabled class="mb-3 w-full" value={data.user?.userName} />
 										<form method="POST" use:enhanceProposal action="?/createProposal">
 											<Form.Field form={formProposal} name="title">
 												<Form.Control>
 													{#snippet children({ props })}
-														<Form.Label><h3>Proposal title</h3></Form.Label>
+														<Form.Label><h3>Proposal Title</h3></Form.Label>
 														<Input {...props} bind:value={$formDataProposal.title} />
 													{/snippet}
 												</Form.Control>
 												<Form.Description></Form.Description>
-												<Form.FieldErrors />
-											</Form.Field>
-											<Form.Field form={formProposal} name="initiator" class="mt-4">
-												<Form.Control>
-													{#snippet children({ props })}
-														<Form.Label><h3>Initiator</h3></Form.Label>
-														<Input {...props} value={data.user?.userName} readonly />
-													{/snippet}
-												</Form.Control>
-												<Form.Description></Form.Description>
-												<Form.FieldErrors />
-											</Form.Field>
-											<Form.Field form={formProposal} name="initiatorId">
-												<Form.Control>
-													{#snippet children({ props })}
-														<Input type="hidden" {...props} value={data.user?.userId} />
-													{/snippet}
-												</Form.Control>
-												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
 											<Form.Field form={formProposal} name="description" class="mt-4">
@@ -537,7 +520,7 @@
 														<Textarea {...props} bind:value={$formDataProposal.description} />
 													{/snippet}
 												</Form.Control>
-												<Form.Description></Form.Description>
+												<Form.Description />
 												<Form.FieldErrors />
 											</Form.Field>
 											<Form.Field form={formProposal} name="taskHistoryId">
@@ -642,7 +625,7 @@
 											{/if}
 											<Form.Button
 												disabled={disableCreateProposalBtn || !isTaskTested}
-												class="mt-4"
+												class="mt-4 hover:cursor-pointer"
 											>
 												{#if disableCreateProposalBtn}
 													<LoaderCircleIcon class="size-4 animate-spin" />
