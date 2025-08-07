@@ -2,6 +2,7 @@ import { underspecifiedPipeline } from '$lib/server/openAI/underspecifiedPipelin
 import { overspecifiedPipeline } from '$lib/server/openAI/overspecifiedPipeline';
 import { consequencePipeline } from '$lib/server/openAI/consequencePipeline';
 import { generalEvaluator } from '$lib/server/openAI/generalEvaluator';
+import { generalSelector } from '$lib/server/openAI/generalSelector';
 import { baselinePipeline } from '$lib/server/openAI/baselinePipeline';
 import { json, error } from '@sveltejs/kit';
 import { doc, getDoc } from 'firebase/firestore';
@@ -63,7 +64,7 @@ export const POST = async ({ request, params }) => {
 			.sort();
 		const input_specification = `The input should consist of a Discord channel name and a user message. The channel name must begin with a hash (#) followed by a valid channel identifier, chosen from the following available channels on the server: ${formatChannelList(channels)} The user message should be a single string that realistically represents something a user might post in that channel. It must not include explicit formatting instructions, metadata, or explanations of its purpose. The message should be plausible and use natural language typical of a real Discord community, and the input must not contain bot commands, markup syntax, or JSON structures.`;
 
-		// Botender's Pipeline Starts Here
+		// =============== Botender's Pipeline Starts Here ===============
 		const underspecifiedPromise = Promise.allSettled(
 			diffTasks.map((diffTask: Task) =>
 				underspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
@@ -117,15 +118,31 @@ export const POST = async ({ request, params }) => {
 		const consequenceCases = consequenceResults.flat();
 
 		const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
-		const evaluatedCases = await generalEvaluator(newTasks, allRawCases);
-		const allCases = evaluatedCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
+		const allRawCasesWithId = allRawCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
-		return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
-		// Botender's Pipeline Ends Here
+		// Option 1: Use General Evaluator for Rating
+		// const allCases = await generalEvaluator(newTasks, allRawCasesWithId);
+		// return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
 
-		// Baseline Pipeline Starts Here
+		// Option 2: Use General Selector for Selection
+		const selectionResult = await generalSelector(newTasks, allRawCasesWithId);
+		const reasonsMap = new Map(selectionResult.map((item) => [item.caseId, item.selection_reason]));
+		const selectedCases = allRawCasesWithId
+			.filter((c) => reasonsMap.has(c.tmpId))
+			.map((c) => ({
+				...c,
+				selection_reason: reasonsMap.get(c.tmpId)
+			}));
+
+		return json({ cases: selectedCases }, { status: 201 });
+
+		// =============== Botender's Pipeline Ends Here ===============
+
+		// =============== Baseline Pipeline Starts Here ===============
 		// const baselinePromise = Promise.allSettled(
-		// 	diffTasks.map((diffTask: Task) => baselinePipeline(diffTask, newTasks, community_tone, input_specification))
+		// 	diffTasks.map((diffTask: Task) =>
+		// 		baselinePipeline(diffTask, newTasks, community_tone, input_specification)
+		// 	)
 		// );
 		// const baselineSettled = await baselinePromise;
 
@@ -139,7 +156,7 @@ export const POST = async ({ request, params }) => {
 		// const allCases = baselineResults.flat().map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
 
 		// return json({ cases: allCases }, { status: 201 });
-		// Baseline Pipeline Ends Here
+		// =============== Baseline Pipeline Ends Here ===============
 	} catch {
 		throw error(400, 'Fail to generate cases');
 	}

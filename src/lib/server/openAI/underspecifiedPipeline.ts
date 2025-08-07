@@ -244,7 +244,8 @@ export async function underspecifiedPipeline(
 				allCases.push({
 					...botResponseResults[index],
 					...result.value.output_parsed,
-					prompt: prompt
+					prompt: prompt,
+					issue: 'underspecified prompt'
 				});
 			} else if (result.status === 'rejected') {
 				console.error('An evaluator promise failed:', result.reason);

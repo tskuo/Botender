@@ -267,7 +267,8 @@ export async function overspecifiedPipeline(
 			allCases.push({
 				...botResponseResults[index],
 				...result.value.output_parsed,
-				prompt: prompt
+				prompt: prompt,
+				issue: 'overspecified prompt'
 			});
 		} else if (result.status === 'rejected') {
 			console.error('An evaluator promise failed:', result.reason);

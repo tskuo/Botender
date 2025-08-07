@@ -4,6 +4,8 @@ import { openAIClient, openAIModel } from '$lib/server/openAI/client';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
+const SELECT_CASE_NUMBER = 5;
+
 export async function baselinePipeline(
 	diffTask: Task,
 	newTasks: Tasks,
@@ -21,7 +23,7 @@ export async function baselinePipeline(
 		`You will be provided with:`,
 		`\t- prompt: the full prompt for the bot, including both the trigger and action components.`,
 		`Your Task:`,
-		`Generate a small set of realistic test cases that could potentially reveal issues with the prompt or spark community discussion about its wording. A test case is an input to the bot that adheres to the following input specification:`,
+		`Generate ${SELECT_CASE_NUMBER} realistic test cases that could potentially reveal issues with the prompt or spark community discussion about its wording. A test case is an input to the bot that adheres to the following input specification:`,
 		input_specification,
 		`Additionally, the test cases should be realistic and natural, mirroring the typical messages found in the following community and reflecting its unique tone:`,
 		community_tone,

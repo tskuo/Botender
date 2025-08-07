@@ -238,7 +238,8 @@ export async function consequencePipeline(
 			allCases.push({
 				...botResponseResults[index],
 				...result.value.output_parsed,
-				prompt: prompt
+				prompt: prompt,
+				issue: 'unintended consequences of the prompt'
 			});
 		} else if (result.status === 'rejected') {
 			console.error('An evaluator promise failed:', result.reason);
