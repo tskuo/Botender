@@ -242,11 +242,11 @@ export async function sendDeployNotificationToThread(
 				Authorization: `Bot ${DISCORD_TOKEN}`
 			},
 			body: JSON.stringify({
-				content: `🔒 **Proposal Closed**\n\n`,
+				content: `🔒 **Proposal Closed**\n\nThis proposal has been automatically closed following its successful deployment.`,
 				embeds: [
 					{
 						title: 'View the Closed Proposal',
-						description: `This proposal is now permanently closed, as it has been successfully deployed.`,
+						description: `This proposal is now permanently closed.`,
 						color: parseInt('ff4cd2', 16),
 						url: proposalUrl
 					}
@@ -307,5 +307,44 @@ export async function sendTaskUpdateNotification(guildId: string, deployerId: st
 		}
 	} catch (error) {
 		console.error('Error sending task update notification:', error);
+	}
+}
+
+export async function sendCloseNotificationToThread(
+	guildId: string,
+	threadId: string,
+	userId: string,
+	proposalId: string
+) {
+	const proposalUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/proposals/${proposalId}`;
+
+	try {
+		const closeResponse = await fetch(`${DISCORD_API_BASE}/channels/${threadId}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `🔒 **Proposal Closed**\n\nThis proposal has been manually closed by <@${userId}>.`,
+				embeds: [
+					{
+						title: 'View the Closed Proposal',
+						description: `This proposal is now permanently closed.`,
+						color: parseInt('ff4cd2', 16),
+						url: proposalUrl
+					}
+				]
+			})
+		});
+
+		if (!closeResponse.ok) {
+			console.error(
+				`Failed to send closing message to thread ${threadId}:`,
+				await closeResponse.text()
+			);
+		}
+	} catch (error) {
+		console.error(`Error sending message to thread ${threadId}:`, error);
 	}
 }

@@ -8,6 +8,8 @@
 	// import lucide icons
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
+	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
+	import XCircleIcon from '@lucide/svelte/icons/x-circle';
 	import { goto } from '$app/navigation';
 
 	// import types
@@ -18,7 +20,7 @@
 	let { data }: PageProps = $props();
 </script>
 
-{#snippet proposalRow(proposal)}
+{#snippet proposalRow(proposal, showStatus = false)}
 	<Table.Row
 		class="h-14 hover:cursor-pointer"
 		onclick={() => {
@@ -67,6 +69,21 @@
 				</p>
 			</div>
 		</Table.Cell>
+		{#if showStatus}
+			<Table.Cell>
+				{#if proposal.deployed}
+					<div class="text-my-green flex items-center">
+						<LandPlotIcon class="mr-1 size-4" />
+						<span>Deployed</span>
+					</div>
+				{:else}
+					<div class="text-my-pink flex items-center">
+						<XCircleIcon class="mr-1 size-4" />
+						<span>Not Deployed</span>
+					</div>
+				{/if}
+			</Table.Cell>
+		{/if}
 	</Table.Row>
 {/snippet}
 
@@ -89,7 +106,7 @@
 					<Table.Caption>A list of open proposals</Table.Caption>
 					<Table.Header>
 						<Table.Row class="hover:bg-trasparent">
-							<Table.Head class="w-1/3"><h4>Title</h4></Table.Head>
+							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
@@ -99,7 +116,7 @@
 					<Table.Body>
 						{#each data.proposals as proposal (proposal.id)}
 							{#if proposal.open}
-								{@render proposalRow(proposal)}
+								{@render proposalRow(proposal, false)}
 							{/if}
 						{/each}
 					</Table.Body>
@@ -110,17 +127,18 @@
 					<Table.Caption>A list of closed proposals</Table.Caption>
 					<Table.Header>
 						<Table.Row class="hover:bg-trasparent">
-							<Table.Head class="w-1/3"><h4>Title</h4></Table.Head>
+							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
+							<Table.Head><h4>Status</h4></Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
 						{#each data.proposals as proposal (proposal.id)}
 							{#if !proposal.open}
-								{@render proposalRow(proposal)}
+								{@render proposalRow(proposal, true)}
 							{/if}
 						{/each}
 					</Table.Body>

@@ -1,7 +1,10 @@
 import { json, error } from '@sveltejs/kit';
 import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { db } from '$lib/firebase';
-import { sendDeployNotificationToThread } from '$lib/server/discord/api';
+import {
+	sendDeployNotificationToThread,
+	sendCloseNotificationToThread
+} from '$lib/server/discord/api';
 
 export const GET = async ({ params }) => {
 	const docRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
@@ -83,9 +86,25 @@ export const PATCH = async ({ params, request, locals }) => {
 				);
 			}
 		} else if (action === 'closeProposal') {
+			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+			const proposalSnap = await getDoc(proposalRef);
+
+			if (!proposalSnap.exists()) {
+				throw error(404, 'Proposal not found.');
+			}
 			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
 				open: false
 			});
+
+			const proposalData = proposalSnap.data();
+			if (proposalData.threadId) {
+				await sendCloseNotificationToThread(
+					params.guildId,
+					proposalData.threadId,
+					locals.user.userId,
+					params.proposalId
+				);
+			}
 		} else if (action === 'deployProposal') {
 			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
 			const proposalSnap = await getDoc(proposalRef);

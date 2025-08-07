@@ -66,7 +66,7 @@
 	import EyeClosedIcon from '@lucide/svelte/icons/eye-closed';
 	import SmileIcon from '@lucide/svelte/icons/smile';
 	import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
-
+	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 
 	// import types
@@ -127,6 +127,7 @@
 	let viewHistory = $state(false);
 	let overheated = $state(false);
 	let deployingProposal = $state(false);
+	let closingProposal = $state(false);
 
 	let editScope = $state(
 		(data.edits.length > 0
@@ -447,6 +448,7 @@
 	};
 
 	let closeProposal = async () => {
+		closingProposal = true;
 		await fetch(`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}`, {
 			method: 'PATCH',
 			body: JSON.stringify({
@@ -513,14 +515,68 @@
 				</Button>
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
-			<Button
-				href={`https://discord.com/channels/${page.params.guildId}/${data.proposal.threadId}`}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="mr-1 hover:cursor-pointer"
-			>
-				<ExternalLinkIcon class="size-4" />Discuss
-			</Button>
+			<div class="flex items-center gap-x-2">
+				{#if data.proposal.open}
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger>
+							{#snippet child({ props })}
+								<Button {...props} variant="ghost" class="hover:cursor-pointer">
+									<EllipsisVerticalIcon />
+								</Button>
+							{/snippet}
+						</DropdownMenu.Trigger>
+						<DropdownMenu.Content>
+							<DropdownMenu.Item
+								class="hover:cursor-pointer"
+								onclick={(e) => {
+									e.preventDefault(); // This stops the dropdown from closing
+								}}
+							>
+								<AlertDialog.Root>
+									<AlertDialog.Trigger>
+										<span class="text-my-pink hover:cursor-pointer">Close Proposal</span>
+									</AlertDialog.Trigger>
+									<AlertDialog.Content>
+										<AlertDialog.Header>
+											<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
+											<AlertDialog.Description class="text-foreground text-base">
+												This action cannot be undone and will permanently close the proposal. You
+												will not be able to reopen it. A notification will be sent to the Discord
+												thread to let everyone know that this proposal has been closed.
+											</AlertDialog.Description>
+										</AlertDialog.Header>
+										<AlertDialog.Footer>
+											<AlertDialog.Cancel disabled={closingProposal} class="hover:cursor-pointer">
+												Cancel
+											</AlertDialog.Cancel>
+											<AlertDialog.Action
+												class={`${buttonVariants({ variant: 'destructive' })} hover:cursor-pointer`}
+												onclick={async () => {
+													await closeProposal();
+												}}
+												disabled={closingProposal}
+											>
+												{#if closingProposal}
+													<LoaderCircleIcon class="size-4 animate-spin" />
+												{/if}
+												Close
+											</AlertDialog.Action>
+										</AlertDialog.Footer>
+									</AlertDialog.Content>
+								</AlertDialog.Root>
+							</DropdownMenu.Item>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+				{/if}
+				<Button
+					href={`https://discord.com/channels/${page.params.guildId}/${data.proposal.threadId}`}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="mr-1 hover:cursor-pointer"
+				>
+					<ExternalLinkIcon class="size-4" />Discuss
+				</Button>
+			</div>
 		</div>
 		<Separator />
 	</div>
