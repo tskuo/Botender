@@ -4,20 +4,46 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
+	import * as Form from '$lib/components/ui/form/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
 
 	// import lucide icons
 	import ArrowBigUpIcon from '@lucide/svelte/icons/arrow-big-up';
 	import ArrowBigDownIcon from '@lucide/svelte/icons/arrow-big-down';
 	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
 	import XCircleIcon from '@lucide/svelte/icons/x-circle';
-	import { goto } from '$app/navigation';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 
-	// import types
+	// import svelte-related things
 	import type { PageProps } from './$types';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+
+	// import form-related things
+	import { proposalsCreateProposalSchema } from '$lib/schema';
+	import { superForm } from 'sveltekit-superforms';
+	import { zodClient } from 'sveltekit-superforms/adapters';
 
 	// data props
 	let { data }: PageProps = $props();
+	let disableCreateProposalBtn = $state(false);
+	const formProposal = superForm(data.formProposal, {
+		validators: zodClient(proposalsCreateProposalSchema),
+		onSubmit() {
+			disableCreateProposalBtn = true;
+		},
+		onError() {
+			disableCreateProposalBtn = false;
+		},
+		onUpdated() {
+			disableCreateProposalBtn = false;
+		}
+	});
+	const { form: formDataProposal, enhance: enhanceProposal } = formProposal;
 </script>
 
 {#snippet proposalRow(proposal, showStatus = false)}
@@ -89,9 +115,60 @@
 
 <div class="flex h-screen w-full flex-col">
 	<div class="sticky top-0 z-10 bg-white">
-		<div class="flex items-center p-4">
-			<Sidebar.Trigger class="mr-2 md:hidden" />
-			<h2 class="text-xl font-bold">Proposals</h2>
+		<div class="flex items-center justify-between p-3">
+			<div class="flex items-center px-1">
+				<Sidebar.Trigger class="mr-2 md:hidden" />
+				<h2 class="text-xl font-bold">Proposals</h2>
+			</div>
+			<div>
+				<Dialog.Root>
+					<Dialog.Trigger class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}>
+						<LightbulbIcon class="size-4" />
+						New Proposal
+					</Dialog.Trigger>
+					<Dialog.Content class="flex max-h-[80vh] flex-col">
+						<Dialog.Header>
+							<Dialog.Title><h2>Initiate a new proposal</h2></Dialog.Title>
+							<Dialog.Description class="text-foreground text-sm md:text-base">
+								Describe the issue you've observed with the current bot's behavior, and explain how
+								you would like it to be improved.
+							</Dialog.Description>
+						</Dialog.Header>
+						<div class="min-h-0 flex-1 overflow-y-auto p-1">
+							<h3 class="mb-1">Initiator</h3>
+							<Input disabled class="mb-3 w-full" value={data.user?.userName} />
+							<form method="POST" use:enhanceProposal action="?/createProposal">
+								<Form.Field form={formProposal} name="title">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label><h3>Proposal Title</h3></Form.Label>
+											<Input {...props} bind:value={$formDataProposal.title} />
+										{/snippet}
+									</Form.Control>
+									<Form.Description></Form.Description>
+									<Form.FieldErrors />
+								</Form.Field>
+								<Form.Field form={formProposal} name="description" class="mt-4">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label><h3>Description</h3></Form.Label>
+											<Textarea {...props} bind:value={$formDataProposal.description} />
+										{/snippet}
+									</Form.Control>
+									<Form.Description />
+									<Form.FieldErrors />
+								</Form.Field>
+								<Form.Button disabled={disableCreateProposalBtn} class="mt-4 hover:cursor-pointer">
+									{#if disableCreateProposalBtn}
+										<LoaderCircleIcon class="size-4 animate-spin" />
+									{/if}
+									Submit
+								</Form.Button>
+							</form>
+						</div>
+					</Dialog.Content>
+				</Dialog.Root>
+			</div>
 		</div>
 		<Separator />
 	</div>

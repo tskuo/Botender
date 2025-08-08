@@ -37,17 +37,19 @@ export const POST = async ({ request, params }) => {
 	try {
 		const { formCase, caseOnly = false } = await request.json();
 
-		// Check if a case with the same generatedId already exists
-		const casesRef = collection(db, 'guilds', params.guildId, 'cases');
-		const q = query(casesRef, where('generatedId', '==', formCase.data.generatedId), limit(1));
-		const querySnapshot = await getDocs(q);
+		// If generatedId is not empty, check if a case with the same generatedId already exists
+		if (formCase.data.generatedId !== '') {
+			const casesRef = collection(db, 'guilds', params.guildId, 'cases');
+			const q = query(casesRef, where('generatedId', '==', formCase.data.generatedId), limit(1));
+			const querySnapshot = await getDocs(q);
 
-		// If a case with this generatedId already exists...
-		if (!querySnapshot.empty) {
-			const existingDocId = querySnapshot.docs[0].id;
+			// If a case with this generatedId already exists...
+			if (!querySnapshot.empty) {
+				const existingDocId = querySnapshot.docs[0].id;
 
-			// Return the ID of the existing case.
-			return json({ id: existingDocId }, { status: 200 });
+				// Return the ID of the existing case.
+				return json({ id: existingDocId }, { status: 200 });
+			}
 		}
 
 		// If no existing case is found, create a new one.

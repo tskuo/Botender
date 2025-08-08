@@ -6,6 +6,7 @@ import {
 	orderBy,
 	addDoc,
 	serverTimestamp,
+	limit,
 	updateDoc,
 	doc
 } from 'firebase/firestore';
@@ -44,7 +45,20 @@ export const POST = async ({ request, params, locals }) => {
 		throw error(401, 'You must be logged in to initiate a proposal.');
 	}
 	try {
-		const { formProposal, caseId } = await request.json();
+		const { formProposal } = await request.json();
+
+		// When creating a new proposal on the proposals page, formProposal doesn't have taskHistoryId
+		let taskHistoryId = formProposal.data.taskHistoryId;
+		if (!taskHistoryId) {
+			const querySnapshot = await getDocs(
+				query(
+					collection(db, 'guilds', params.guildId, 'taskHistory'),
+					orderBy('createAt', 'desc'),
+					limit(1)
+				)
+			);
+			taskHistoryId = querySnapshot.docs[0].id;
+		}
 
 		const docRef = await addDoc(collection(db, 'guilds', params.guildId, 'proposals'), {
 			createAt: serverTimestamp(),
@@ -54,8 +68,8 @@ export const POST = async ({ request, params, locals }) => {
 			initiatorId: locals.user.userId,
 			open: true,
 			deployed: false,
-			taskHistoryId: formProposal.data.taskHistoryId,
-			testCases: caseId ? [caseId] : [],
+			taskHistoryId: taskHistoryId,
+			testCases: [],
 			title: formProposal.data.title
 		});
 

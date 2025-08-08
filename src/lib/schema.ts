@@ -33,6 +33,12 @@ export const playgroundCreateProposalSchema = z.object({
 	proposalId: z.string()
 });
 
+export const proposalsCreateProposalSchema = z.object({
+	description: z.string().trim().min(1),
+	title: z.string().trim().min(1).max(50)
+});
+
 export type PlaygroundRunFormSchema = typeof playgroundRunFormSchema;
 export type CreateCaseSchema = typeof createCaseSchema;
 export type PlaygroundCreateProposalSchema = typeof playgroundCreateProposalSchema;
+export type ProposalsCreateProposalSchema = typeof proposalsCreateProposalSchema;

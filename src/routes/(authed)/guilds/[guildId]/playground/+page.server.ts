@@ -3,9 +3,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 // import { createCaseSchema } from '$lib/schema.js';
 import { playgroundCreateProposalSchema } from '$lib/schema.js';
-
 import { zod } from 'sveltekit-superforms/adapters';
-
 import _ from 'lodash';
 
 export const load: PageServerLoad = async ({ params, fetch, locals }) => {
