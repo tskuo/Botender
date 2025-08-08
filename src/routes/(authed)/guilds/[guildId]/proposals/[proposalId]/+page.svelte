@@ -660,6 +660,21 @@
 						</Alert.Root>
 					{/if}
 				{/if}
+				{#if !editMode && data.edits.length === 0}
+					<Alert.Root class="border-primary text-primary mb-2">
+						<InfoIcon />
+						<Alert.Title>
+							<h4>Tip for You!</h4>
+						</Alert.Title>
+						<Alert.Description class="text-primary">
+							<p>
+								Go ahead and make an edit to implement the proposed change. Once you've done that,
+								take a look at the auto-generated test cases to see how your edit affects the bot's
+								behavior.
+							</p>
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
 					Initiated by {data.proposal.initiator} at {new Date(
@@ -724,6 +739,7 @@
 						</Button>
 					{/if}
 				</div>
+
 				{#if !editMode}
 					<div class="flex flex-col gap-6 pt-4">
 						{#each [...Object.keys(_.omit( editedTasks, ['new'] )).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
@@ -1362,7 +1378,7 @@
 						</Popover.Trigger>
 						<Popover.Content class="text-sm">
 							For each case, give a thumbs up if the bot's response is good, or a thumbs down if
-							it's not. If you notice any issues, try editing the prompt to address them. If the
+							it's not. If you notice any issues, try editing the tasks to address them. If the
 							bot's responses are already satisfactory, feel free to upvote the proposed edit to
 							support its deployment.
 						</Popover.Content>
@@ -1387,9 +1403,11 @@
 								<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
 							</Popover.Trigger>
 							<Popover.Content class="text-sm">
-								Cases saved collectively by everyone to observe how the bot behaves based on the
-								proposed edits. These cases are intended to help people decide whether to upvote or
-								downvote a proposed edit for deployment.
+								These cases are saved collaboratively by everyone to evaluate how the bot behaves
+								based on the proposed edits. You can give a thumbs up or thumbs down on each case to
+								indicate whether you think the bot's response is good or bad. You can also see how
+								others have reacted to each case. The purpose of these cases is to help you decide
+								whether to upvote or downvote the latest proposed edit for deployment.
 							</Popover.Content>
 						</Popover.Root>
 					</div>
@@ -1432,7 +1450,7 @@
 					<div class="flex items-center justify-between pb-2">
 						<div class="flex items-center gap-2">
 							<h4>
-								Generated cases ( {#if generatingCase}
+								Generated test cases ( {#if generatingCase}
 									—
 								{:else}
 									{generatedCases.length}
@@ -1443,9 +1461,13 @@
 									<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
 								</Popover.Trigger>
 								<Popover.Content class="text-sm">
-									Cases generated to uncover potential issues with the proposed edits. You can save
-									any relevant cases as test cases, making them visible and available for anyone
-									visiting this proposal page to give a thumbs up or down.
+									These cases are automatically generated to help identify potential issues with the
+									most recent edit made to the proposal. When you are editing, these cases are
+									regenerated based on your current edit. You can review the generated test cases
+									and save any relevant ones as saved test cases, which will then be visible to
+									anyone visiting this proposal page for collaborative review. Please note that
+									generated test cases are temporary and will only become visible to others if you
+									explicitly save them as test cases.
 								</Popover.Content>
 							</Popover.Root>
 						</div>
