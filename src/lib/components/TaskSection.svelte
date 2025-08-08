@@ -58,7 +58,7 @@
 		<div class="grid w-full gap-1.5 pt-3">
 			<Label for="{id}-trigger">Trigger</Label>
 			<Textarea
-				placeholder="When should the bot do something about this task?"
+				placeholder="When should the bot take action?"
 				id="{id}-trigger"
 				bind:value={trigger}
 				{readonly}
@@ -68,7 +68,7 @@
 			<div class="grid w-full gap-1.5 pt-3">
 				<Label for="{id}-action">Action</Label>
 				<Textarea
-					placeholder="What should the bot do when this task is triggered?"
+					placeholder="What action should the bot take?"
 					id="{id}-action"
 					bind:value={action}
 					{readonly}
