@@ -5,7 +5,7 @@ import { generalEvaluator } from '$lib/server/openAI/generalEvaluator';
 import { generalSelector } from '$lib/server/openAI/generalSelector';
 import { baselinePipeline } from '$lib/server/openAI/baselinePipeline';
 import { json, error } from '@sveltejs/kit';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '$lib/firebase';
 import _ from 'lodash';
 import { isTaskEmpty, trimTaskCustomizer } from '$lib/tasks';
@@ -24,7 +24,7 @@ const formatChannelList = (arr: string[]) => {
 
 export const POST = async ({ request, params }) => {
 	try {
-		const { oldTasks, newTasks } = await request.json();
+		const { oldTasks, newTasks, proposalId, editId } = await request.json();
 
 		const diffTasks: Task[] = [];
 
@@ -134,6 +134,31 @@ export const POST = async ({ request, params }) => {
 				selection_reason: reasonsMap.get(c.tmpId)
 			}));
 
+		// Generated Case Cache for Stable Edits
+		if (editId) {
+			const generatedCaseCache = selectedCases.map((c) => ({
+				channel: c.channel,
+				userMessage: c.userMessage,
+				tmpId: c.tmpId,
+				// tmpTasks: newTasks, // dont' need this because tmpTask is the edit's tasks
+				triggeredTask: c.triggeredTask,
+				botResponse: c.botResponse,
+				issue: c.issue
+			}));
+			const editDocRef = doc(
+				db,
+				'guilds',
+				params.guildId,
+				'proposals',
+				proposalId,
+				'edits',
+				editId
+			);
+			await updateDoc(editDocRef, {
+				generatedCaseCache: generatedCaseCache // Use the new, trimmed array
+			});
+		}
+
 		return json({ cases: selectedCases }, { status: 201 });
 
 		// =============== Botender's Pipeline Ends Here ===============
@@ -157,6 +182,8 @@ export const POST = async ({ request, params }) => {
 
 		// return json({ cases: allCases }, { status: 201 });
 		// =============== Baseline Pipeline Ends Here ===============
+
+		// Save generated cases to the database as cache if editId !== '', meaning its a stable, latest edit
 	} catch {
 		throw error(400, 'Fail to generate cases');
 	}

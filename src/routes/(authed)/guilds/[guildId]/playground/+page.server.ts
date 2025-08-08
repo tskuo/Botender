@@ -110,7 +110,9 @@ export const actions: Actions = {
 						taskHistoryId: editId === undefined ? formProposal.data.taskHistoryId : '',
 						triggeredTaskId: formProposal.data.triggeredTaskId,
 						thumbsUp: [],
-						thumbsDown: []
+						thumbsDown: [],
+						generatedId: '',
+						issue: ''
 					}
 				}
 			}),

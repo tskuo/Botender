@@ -50,6 +50,7 @@
 		checkingBadge = false,
 		user,
 		generatedId = undefined,
+		issue = '',
 		removeCaseFunction = undefined,
 		addGeneratedCaseFunction = () => {}
 	} = $props();
@@ -761,7 +762,8 @@
 								tmpBotResponse.triggeredTask,
 								tmpBotResponse.botResponse,
 								tmpBotResponse.thumbsUp,
-								tmpBotResponse.thumbsDown
+								tmpBotResponse.thumbsDown,
+								issue
 							);
 						}
 					}}

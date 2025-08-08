@@ -1,5 +1,14 @@
 import { json, error } from '@sveltejs/kit';
-import { serverTimestamp, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import {
+	serverTimestamp,
+	addDoc,
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	where,
+	limit
+} from 'firebase/firestore';
 import { db } from '$lib/firebase';
 
 export const GET = async ({ params }) => {
@@ -28,12 +37,28 @@ export const POST = async ({ request, params }) => {
 	try {
 		const { formCase, caseOnly = false } = await request.json();
 
+		// Check if a case with the same generatedId already exists
+		const casesRef = collection(db, 'guilds', params.guildId, 'cases');
+		const q = query(casesRef, where('generatedId', '==', formCase.data.generatedId), limit(1));
+		const querySnapshot = await getDocs(q);
+
+		// If a case with this generatedId already exists...
+		if (!querySnapshot.empty) {
+			const existingDocId = querySnapshot.docs[0].id;
+
+			// Return the ID of the existing case.
+			return json({ id: existingDocId }, { status: 200 });
+		}
+
+		// If no existing case is found, create a new one.
 		const docRef = await addDoc(collection(db, 'guilds', params.guildId, 'cases'), {
 			channel: formCase.data.channel,
 			createAt: serverTimestamp(),
 			realUserMessage: formCase.data.realUserMessage,
 			source: formCase.data.source,
-			userMessage: formCase.data.userMessage
+			userMessage: formCase.data.userMessage,
+			generatedId: formCase.data.generatedId,
+			issue: formCase.data.issue
 		});
 
 		if (!caseOnly) {

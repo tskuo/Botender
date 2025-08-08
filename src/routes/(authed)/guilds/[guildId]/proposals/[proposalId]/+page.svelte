@@ -121,7 +121,11 @@
 	let runningTest = $state(false);
 	let generatingCase = $state(false);
 	let savingEdit = $state(false);
-	let generatedCases = $state<any[]>([]);
+	let generatedCases = $state<any[]>(
+		data.edits.length > 0 && data.edits[0].generatedCaseCache
+			? data.edits[0].generatedCaseCache
+			: []
+	);
 	let generatedCaseRefs = $state<any[]>([]);
 	let editMode = $state(false);
 	let viewHistory = $state(false);
@@ -200,18 +204,44 @@
 		// Set manual testing sheet width
 		updateSheetWidth();
 		window.addEventListener('resize', updateSheetWidth);
+
+		(async () => {
+			// If there's a cache of generated cases from a previous edit, load them
+			// and update their bot responses based on the current tasks.
+			if (data.edits.length > 0 && data.edits[0].generatedCaseCache) {
+				// Wait for the DOM to update so that generatedCaseRefs is populated by the #each block
+				await tick();
+
+				if (generatedCaseRefs.length === generatedCases.length) {
+					generatedCaseRefs.forEach((ref, i) => {
+						if (ref) {
+							ref.setTmpBotResponse(
+								trimWhiteSpaceInTasks(data.edits[0].tasks),
+								generatedCases[i].triggeredTask,
+								generatedCases[i].botResponse,
+								[],
+								[]
+							);
+						}
+					});
+				}
+			}
+		})();
+
 		return () => window.removeEventListener('resize', updateSheetWidth);
 	});
 
 	// Add New Case to the Test Suite when the Case doesn't already exist
 	let createAndAddNewTestCase = async (
+		generatedId: string,
 		tmpTasks: Tasks,
 		channel: string,
 		userMessage: string,
 		triggeredTaskId: string,
 		botResponse: string,
 		thumbsUp: string[],
-		thumbsDown: string[]
+		thumbsDown: string[],
+		issue: string
 	) => {
 		let resCase;
 		if (
@@ -234,7 +264,9 @@
 							taskHistoryId: data.edits.length > 0 ? '' : data.proposal.taskHistoryId,
 							triggeredTaskId: triggeredTaskId,
 							thumbsUp: thumbsUp,
-							thumbsDown: thumbsDown
+							thumbsDown: thumbsDown,
+							generatedId: generatedId,
+							issue: issue
 						}
 					}
 				}),
@@ -250,13 +282,15 @@
 						data: {
 							channel: channel,
 							realUserMessage: false,
+							source: 'proposal',
 							userMessage: userMessage,
 							botResponse: '',
 							proposalEditId: '',
 							proposalId: '',
 							taskHistoryId: '',
 							triggeredTaskId: '',
-							source: 'proposal'
+							generatedId: generatedId,
+							issue: issue
 						}
 					},
 					caseOnly: true
@@ -319,16 +353,19 @@
 		triggeredTaskId: string,
 		botResponse: string,
 		thumbsUp: string[],
-		thumbsDown: string[]
+		thumbsDown: string[],
+		issue: string
 	) => {
 		await createAndAddNewTestCase(
+			generatedId,
 			trimWhiteSpaceInTasks(tmpTasks),
 			channel,
 			userMessage,
 			triggeredTaskId,
 			botResponse,
 			thumbsUp,
-			thumbsDown
+			thumbsDown,
+			issue
 		);
 
 		const idx = generatedCases.findIndex((c) => c.tmpId === generatedId);
@@ -336,6 +373,20 @@
 			generatedCases = [...generatedCases.slice(0, idx), ...generatedCases.slice(idx + 1)];
 			generatedCaseRefs = [...generatedCaseRefs.slice(0, idx), ...generatedCaseRefs.slice(idx + 1)];
 		}
+
+		await fetch(
+			`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}/edits/${data.edits[0].id}`,
+			{
+				method: 'PATCH',
+				body: JSON.stringify({
+					action: 'removeCaseCache',
+					generatedId: generatedId
+				}),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			}
+		);
 	};
 
 	// Run Tests
@@ -362,7 +413,12 @@
 			method: 'POST',
 			body: JSON.stringify({
 				oldTasks: data.originalTasks.tasks,
-				newTasks: trimWhiteSpaceInTasks(tasks)
+				newTasks: trimWhiteSpaceInTasks(tasks),
+				proposalId: data.proposal.id,
+				editId:
+					data.edits.length > 0 && _.isEqualWith(tasks, data.edits[0].tasks, trimTaskCustomizer)
+						? data.edits[0].id
+						: ''
 			}),
 			headers: {
 				'Content-Type': 'application/json'
@@ -1354,7 +1410,7 @@
 										<Carousel.Item class="xl:basis-1/2">
 											<CaseCard
 												bind:this={testCaseRefs[i]}
-												{...testCase}
+												{..._.omit(testCase, ['generatedId'])}
 												testCaseBadge={true}
 												tasks={editedTasks}
 												edits={data.edits}
@@ -1411,7 +1467,7 @@
 							}}
 						>
 							<FolderCogIcon class="size-4" />
-							Generate
+							Re-Generate
 						</Button>
 					</div>
 					{#if generatingCase}
@@ -1453,6 +1509,7 @@
 										checkingBadge={generatedCase.rating >= 3 ? true : false}
 										user={data.user}
 										generatedId={generatedCase.tmpId}
+										issue={generatedCase.issue}
 										{addGeneratedCaseFunction}
 									/>
 								</Carousel.Item>
@@ -1850,13 +1907,15 @@
 
 											if (!fetchCase) {
 												await createAndAddNewTestCase(
+													'',
 													editedTasksWithoutEmptyNewTask,
 													displayedChannel,
 													displayedUserMessage,
 													displayedTaskId,
 													displayedBotResponse,
 													displayedThumbsUp,
-													displayedThumbsDown
+													displayedThumbsDown,
+													''
 												);
 												showAddCaseSuccess = true;
 											} else {
