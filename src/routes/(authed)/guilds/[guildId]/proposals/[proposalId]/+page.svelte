@@ -375,19 +375,21 @@
 			generatedCaseRefs = [...generatedCaseRefs.slice(0, idx), ...generatedCaseRefs.slice(idx + 1)];
 		}
 
-		await fetch(
-			`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}/edits/${data.edits[0].id}`,
-			{
-				method: 'PATCH',
-				body: JSON.stringify({
-					action: 'removeCaseCache',
-					generatedId: generatedId
-				}),
-				headers: {
-					'Content-Type': 'application/json'
+		if (data.edits.length > 0 && _.isEqualWith(tmpTasks, data.edits[0].tasks, trimTaskCustomizer)) {
+			await fetch(
+				`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}/edits/${data.edits[0].id}`,
+				{
+					method: 'PATCH',
+					body: JSON.stringify({
+						action: 'removeCaseCache',
+						generatedId: generatedId
+					}),
+					headers: {
+						'Content-Type': 'application/json'
+					}
 				}
-			}
-		);
+			);
+		}
 	};
 
 	// Run Tests
