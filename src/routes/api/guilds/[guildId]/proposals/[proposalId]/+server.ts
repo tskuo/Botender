@@ -3,7 +3,8 @@ import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firest
 import { db } from '$lib/firebase';
 import {
 	sendDeployNotificationToThread,
-	sendCloseNotificationToThread
+	sendCloseNotificationToThread,
+	sendReopenNotificationToThread
 } from '$lib/server/discord/api';
 
 export const GET = async ({ params }) => {
@@ -99,6 +100,26 @@ export const PATCH = async ({ params, request, locals }) => {
 			const proposalData = proposalSnap.data();
 			if (proposalData.threadId) {
 				await sendCloseNotificationToThread(
+					params.guildId,
+					proposalData.threadId,
+					locals.user.userId,
+					params.proposalId
+				);
+			}
+		} else if (action === 'reopenProposal') {
+			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+			const proposalSnap = await getDoc(proposalRef);
+
+			if (!proposalSnap.exists()) {
+				throw error(404, 'Proposal not found.');
+			}
+			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+				open: true
+			});
+
+			const proposalData = proposalSnap.data();
+			if (proposalData.threadId) {
+				await sendReopenNotificationToThread(
 					params.guildId,
 					proposalData.threadId,
 					locals.user.userId,

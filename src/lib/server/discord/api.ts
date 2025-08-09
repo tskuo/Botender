@@ -326,11 +326,11 @@ export async function sendCloseNotificationToThread(
 				Authorization: `Bot ${DISCORD_TOKEN}`
 			},
 			body: JSON.stringify({
-				content: `🔒 **Proposal Closed**\n\nThis proposal has been manually closed by <@${userId}>.`,
+				content: `🔒 **Proposal Closed**\n\nThis proposal has been closed by <@${userId}>.`,
 				embeds: [
 					{
 						title: 'View the Closed Proposal',
-						description: `This proposal is now permanently closed.`,
+						description: `This proposal is now temporarily closed. You can reopen it by visiting the proposal page.`,
 						color: parseInt('ff4cd2', 16),
 						url: proposalUrl
 					}
@@ -342,6 +342,45 @@ export async function sendCloseNotificationToThread(
 			console.error(
 				`Failed to send closing message to thread ${threadId}:`,
 				await closeResponse.text()
+			);
+		}
+	} catch (error) {
+		console.error(`Error sending message to thread ${threadId}:`, error);
+	}
+}
+
+export async function sendReopenNotificationToThread(
+	guildId: string,
+	threadId: string,
+	userId: string,
+	proposalId: string
+) {
+	const proposalUrl = `${VERCEL_WEB_APP_URL}/guilds/${guildId}/proposals/${proposalId}`;
+
+	try {
+		const reopenResponse = await fetch(`${DISCORD_API_BASE}/channels/${threadId}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bot ${DISCORD_TOKEN}`
+			},
+			body: JSON.stringify({
+				content: `🔓 **Proposal Reopened**\n\nThis proposal has been reopened by <@${userId}>.`,
+				embeds: [
+					{
+						title: 'View the Reopened Proposal',
+						description: `This proposal is now reopened. You can review and edit it by visiting the proposal page.`,
+						color: parseInt('35ed7e', 16),
+						url: proposalUrl
+					}
+				]
+			})
+		});
+
+		if (!reopenResponse.ok) {
+			console.error(
+				`Failed to send closing message to thread ${threadId}:`,
+				await reopenResponse.text()
 			);
 		}
 	} catch (error) {

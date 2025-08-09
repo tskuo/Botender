@@ -132,6 +132,9 @@
 	let overheated = $state(false);
 	let deployingProposal = $state(false);
 	let closingProposal = $state(false);
+	let closeAlertOpen = $state(false);
+	let reopeningProposal = $state(false);
+	let reopenAlertOpen = $state(false);
 
 	let editScope = $state(
 		(data.edits.length > 0
@@ -514,7 +517,27 @@
 				'Content-Type': 'application/json'
 			}
 		});
-		goto(`/guilds/${page.params.guildId}/proposals`);
+		await invalidateAll();
+		reloadProposalState();
+		closeAlertOpen = false;
+		closingProposal = false;
+	};
+
+	let reopenProposal = async () => {
+		reopeningProposal = true;
+		await fetch(`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				action: 'reopenProposal'
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		await invalidateAll();
+		reloadProposalState();
+		reopenAlertOpen = false;
+		reopeningProposal = false;
 	};
 
 	let deployProposal = async () => {
@@ -559,6 +582,7 @@
 			});
 			goto(`/guilds/${page.params.guildId}/tasks`);
 		}
+		deployingProposal = false;
 	};
 </script>
 
@@ -572,7 +596,7 @@
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
 			<div class="flex items-center gap-x-2">
-				{#if data.proposal.open}
+				{#if data.proposal.open || (!data.proposal.open && !data.proposal.deployed)}
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger>
 							{#snippet child({ props })}
@@ -582,47 +606,81 @@
 							{/snippet}
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content>
-							<DropdownMenu.Item
-								class="hover:cursor-pointer"
-								onclick={(e) => {
-									e.preventDefault(); // This stops the dropdown from closing
-								}}
-							>
-								<AlertDialog.Root>
-									<AlertDialog.Trigger>
-										<span class="text-my-pink hover:cursor-pointer">Close Proposal</span>
-									</AlertDialog.Trigger>
-									<AlertDialog.Content>
-										<AlertDialog.Header>
-											<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
-											<AlertDialog.Description class="text-foreground text-base">
-												This action cannot be undone and will permanently close the proposal. You
-												will not be able to reopen it. A notification will be sent to the Discord
-												thread to let everyone know that this proposal has been closed.
-											</AlertDialog.Description>
-										</AlertDialog.Header>
-										<AlertDialog.Footer>
-											<AlertDialog.Cancel disabled={closingProposal} class="hover:cursor-pointer">
-												Cancel
-											</AlertDialog.Cancel>
-											<AlertDialog.Action
-												class={`${buttonVariants({ variant: 'destructive' })} hover:cursor-pointer`}
-												onclick={async () => {
-													await closeProposal();
-												}}
-												disabled={closingProposal}
-											>
-												{#if closingProposal}
-													<LoaderCircleIcon class="size-4 animate-spin" />
-												{/if}
-												Close
-											</AlertDialog.Action>
-										</AlertDialog.Footer>
-									</AlertDialog.Content>
-								</AlertDialog.Root>
-							</DropdownMenu.Item>
+							{#if data.proposal.open}
+								<DropdownMenu.Item
+									class="hover:cursor-pointer"
+									onclick={() => (closeAlertOpen = true)}
+								>
+									<span class="text-my-pink">Close Proposal</span>
+								</DropdownMenu.Item>
+							{:else if !data.proposal.open && !data.proposal.deployed}
+								<DropdownMenu.Item
+									class="hover:cursor-pointer"
+									onclick={() => (reopenAlertOpen = true)}
+								>
+									Reopen Proposal
+								</DropdownMenu.Item>
+							{/if}
 						</DropdownMenu.Content>
 					</DropdownMenu.Root>
+					<AlertDialog.Root bind:open={closeAlertOpen}>
+						<AlertDialog.Content>
+							<AlertDialog.Header>
+								<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
+								<AlertDialog.Description class="text-foreground text-base">
+									This action will temporarily close the proposal. A notification will be sent to
+									the Discord thread to inform everyone that the proposal has been closed. You can
+									reopen it later if needed.
+								</AlertDialog.Description>
+							</AlertDialog.Header>
+							<AlertDialog.Footer>
+								<AlertDialog.Cancel disabled={closingProposal} class="hover:cursor-pointer">
+									Cancel
+								</AlertDialog.Cancel>
+								<AlertDialog.Action
+									class={`${buttonVariants({ variant: 'destructive' })} hover:cursor-pointer`}
+									onclick={async () => {
+										await closeProposal();
+									}}
+									disabled={closingProposal}
+								>
+									{#if closingProposal}
+										<LoaderCircleIcon class="size-4 animate-spin" />
+									{/if}
+									Close
+								</AlertDialog.Action>
+							</AlertDialog.Footer>
+						</AlertDialog.Content>
+					</AlertDialog.Root>
+					<AlertDialog.Root bind:open={reopenAlertOpen}>
+						<AlertDialog.Content>
+							<AlertDialog.Header>
+								<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
+								<AlertDialog.Description class="text-foreground text-base">
+									This action will reopen the proposal. A notification will be sent to the Discord
+									thread to inform everyone that the proposal has been reopened. You can close it
+									later if needed.
+								</AlertDialog.Description>
+							</AlertDialog.Header>
+							<AlertDialog.Footer>
+								<AlertDialog.Cancel disabled={reopeningProposal} class="hover:cursor-pointer">
+									Cancel
+								</AlertDialog.Cancel>
+								<AlertDialog.Action
+									class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}
+									onclick={async () => {
+										await reopenProposal();
+									}}
+									disabled={reopeningProposal}
+								>
+									{#if reopeningProposal}
+										<LoaderCircleIcon class="size-4 animate-spin" />
+									{/if}
+									Reopen
+								</AlertDialog.Action>
+							</AlertDialog.Footer>
+						</AlertDialog.Content>
+					</AlertDialog.Root>
 				{/if}
 				<Button
 					href={`https://discord.com/channels/${page.params.guildId}/${data.proposal.threadId}`}
@@ -655,7 +713,10 @@
 							<TriangleAlertIcon />
 							<Alert.Title><h4>This proposal has been closed.</h4></Alert.Title>
 							<Alert.Description class="text-my-pink">
-								<p>This proposal is now available for viewing only.</p>
+								<p>
+									This proposal is now temporarily closed and available for viewing only. To reopen
+									it, click the three-dot button in the upper-right corner.
+								</p>
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
