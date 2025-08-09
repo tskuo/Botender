@@ -26,7 +26,11 @@ export const GET = async ({ params }) => {
 
 export const POST = async ({ request, params }) => {
 	try {
-		const { channels, community_tone } = await request.json();
+		const {
+			channels = ['botender'],
+			community_tone = `A Discord server where people come together with something in common. The community includes both newcomers and long-time members. The tone is generally friendly and collaborative, though discussions can sometimes become heated. Members aim to foster a welcoming and engaged environment. This is not necessarily a gaming community, but a shared space for people with a common interest or connection.`,
+			deploy_threshold = 3
+		} = await request.json();
 
 		const guildDocRef = doc(db, 'guilds', params.guildId);
 		const guildDocSnap = await getDoc(guildDocRef);
@@ -35,7 +39,8 @@ export const POST = async ({ request, params }) => {
 		if (guildDocSnap.exists()) {
 			await updateDoc(guildDocRef, {
 				channels: channels,
-				community_tone: community_tone
+				community_tone: community_tone,
+				deploy_threshold: deploy_threshold
 			});
 			return json({ id: params.guildId }, { status: 201 });
 		}
@@ -43,7 +48,8 @@ export const POST = async ({ request, params }) => {
 		// If the guild does not exist, proceed with the initialization process.
 		await setDoc(guildDocRef, {
 			channels: channels,
-			community_tone: community_tone
+			community_tone: community_tone,
+			deploy_threshold: deploy_threshold
 		});
 
 		const initialTask = {

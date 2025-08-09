@@ -82,8 +82,6 @@
 	// data props
 	let { data }: PageProps = $props();
 
-	let DEPLOY_THRESHOLD = 1;
-
 	// state for the proposal
 	let editedTasks = $state<Tasks>(
 		data.edits.length > 0 ? data.edits[0].tasks : data.originalTasks.tasks
@@ -544,7 +542,7 @@
 		deployingProposal = true;
 		if (
 			data.edits.length === 0 ||
-			upvotes.length < DEPLOY_THRESHOLD ||
+			upvotes.length < data.guild.deploy_threshold ||
 			_.isNil(data.user?.userId)
 		) {
 			return;
@@ -966,7 +964,7 @@
 							<AlertDialog.Root>
 								<AlertDialog.Trigger
 									class={`${buttonVariants({ variant: 'secondary' })} w-24 justify-start hover:cursor-pointer`}
-									disabled={upvotes.length < DEPLOY_THRESHOLD}
+									disabled={upvotes.length < data.guild.deploy_threshold}
 								>
 									<LandPlotIcon class="size-4" />
 									Deploy
@@ -1068,7 +1066,7 @@
 										>
 										<AlertDialog.Action
 											class="hover:cursor-pointer"
-											disabled={upvotes.length < DEPLOY_THRESHOLD || deployingProposal}
+											disabled={upvotes.length < data.guild.deploy_threshold || deployingProposal}
 											onclick={async () => {
 												deployProposal();
 											}}
