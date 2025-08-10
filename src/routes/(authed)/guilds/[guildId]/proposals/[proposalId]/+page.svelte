@@ -2011,10 +2011,16 @@
 																			}
 																		}
 																	);
+
+																	const {
+																		botResponse: savedBotResponse,
+																		triggeredTask: savedTriggeredTask
+																	} = await resBotResponse.json();
+
 																	displayedChannel = fetchCase.channel;
 																	displayedUserMessage = fetchCase.userMessage;
-																	displayedTaskId = taskId;
-																	displayedBotResponse = botResponse;
+																	displayedTaskId = savedTriggeredTask;
+																	displayedBotResponse = savedBotResponse;
 																	showCase = true;
 																}
 															} else {

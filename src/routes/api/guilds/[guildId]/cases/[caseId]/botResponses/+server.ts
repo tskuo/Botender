@@ -127,21 +127,56 @@ export const POST = async ({ request, params }) => {
 			triggeredTaskId
 		} = await request.json();
 
-		const docRef = await addDoc(
-			collection(db, 'guilds', params.guildId, 'cases', params.caseId, 'botResponses'),
-			{
-				botResponse: botResponse,
-				createAt: serverTimestamp(),
-				proposalEditId: proposalEditId,
-				proposalId: proposalId,
-				taskHistoryId: taskHistoryId,
-				thumbsDown: thumbsDown,
-				thumbsUp: thumbsUp,
-				triggeredTask: triggeredTaskId
-			}
+		// 1. Create a reference to the subcollection.
+		const botResponsesRef = collection(
+			db,
+			'guilds',
+			params.guildId,
+			'cases',
+			params.caseId,
+			'botResponses'
 		);
-		return json({ id: docRef.id }, { status: 201 });
+
+		// 2. Create a query to find an existing document with the same IDs.
+		const q = query(
+			botResponsesRef,
+			where('proposalEditId', '==', proposalEditId),
+			where('proposalId', '==', proposalId),
+			where('taskHistoryId', '==', taskHistoryId),
+			limit(1)
+		);
+
+		// 3. Execute the query.
+		const querySnapshot = await getDocs(q);
+
+		// 4. If a document is found, return the existing doc instead of creating a new one.
+		if (!querySnapshot.empty) {
+			return json(
+				{
+					id: querySnapshot.docs[0].id,
+					botResponse: querySnapshot.docs[0].data().botResponse,
+					triggeredTask: querySnapshot.docs[0].data().triggeredTask
+				},
+				{ status: 200 }
+			);
+		}
+
+		// 5. If no existing document is found, create a new one.
+		const docRef = await addDoc(botResponsesRef, {
+			botResponse: botResponse,
+			createAt: serverTimestamp(),
+			proposalEditId: proposalEditId,
+			proposalId: proposalId,
+			taskHistoryId: taskHistoryId,
+			thumbsDown: thumbsDown,
+			thumbsUp: thumbsUp,
+			triggeredTask: triggeredTaskId
+		});
+		return json(
+			{ id: docRef.id, botResponse: botResponse, triggeredTask: triggeredTaskId },
+			{ status: 201 }
+		);
 	} catch {
-		throw error(400, 'Fail to save a new edit in the database.');
+		throw error(400, 'Fail to save a new botResponse in the database.');
 	}
 };
