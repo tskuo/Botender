@@ -4,10 +4,12 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import Button from './ui/button/button.svelte';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 
 	// import lucide icons
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import InfoIcon from '@lucide/svelte/icons/info';
+	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
 
 	let {
 		id,
@@ -17,6 +19,10 @@
 		triggersOnly = false,
 		readonly = false
 	} = $props();
+
+	let initName = name;
+	let initTrigger = trigger;
+	let initAction = action;
 </script>
 
 <div class="border-l-4">
@@ -33,27 +39,43 @@
 					{readonly}
 				/>
 			</div>
-			<div class="flex items-center gap-2">
-				<Button
-					disabled={name === '' && trigger === '' && action === ''}
-					class="hover:cursor-pointer"
-					variant="secondary"
-					onclick={() => {
-						name = '';
-						trigger = '';
-						action = '';
-					}}
-				>
-					<Trash2Icon class="size-4" />
-					<p class="hidden lg:inline">
-						{#if name === '' && trigger === '' && action === ''}
-							Deleted
-						{:else}
-							Delete
-						{/if}
-					</p>
-				</Button>
-			</div>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant="ghost" class="hover:cursor-pointer">
+							<EllipsisVerticalIcon />
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content>
+					<DropdownMenu.Group>
+						<DropdownMenu.Label>More Actions</DropdownMenu.Label>
+						<DropdownMenu.Separator />
+						<DropdownMenu.Item
+							disabled={name === initName && trigger === initTrigger && action === initAction}
+							class="hover:cursor-pointer"
+							onclick={() => {
+								name = initName;
+								trigger = initTrigger;
+								action = initAction;
+							}}
+						>
+							Reset Task
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							disabled={name === '' && trigger === '' && action === ''}
+							class="hover:cursor-pointer"
+							onclick={() => {
+								name = '';
+								trigger = '';
+								action = '';
+							}}
+						>
+							<span class="text-my-pink">Delete Task</span>
+						</DropdownMenu.Item>
+					</DropdownMenu.Group>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		</div>
 		<div class="grid w-full gap-1.5 pt-3">
 			<Label for="{id}-trigger">Trigger</Label>
