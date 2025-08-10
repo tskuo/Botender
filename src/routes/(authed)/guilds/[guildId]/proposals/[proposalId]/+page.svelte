@@ -32,6 +32,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -97,6 +98,7 @@
 		testCases = data.testCases;
 		upvotes = data.edits.length > 0 ? data.edits[0].upvotes : [];
 		downvotes = data.edits.length > 0 ? data.edits[0].downvotes : [];
+		editQuestionnaire = [];
 	};
 
 	let enteredCaseId = $state('');
@@ -136,6 +138,7 @@
 	let reopenAlertOpen = $state(false);
 	let api = $state<CarouselAPI>();
 	let previousTestCaseCount = $state(data.testCases.length);
+	let editQuestionnaire = $state<string[]>([]);
 
 	// scroll to the end whenever a new test case is saved
 	$effect(() => {
@@ -500,7 +503,8 @@
 			{
 				method: 'POST',
 				body: JSON.stringify({
-					tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask)
+					tasks: trimWhiteSpaceInTasks(editedTasksWithoutEmptyNewTask),
+					editQuestionnaire: editQuestionnaire
 				}),
 				headers: {
 					'Content-Type': 'application/json'
@@ -599,6 +603,33 @@
 		}
 		deployingProposal = false;
 	};
+
+	const editQuestionnaireItems = [
+		{
+			id: 'case_self',
+			label: 'address specific cases I thought of myself'
+		},
+		{
+			id: 'case_others',
+			label: 'address specific cases that someone else saved as test cases'
+		},
+		{
+			id: 'case_generated',
+			label: 'address specific cases that were auto-generated'
+		},
+		{
+			id: 'issue_self',
+			label: 'address general issues I thought of myself'
+		},
+		{
+			id: 'issue_others',
+			label: 'address general issues that someone else raised'
+		},
+		{
+			id: 'others',
+			label: 'others'
+		}
+	];
 </script>
 
 <div class="flex h-screen w-full flex-col">
@@ -994,10 +1025,9 @@
 									</AlertDialog.Header>
 									<div class="min-h-0 flex-1 overflow-y-auto">
 										<AlertDialog.Description class="text-foreground text-sm md:text-base">
-											Review the changes to the original tasks and latest tasks below to ensure they
-											are correct. If you are satisfied, click the submit button to confirm
-											deployment. Once deployed, the bot will behave according to the proposed edit
-											on Discord.
+											Review the changes compared to the original tasks and latest tasks below to
+											ensure they are correct. Once deployed, the bot will behave according to the
+											proposed edit in your Discord server.
 										</AlertDialog.Description>
 										<Accordion.Root type="single" class="my-2">
 											<Accordion.Item value="item-1">
@@ -1032,10 +1062,10 @@
 										<Tabs.Root value="original" class="mt-1">
 											<Tabs.List class="w-full">
 												<Tabs.Trigger value="original">
-													<span class="hidden md:inline">Compare with </span>Original Tasks
+													<span class="hidden md:inline">Compare with</span>Original Tasks
 												</Tabs.Trigger>
 												<Tabs.Trigger value="latest">
-													<span class="hidden md:inline">Compare with </span>Latest Tasks
+													<span class="hidden md:inline">Compare with</span>Latest Tasks
 												</Tabs.Trigger>
 											</Tabs.List>
 											<Tabs.Content value="original">
@@ -1085,13 +1115,13 @@
 											class="hover:cursor-pointer"
 											disabled={upvotes.length < data.guild.deploy_threshold || deployingProposal}
 											onclick={async () => {
-												deployProposal();
+												await deployProposal();
 											}}
 										>
 											{#if deployingProposal}
 												<LoaderCircleIcon class="size-4 animate-spin" />
 											{/if}
-											Submit
+											Deploy
 										</AlertDialog.Action>
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
@@ -1247,27 +1277,117 @@
 								</Dialog.Content>
 							</Dialog.Root>
 							<!-- Save Button -->
-							<Button
-								class="hover:cursor-pointer"
-								variant="secondary"
-								disabled={(data.edits.length > 0
-									? _.isEqualWith(editedTasks, data.edits[0].tasks, trimTaskCustomizer)
-									: _.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) ||
-									_.isNil(testedTasks) ||
-									!_.isEqualWith(testedTasks, editedTasks, trimTaskCustomizer) ||
-									runningTest ||
-									generatingCase ||
-									savingEdit}
-								onclick={async () => {
-									await saveProposal();
-								}}
-							>
-								{#if savingEdit}
-									<LoaderCircleIcon class="size-4 animate-spin" />Save
-								{:else}
+							<AlertDialog.Root>
+								<AlertDialog.Trigger
+									class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+									disabled={(data.edits.length > 0
+										? _.isEqualWith(editedTasks, data.edits[0].tasks, trimTaskCustomizer)
+										: _.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) ||
+										_.isNil(testedTasks) ||
+										!_.isEqualWith(testedTasks, editedTasks, trimTaskCustomizer) ||
+										runningTest ||
+										generatingCase ||
+										savingEdit}
+								>
 									<SaveIcon class="size-4" />Save
-								{/if}
-							</Button>
+								</AlertDialog.Trigger>
+								<AlertDialog.Content class="flex max-h-[80vh] flex-col">
+									<AlertDialog.Header>
+										<AlertDialog.Title>
+											<h2 class="text-left">Are you sure you want to save this edit?</h2>
+										</AlertDialog.Title>
+									</AlertDialog.Header>
+									<div class="min-h-0 flex-1 overflow-y-auto">
+										<AlertDialog.Description class="text-foreground text-sm md:text-base">
+											Review the changes compared to the latest edit and the original tasks below to
+											ensure they are correct. Once saved, your edit will replace the most recent
+											proposed edit and become the new version that others can vote to approve for
+											deployment.
+										</AlertDialog.Description>
+										<Tabs.Root value="edit" class="mt-4">
+											<Tabs.List class="w-full">
+												<Tabs.Trigger value="edit">
+													<span class="hidden md:inline">Compare with</span>Latest Edit
+												</Tabs.Trigger>
+												<Tabs.Trigger value="original">
+													<span class="hidden md:inline">Compare with</span>Original Tasks
+												</Tabs.Trigger>
+											</Tabs.List>
+											<Tabs.Content value="edit">
+												{#if data.edits.length > 0}
+													<div class="mt-2 flex flex-col gap-6 text-sm">
+														{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+															{#if !_.isEqualWith(data.edits[0].tasks[taskId], editedTasks[taskId], trimTaskCustomizer)}
+																<TaskDiffSection
+																	oldTask={data.edits[0].tasks[taskId]}
+																	newTask={editedTasks[taskId]}
+																/>
+															{/if}
+														{/each}
+													</div>
+												{:else}
+													<p class="text-muted-foreground text-sm">
+														No edits have been proposed yet.
+													</p>
+												{/if}
+											</Tabs.Content>
+											<Tabs.Content value="original">
+												<div class="mt-2 flex flex-col gap-6 text-sm">
+													{#each [...Object.keys(data.originalTasks.tasks).sort(), ...('new' in editedTasks ? ['new'] : [])] as taskId (taskId)}
+														{#if !_.isEqualWith(data.originalTasks.tasks[taskId], editedTasks[taskId], trimTaskCustomizer)}
+															<TaskDiffSection
+																oldTask={data.originalTasks.tasks[taskId]}
+																newTask={editedTasks[taskId]}
+															/>
+														{/if}
+													{/each}
+												</div>
+											</Tabs.Content>
+										</Tabs.Root>
+										<div class="mt-6 flex flex-col gap-2">
+											<div class="mb-1">
+												<h4>Questionnaire: What motivated you to make this edit?</h4>
+												<p>I am making this edit to...</p>
+											</div>
+											{#each editQuestionnaireItems as item (item.id)}
+												<div class="flex items-center gap-3">
+													<Checkbox
+														id={item.id}
+														value={item.id}
+														onCheckedChange={(v) => {
+															if (v) {
+																editQuestionnaire.push(item.id);
+															} else {
+																editQuestionnaire = editQuestionnaire.filter(
+																	(id) => id !== item.id
+																);
+															}
+														}}
+													/>
+													<Label for={item.id}>{item.label}</Label>
+												</div>
+											{/each}
+										</div>
+									</div>
+									<AlertDialog.Footer>
+										<AlertDialog.Cancel disabled={savingEdit} class="hover:cursor-pointer"
+											>Cancel</AlertDialog.Cancel
+										>
+										<AlertDialog.Action
+											class="hover:cursor-pointer"
+											disabled={savingEdit || editQuestionnaire.length === 0}
+											onclick={async () => {
+												await saveProposal();
+											}}
+										>
+											{#if savingEdit}
+												<LoaderCircleIcon class="size-4 animate-spin" />
+											{/if}
+											Save
+										</AlertDialog.Action>
+									</AlertDialog.Footer>
+								</AlertDialog.Content>
+							</AlertDialog.Root>
 						</div>
 					</div>
 				{/if}

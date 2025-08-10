@@ -47,7 +47,7 @@ export const POST = async ({ request, params, locals }) => {
 		throw error(401, 'You must be logged in to edit a proposal.');
 	}
 	try {
-		const { tasks } = await request.json();
+		const { tasks, editQuestionnaire = [] } = await request.json();
 		const docRef = await addDoc(
 			collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'edits'),
 			{
@@ -56,7 +56,8 @@ export const POST = async ({ request, params, locals }) => {
 				editor: locals.user.userName,
 				editorId: locals.user.userId,
 				tasks: tasks,
-				upvotes: []
+				upvotes: [],
+				editQuestionnaire: editQuestionnaire
 			}
 		);
 
