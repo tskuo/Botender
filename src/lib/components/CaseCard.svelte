@@ -10,7 +10,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 
 	// import lucide icons
 	import HashIcon from '@lucide/svelte/icons/hash';
@@ -26,8 +26,7 @@
 	import BotMessageSquareIcon from '@lucide/svelte/icons/bot-message-square';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import FolderPlusIcon from '@lucide/svelte/icons/folder-plus';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import InfoIcon from '@lucide/svelte/icons/info';
 
 	// import svelte features
 	import { onMount } from 'svelte';
@@ -342,7 +341,7 @@
 {/snippet}
 
 <Dialog.Root>
-	<Dialog.Trigger class="hover:cursor-pointer">
+	<Dialog.Trigger class="w-full hover:cursor-pointer">
 		<Card.Root class="hover:bg-muted/50 h-full w-full gap-3 text-left text-sm">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
@@ -462,7 +461,7 @@
 			{/if}
 		</Card.Root>
 	</Dialog.Trigger>
-	<Dialog.Content class="flex h-[80vh] flex-col overflow-y-auto">
+	<Dialog.Content class="flex max-h-[80vh] flex-col overflow-y-auto">
 		<Dialog.Header class="text-left">
 			<Dialog.Title class="mb-2 flex gap-2">
 				{#if checkingBadge}
@@ -747,6 +746,23 @@
 				</Button>
 			{/if}
 			{#if page.url.pathname.includes('/proposals/') && generatedId !== undefined && tmpBotResponse}
+				{#if tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0}
+					<Alert.Root>
+						<InfoIcon />
+						<Alert.Title><h4>Pro Tip</h4></Alert.Title>
+						<Alert.Description class="text-muted-foreground">
+							To save as a test case, first label the bot's response as good or bad.
+						</Alert.Description>
+					</Alert.Root>
+				{:else}
+					<Alert.Root class="text-primary border-primary">
+						<InfoIcon />
+						<Alert.Title class="text-primary"><h4>Pro Tip</h4></Alert.Title>
+						<Alert.Description class="text-primary">
+							Your label will not be saved or visible to others unless you save it as a test case.
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
 				<Button
 					disabled={adding ||
 						(tmpBotResponse.thumbsUp.length === 0 && tmpBotResponse.thumbsDown.length === 0)}
@@ -775,9 +791,6 @@
 					{/if}
 					save as a test case
 				</Button>
-				<p class="text-muted-foreground mt-2 w-full text-center text-sm">
-					To save as a test case, first label the bot's response as good or bad.
-				</p>
 			{/if}
 		</div>
 		<p class="text-muted-foreground mt-1 text-center text-xs" hidden={id === ''}>Case ID: {id}</p>

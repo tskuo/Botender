@@ -17,6 +17,7 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
+	import { type CarouselAPI } from '$lib/components/ui/carousel/context.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -133,6 +134,20 @@
 	let closeAlertOpen = $state(false);
 	let reopeningProposal = $state(false);
 	let reopenAlertOpen = $state(false);
+	let api = $state<CarouselAPI>();
+	let previousTestCaseCount = $state(data.testCases.length);
+
+	// scroll to the end whenever a new test case is saved
+	$effect(() => {
+		if (api) {
+			api.on('slidesChanged', () => {
+				if (testCases.length > previousTestCaseCount) {
+					api!.scrollTo(testCases.length);
+				}
+				previousTestCaseCount = testCases.length;
+			});
+		}
+	});
 
 	let editScope = $state(
 		(data.edits.length > 0
@@ -725,7 +740,7 @@
 					<Alert.Root class="border-primary text-primary mb-2">
 						<InfoIcon />
 						<Alert.Title>
-							<h4>Tip for You!</h4>
+							<h4>Get Started</h4>
 						</Alert.Title>
 						<Alert.Description class="text-primary">
 							<p>
@@ -1483,6 +1498,7 @@
 									align: 'start'
 								}}
 								class="mx-auto h-full w-4/5 max-w-screen md:w-5/6"
+								setApi={(emblaApi) => (api = emblaApi)}
 							>
 								<Carousel.Content class="h-full">
 									{#each testCases as testCase, i (`${testCase.id}-${data.edits.length}`)}
@@ -1747,10 +1763,16 @@
 										}
 									}}
 								>
-									<ToggleGroup.Item value="thumbsUp" class="data-[state=on]:bg-my-green px-3">
+									<ToggleGroup.Item
+										value="thumbsUp"
+										class="data-[state=on]:bg-my-green px-3 hover:cursor-pointer"
+									>
 										<ThumbsUpIcon class="size-4" />good response
 									</ToggleGroup.Item>
-									<ToggleGroup.Item value="thumbsDown" class="data-[state=on]:bg-my-pink px-3">
+									<ToggleGroup.Item
+										value="thumbsDown"
+										class="data-[state=on]:bg-my-pink px-3 hover:cursor-pointer"
+									>
 										<ThumbsDownIcon class="size-4" />bad response
 									</ToggleGroup.Item>
 								</ToggleGroup.Root>
@@ -1759,6 +1781,7 @@
 						<Sheet.Footer>
 							<div class="flex items-center justify-between">
 								<Button
+									class="hover:cursor-pointer"
 									disabled={showCase ||
 										checkingCaseManually ||
 										(!enteredCaseId.trim() && !enteredUserMessage.trim() && !selectedChannel) ||
@@ -1972,6 +1995,7 @@
 								<div>
 									<!-- Clear Button -->
 									<Button
+										class="hover:cursor-pointer"
 										variant="secondary"
 										disabled={checkingCaseManually || addingCase}
 										onclick={() => {
@@ -1983,6 +2007,7 @@
 									</Button>
 									<!-- Add to Test Suite Button -->
 									<Button
+										class="hover:cursor-pointer"
 										variant="secondary"
 										disabled={!showCase || checkingCaseManually || showAddCaseSuccess || addingCase}
 										onclick={async () => {
