@@ -778,6 +778,18 @@
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
+				{#if data.edits.length > 0 && _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
+					<Alert.Root class="text-my-pink border-my-pink mb-2">
+						<TriangleAlertIcon />
+						<Alert.Title><h4>Heads Up!</h4></Alert.Title>
+						<Alert.Description class="text-my-pink"
+							>The latest proposed edit will result in a proposal that is identical to the original
+							task and does not include any changes. You cannot deploy a proposal if it does not
+							differ from the original tasks. If you want to discard a proposal, simply click the
+							three dots in the upper right corner of the screen and select "close proposal."
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
 					Initiated by {data.proposal.initiator} at {new Date(
@@ -1008,7 +1020,12 @@
 							<AlertDialog.Root>
 								<AlertDialog.Trigger
 									class={`${buttonVariants({ variant: 'secondary' })} w-24 justify-start hover:cursor-pointer`}
-									disabled={upvotes.length < data.guild.deploy_threshold}
+									disabled={upvotes.length < data.guild.deploy_threshold ||
+										_.isEqualWith(
+											editedTasksWithoutEmptyNewTask,
+											data.originalTasks.tasks,
+											trimTaskCustomizer
+										)}
 								>
 									<LandPlotIcon class="size-4" />
 									Deploy
@@ -1109,7 +1126,13 @@
 										>
 										<AlertDialog.Action
 											class="hover:cursor-pointer"
-											disabled={upvotes.length < data.guild.deploy_threshold || deployingProposal}
+											disabled={upvotes.length < data.guild.deploy_threshold ||
+												deployingProposal ||
+												_.isEqualWith(
+													editedTasksWithoutEmptyNewTask,
+													data.originalTasks.tasks,
+													trimTaskCustomizer
+												)}
 											onclick={async () => {
 												await deployProposal();
 											}}
@@ -1222,6 +1245,19 @@
 								<Dialog.Content class="flex max-h-[80vh] flex-col">
 									<Dialog.Header class="text-left">
 										<Dialog.Title><h2>Compare the differences</h2></Dialog.Title>
+										{#if _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
+											<Alert.Root class="text-my-pink border-my-pink">
+												<TriangleAlertIcon />
+												<Alert.Title><h4>Heads up!</h4></Alert.Title>
+												<Alert.Description class="text-my-pink"
+													>This edit will result in a proposal that is identical to the original
+													task and does not include any changes. You cannot deploy a proposal if it
+													does not differ from the original tasks. If you want to discard a
+													proposal, simply click the three dots in the upper right corner of the
+													screen and select "close proposal."
+												</Alert.Description>
+											</Alert.Root>
+										{/if}
 										<Dialog.Description class="text-foreground text-sm md:text-base">
 											The highlighted and strikethrough text indicates the edits you made, either to
 											the most recent proposed edit or to the original tasks in place when this
@@ -1291,6 +1327,19 @@
 									<AlertDialog.Header>
 										<AlertDialog.Title>
 											<h2 class="text-left">Are you sure you want to save this edit?</h2>
+											{#if _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
+												<Alert.Root class="text-my-pink border-my-pink">
+													<TriangleAlertIcon />
+													<Alert.Title><h4>Heads up!</h4></Alert.Title>
+													<Alert.Description class="text-my-pink"
+														>This edit will result in a proposal that is identical to the original
+														task and does not include any changes. You cannot deploy a proposal if
+														it does not differ from the original tasks. If you want to discard a
+														proposal, simply click the three dots in the upper right corner of the
+														screen and select "close proposal."
+													</Alert.Description>
+												</Alert.Root>
+											{/if}
 										</AlertDialog.Title>
 									</AlertDialog.Header>
 									<div class="min-h-0 flex-1 overflow-y-auto">
