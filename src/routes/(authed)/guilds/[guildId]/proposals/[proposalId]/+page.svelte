@@ -607,15 +607,11 @@
 	const editQuestionnaireItems = [
 		{
 			id: 'case_self',
-			label: 'address specific cases I thought of myself'
+			label: 'address specific cases I entered myself'
 		},
 		{
-			id: 'case_others',
-			label: 'address specific cases that someone else saved as test cases'
-		},
-		{
-			id: 'case_generated',
-			label: 'address specific cases that were auto-generated'
+			id: 'case_test',
+			label: 'address specific saved or generated test cases'
 		},
 		{
 			id: 'issue_self',
@@ -626,8 +622,8 @@
 			label: 'address general issues that someone else raised'
 		},
 		{
-			id: 'others',
-			label: 'others'
+			id: 'other',
+			label: 'other'
 		}
 	];
 </script>
@@ -1686,7 +1682,7 @@
 							}}
 						>
 							<FolderCogIcon class="size-4" />
-							Re-Generate
+							Generate
 						</Button>
 					</div>
 					{#if generatingCase}
@@ -1750,7 +1746,7 @@
 					<Sheet.Trigger
 						class="flex w-full items-center justify-between border-t py-2 pl-4 text-left hover:cursor-pointer"
 					>
-						<h3>Check other cases manually</h3>
+						<h4>Enter other cases manually</h4>
 						<ChevronUpIcon class="mr-4 size-4" />
 					</Sheet.Trigger>
 					<Sheet.Content
@@ -1759,10 +1755,10 @@
 						style="width: {sheetWidth}px; max-width: 100vw;"
 					>
 						<Sheet.Header>
-							<Sheet.Title><h3>Check other cases manually</h3></Sheet.Title>
+							<Sheet.Title><h3>Enter other cases manually</h3></Sheet.Title>
 							<Sheet.Description>
 								{#if !showCase}
-									If you want to check a new case, simply leave the case ID field blank. When the
+									If you want to enter a new case, simply leave the case ID field blank. When the
 									case ID field is not empty, the system will use the entered ID to search for an
 									existing case.
 								{/if}
@@ -1775,7 +1771,7 @@
 											This response is generated based on your current, unsaved edit.
 										{/if}
 									{:else if _.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer)}
-										This response is generated based on the most recent proposed edit to the bot.
+										This response is generated based on the latest edit to the bot.
 									{:else}
 										This response is generated based on your current, unsaved edit.
 									{/if}
