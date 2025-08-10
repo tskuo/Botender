@@ -611,7 +611,7 @@
 		},
 		{
 			id: 'case_test',
-			label: 'address specific saved or generated test cases'
+			label: `address specific test cases I saw, but didn't create`
 		},
 		{
 			id: 'issue_self',
