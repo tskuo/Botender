@@ -270,7 +270,11 @@ export async function sendDeployNotificationToThread(
  * @param guildId The ID of the guild where tasks were updated.
  * @param deployerId The ID of the user who deployed the changes.
  */
-export async function sendTaskUpdateNotification(guildId: string, deployerId: string) {
+export async function sendTaskUpdateNotification(
+	guildId: string,
+	deployerId: string,
+	messageId: string
+) {
 	const channel = await findChannelByName(guildId, 'botender');
 	if (!channel) {
 		console.error(`Could not find a text channel named #botender in guild ${guildId}`);
@@ -295,7 +299,10 @@ export async function sendTaskUpdateNotification(guildId: string, deployerId: st
 						color: parseInt('35ed7e', 16),
 						url: tasksUrl
 					}
-				]
+				],
+				message_reference: {
+					message_id: messageId
+				}
 			})
 		});
 

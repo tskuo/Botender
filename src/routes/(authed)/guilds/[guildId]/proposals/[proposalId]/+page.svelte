@@ -600,10 +600,12 @@
 			body: JSON.stringify({
 				formTaskHistory: {
 					data: {
-						changedTasks: trimWhiteSpaceInTasks(changedTasks)
+						changedTasks: trimWhiteSpaceInTasks(changedTasks),
+						proposalId: data.proposal.id,
+						messageId: data.proposal.messageId
 					}
-				},
-				caseOnly: true
+				}
+				// caseOnly: true
 			}),
 			headers: {
 				'Content-Type': 'appplication/json'

@@ -72,7 +72,8 @@ export const POST = async ({ request, params }) => {
 			createAt: serverTimestamp(),
 			deployer: 'botender',
 			deployerId: 'botender',
-			tasks: initialTaskHistory
+			tasks: initialTaskHistory,
+			proposalId: ''
 		});
 
 		return json({ id: params.guildId }, { status: 201 });

@@ -56,6 +56,8 @@ export const POST = async ({ request, params, locals }) => {
 	try {
 		const { formTaskHistory } = await request.json();
 		const changedTasks: Tasks = { ...formTaskHistory.data.changedTasks };
+		const proposalId: string = formTaskHistory.data.proposalId;
+		const messageId: string = formTaskHistory.data.messageId;
 
 		// Check if a new task is proposed
 		if ('new' in changedTasks) {
@@ -87,10 +89,11 @@ export const POST = async ({ request, params, locals }) => {
 			createAt: serverTimestamp(),
 			tasks: newTasks,
 			deployer: locals.user.userName,
-			deployerId: locals.user.userId
+			deployerId: locals.user.userId,
+			proposalId: proposalId
 		});
 
-		await sendTaskUpdateNotification(params.guildId, locals.user.userId);
+		await sendTaskUpdateNotification(params.guildId, locals.user.userId, messageId);
 
 		return json({ id: docRef.id }, { status: 201 });
 	} catch {
