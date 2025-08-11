@@ -2,7 +2,15 @@
 import { json, error } from '@sveltejs/kit';
 import { bot } from '$lib/server/openAI/bot';
 import { db } from '$lib/firebase';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import {
+	collection,
+	getDocs,
+	query,
+	orderBy,
+	limit,
+	addDoc,
+	serverTimestamp
+} from 'firebase/firestore';
 
 export const POST = async ({ request }) => {
 	try {
@@ -22,6 +30,12 @@ export const POST = async ({ request }) => {
 		// Call the core bot logic with the fetched tasks
 		const { taskId, botResponse } = await bot(channel, userMessage, tasks);
 		const taskName = taskId in tasks ? tasks[taskId].name : '';
+
+		// Log triggered task count
+		await addDoc(collection(db, 'guilds', guildId, 'discordTaskTriggers'), {
+			createAt: serverTimestamp(),
+			triggeredTask: taskId
+		});
 
 		return json({ taskId: taskId, taskName: taskName, botResponse: botResponse }, { status: 201 });
 	} catch (e) {
