@@ -803,8 +803,8 @@
 							<Alert.Description>
 								<p>
 									Review the test cases and label each bot response with a thumbs up or down. You
-									must label at least one saved test case before you can upvote or downvote the
-									proposed edit for deployment.
+									must label at least one saved test case before you can vote the proposed edit for
+									deployment.
 								</p>
 							</Alert.Description>
 						</Alert.Root>
@@ -832,8 +832,8 @@
 							<Alert.Description class="text-primary">
 								<p>
 									You must label at least one test case before saving your edit. Be sure to review
-									the generated test cases that have been specifically designed to uncover potential
-									issues with your edit.
+									the generated test cases that have been created to uncover potential issues with
+									your edit.
 								</p>
 							</Alert.Description>
 						</Alert.Root>

@@ -154,41 +154,22 @@
 	}
 
 	export function checkUserLabel() {
+		let response = undefined;
 		if (!_.isNil(tmpBotResponse)) {
-			if (
-				tmpBotResponse.thumbsUp.includes(user.userId) ||
-				tmpBotResponse.thumbsDown.includes(user.userId)
-			) {
-				return true;
-			} else {
-				return false;
-			}
+			response = tmpBotResponse;
 		} else if (edits.length > 0) {
-			const response = botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
+			response = botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
 				| BotResponse
 				| undefined;
-			if (response === undefined) {
-				return false;
-			} else {
-				if (response.thumbsUp.includes(user.userId) || response.thumbsDown.includes(user.userId)) {
-					return true;
-				} else {
-					return false;
-				}
-			}
 		} else {
-			const response = botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
+			response = botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
 				| BotResponse
 				| undefined;
-			if (response === undefined) {
-				return false;
-			} else {
-				if (response.thumbsUp.includes(user.userId) || response.thumbsDown.includes(user.userId)) {
-					return true;
-				} else {
-					return false;
-				}
-			}
+		}
+		if (response === undefined) {
+			return false;
+		} else {
+			return response.thumbsUp.includes(user.userId) || response.thumbsDown.includes(user.userId);
 		}
 	}
 
