@@ -46,7 +46,7 @@
 		originalTasks = {},
 		tasks = {},
 		testCaseBadge = false,
-		checkingBadge = false,
+		// checkingBadge = false,
 		user,
 		generatedId = undefined,
 		issue = '',
@@ -61,6 +61,28 @@
 	let botResponses = $state([]);
 	let removing = $state(false);
 	let adding = $state(false);
+	let activeBotResponse = $derived.by(() => {
+		if (!_.isNil(tmpBotResponse)) {
+			return tmpBotResponse;
+		} else if (edits.length > 0) {
+			return botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
+				| BotResponse
+				| undefined;
+		} else {
+			return botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
+				| BotResponse
+				| undefined;
+		}
+	});
+	let checkingBadge = $derived.by(() => {
+		if (activeBotResponse === undefined) {
+			return false;
+		} else {
+			return activeBotResponse.thumbsUp.length === activeBotResponse.thumbsDown.length;
+		}
+	});
+
+	// for debugging
 	$effect(() => {
 		if (tmpTasks && 'new' in tmpTasks && isTaskEmpty(tmpTasks['new'])) {
 			console.log('tmpTasks has an empty new task:', id, tmpTasks);
@@ -154,43 +176,22 @@
 	}
 
 	export function checkUserLabel() {
-		let response = undefined;
-		if (!_.isNil(tmpBotResponse)) {
-			response = tmpBotResponse;
-		} else if (edits.length > 0) {
-			response = botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
-				| BotResponse
-				| undefined;
-		} else {
-			response = botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
-				| BotResponse
-				| undefined;
-		}
-		if (response === undefined) {
+		if (activeBotResponse === undefined) {
 			return false;
 		} else {
-			return response.thumbsUp.includes(user.userId) || response.thumbsDown.includes(user.userId);
+			return (
+				activeBotResponse.thumbsUp.includes(user.userId) ||
+				activeBotResponse.thumbsDown.includes(user.userId)
+			);
 		}
 	}
 
 	export function checkMajorityLabel() {
-		let response = undefined;
-		if (!_.isNil(tmpBotResponse)) {
-			response = tmpBotResponse;
-		} else if (edits.length > 0) {
-			response = botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
-				| BotResponse
-				| undefined;
-		} else {
-			response = botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
-				| BotResponse
-				| undefined;
-		}
-		if (response === undefined) {
+		if (activeBotResponse === undefined) {
 			return 'tbd';
-		} else if (response.thumbsUp.length > response.thumbsDown.length) {
+		} else if (activeBotResponse.thumbsUp.length > activeBotResponse.thumbsDown.length) {
 			return 'thumbsUp';
-		} else if (response.thumbsUp.length < response.thumbsDown.length) {
+		} else if (activeBotResponse.thumbsUp.length < activeBotResponse.thumbsDown.length) {
 			return 'thumbsDown';
 		} else {
 			return 'tbd';
@@ -389,12 +390,12 @@
 		<Card.Root class="hover:bg-muted/50 h-full w-full gap-3 text-left text-sm">
 			<Card.Header>
 				<!-- <Card.Title></Card.Title> -->
-				<Card.Description class="flex justify-between">
-					{#if checkingBadge}
-						<Badge class="bg-discord-yellow text-black">worth checking</Badge>
-					{/if}
+				<Card.Description class="flex items-center gap-2">
 					{#if testCaseBadge}
 						<Badge>test case</Badge>
+					{/if}
+					{#if checkingBadge}
+						<Badge class="bg-discord-yellow text-black">worth checking</Badge>
 					{/if}
 				</Card.Description>
 			</Card.Header>
@@ -507,12 +508,12 @@
 	</Dialog.Trigger>
 	<Dialog.Content class="flex max-h-[80vh] flex-col overflow-y-auto">
 		<Dialog.Header class="text-left">
-			<Dialog.Title class="mb-2 flex gap-2">
-				{#if checkingBadge}
-					<Badge class="bg-discord-yellow text-black">worth checking</Badge>
-				{/if}
+			<Dialog.Title class="mb-2 flex items-center gap-2">
 				{#if testCaseBadge}
 					<Badge>test case</Badge>
+				{/if}
+				{#if checkingBadge}
+					<Badge class="bg-discord-yellow text-black">worth checking</Badge>
 				{/if}
 			</Dialog.Title>
 			<Dialog.Description class="text-left">
