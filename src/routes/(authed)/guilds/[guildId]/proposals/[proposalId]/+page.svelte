@@ -139,6 +139,9 @@
 	let api = $state<CarouselAPI>();
 	let previousTestCaseCount = $state(data.testCases.length);
 	let editQuestionnaire = $state<string[]>([]);
+	let userLabeledCount = $derived(
+		testCaseRefs.filter((ref) => ref && ref.checkUserLabel && ref.checkUserLabel()).length
+	);
 
 	// scroll to the end whenever a new test case is saved
 	$effect(() => {
@@ -611,7 +614,7 @@
 		},
 		{
 			id: 'case_test',
-			label: `address specific test cases I saw, but didn't create`
+			label: `address specific test cases I saw, but didn't create myself`
 		},
 		{
 			id: 'issue_self',
@@ -762,33 +765,79 @@
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
-				{/if}
-				{#if !editMode && data.edits.length === 0}
-					<Alert.Root class="border-primary text-primary mb-2">
-						<InfoIcon />
-						<Alert.Title>
-							<h4>Get Started</h4>
-						</Alert.Title>
-						<Alert.Description class="text-primary">
-							<p>
-								Go ahead and make an edit to implement the proposed change. Once you've done that,
-								take a look at the auto-generated test cases to see how your edit affects the bot's
-								behavior.
-							</p>
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-				{#if data.edits.length > 0 && _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
-					<Alert.Root class="text-my-pink border-my-pink mb-2">
-						<TriangleAlertIcon />
-						<Alert.Title><h4>Heads Up!</h4></Alert.Title>
-						<Alert.Description class="text-my-pink"
-							>The latest proposed edit will result in a proposal that is identical to the original
-							task and does not include any changes. You cannot deploy a proposal if it does not
-							differ from the original tasks. If you want to discard a proposal, simply click the
-							three dots in the upper right corner of the screen and select "close proposal."
-						</Alert.Description>
-					</Alert.Root>
+				{:else}
+					{#if !editMode && data.edits.length === 0}
+						<Alert.Root class="border-primary text-primary mb-2">
+							<InfoIcon />
+							<Alert.Title>
+								<h4>Get Started</h4>
+							</Alert.Title>
+							<Alert.Description class="text-primary">
+								<p>
+									Go ahead and make an edit to implement the proposed change. Once you've done that,
+									take a look at the auto-generated test cases to see how your edit affects the
+									bot's behavior.
+								</p>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if data.edits.length > 0 && _.isEqualWith(editedTasksWithoutEmptyNewTask, data.originalTasks.tasks, trimTaskCustomizer)}
+						<Alert.Root class="text-my-pink border-my-pink mb-2">
+							<TriangleAlertIcon />
+							<Alert.Title><h4>Heads Up!</h4></Alert.Title>
+							<Alert.Description class="text-my-pink"
+								>The latest proposed edit will result in a proposal that is identical to the
+								original task and does not include any changes. You cannot deploy a proposal if it
+								does not differ from the original tasks. If you want to discard a proposal, simply
+								click the three dots in the upper right corner of the screen and select "close
+								proposal."
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if !editMode && data.edits.length > 0 && userLabeledCount === 0 && !upvotes.includes(data.user?.userId) && !downvotes.includes(data.user?.userId)}
+						<Alert.Root class="mb-2">
+							<InfoIcon />
+							<Alert.Title>
+								<h4>Pro Tip</h4>
+							</Alert.Title>
+							<Alert.Description>
+								<p>
+									Review the test cases and label each bot response with a thumbs up or down. You
+									must label at least one saved test case before you can upvote or downvote the
+									proposed edit for deployment.
+								</p>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if (data.edits.length > 0 ? !_.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer) : !_.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) && !_.isEqualWith(editedTasksWithoutEmptyNewTask, testedTasks, trimTaskCustomizer)}
+						<Alert.Root class="border-primary text-primary mb-2">
+							<InfoIcon />
+							<Alert.Title>
+								<h4>Pro Tip</h4>
+							</Alert.Title>
+							<Alert.Description class="text-primary">
+								<p>
+									Before saving new edits, run test + generate to view the bot's updated responses
+									based on your edit.
+								</p>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					{#if (data.edits.length > 0 ? !_.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer) : !_.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) && _.isEqualWith(editedTasksWithoutEmptyNewTask, testedTasks, trimTaskCustomizer)}
+						<Alert.Root class="border-primary text-primary mb-2">
+							<InfoIcon />
+							<Alert.Title>
+								<h4>Pro Tip</h4>
+							</Alert.Title>
+							<Alert.Description class="text-primary">
+								<p>
+									You must label at least one test case before saving your edit. Be sure to review
+									the generated test cases that have been specifically designed to uncover potential
+									issues with your edit.
+								</p>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
 				{/if}
 				<h3>Description</h3>
 				<p class="text-muted-foreground mb-1 text-sm">
@@ -995,6 +1044,7 @@
 								}}
 							>
 								<ToggleGroup.Item
+									disabled={userLabeledCount === 0}
 									value="upvote"
 									class="data-[state=on]:text-primary mr-4 rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
 								>
@@ -1006,6 +1056,7 @@
 									<p>{upvotes.length}</p>
 								</ToggleGroup.Item>
 								<ToggleGroup.Item
+									disabled={userLabeledCount === 0}
 									value="downvote"
 									class="data-[state=on]:text-primary rounded-md hover:cursor-pointer data-[state=on]:bg-transparent"
 								>
@@ -1319,7 +1370,8 @@
 										!_.isEqualWith(testedTasks, editedTasks, trimTaskCustomizer) ||
 										runningTest ||
 										generatingCase ||
-										savingEdit}
+										savingEdit ||
+										userLabeledCount === 0}
 								>
 									<SaveIcon class="size-4" />Save
 								</AlertDialog.Trigger>
@@ -1625,15 +1677,6 @@
 						</Popover.Content>
 					</Popover.Root>
 				</div>
-				{#if (data.edits.length > 0 ? !_.isEqualWith(editedTasksWithoutEmptyNewTask, data.edits[0].tasks, trimTaskCustomizer) : !_.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) && !_.isEqualWith(editedTasksWithoutEmptyNewTask, testedTasks, trimTaskCustomizer)}
-					<Alert.Root class="border-primary text-primary mt-1">
-						<TriangleAlertIcon />
-						<Alert.Description class="text-primary">
-							Before saving new edits, run test + generate to see the bot's updated responses and
-							review generated cases to identify any potential issues with your edit.
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
 			</div>
 			<div class="flex-1 overflow-hidden">
 				<div class="flex flex-col p-4 md:h-1/2">
