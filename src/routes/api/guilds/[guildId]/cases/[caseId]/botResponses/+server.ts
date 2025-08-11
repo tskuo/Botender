@@ -14,27 +14,6 @@ import {
 import { db } from '$lib/firebase';
 
 export const GET = async ({ params, url }) => {
-	// const latest = url.searchParams.get('latest');
-
-	// if (latest && latest === 'true') {
-	// 	// if latest is specified, return the latest bot response that has a taskHistoryId
-	// 	const subColRef = collection(db, 'cases', params.caseId, 'botResponses');
-	// 	const querySnapshot = await getDocs(query(subColRef, orderBy('createAt', 'desc')));
-
-	// 	if (!querySnapshot.empty) {
-	// 		const latestDoc = querySnapshot.docs.find(
-	// 			(doc) => doc.data().taskHistoryId && doc.data().taskHistoryId !== ''
-	// 		);
-	// 		return json({
-	// 			// wrap in an array for consistency
-	// 			botResponses: [
-	// 				{ ...latestDoc.data(), id: latestDoc.id, createAt: latestDoc.data().createAt.toDate() }
-	// 			]
-	// 		});
-	// 	} else {
-	// 		throw error(404, `Case #${params.caseId} bot responses not found.`);
-	// 	}
-	// } else
 	if (url.searchParams.get('taskHistoryId') && url.searchParams.get('proposalId')) {
 		const subColRef = collection(
 			db,
@@ -115,7 +94,10 @@ export const GET = async ({ params, url }) => {
 	throw error(404, `Case #${params.caseId} not found.`);
 };
 
-export const POST = async ({ request, params }) => {
+export const POST = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		throw error(400, 'User authentication error.');
+	}
 	try {
 		const {
 			botResponse,
@@ -165,6 +147,7 @@ export const POST = async ({ request, params }) => {
 		const docRef = await addDoc(botResponsesRef, {
 			botResponse: botResponse,
 			createAt: serverTimestamp(),
+			creatorId: locals.user.userId,
 			proposalEditId: proposalEditId,
 			proposalId: proposalId,
 			taskHistoryId: taskHistoryId,

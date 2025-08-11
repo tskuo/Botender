@@ -22,18 +22,25 @@ export const GET = async ({ params }) => {
 				id: doc.id,
 				channel: doc.data().channel,
 				createAt: doc.data().createAt.toDate(),
+				creatorId: doc.data().creatorId,
+				generatedId: doc.data().generatedId,
+				issue: doc.data().issue,
 				realUserMessage: doc.data().realUserMessage,
+				source: doc.data().source,
 				userMessage: doc.data().userMessage
 			};
 			res.push(c);
 		});
 		return json(res);
 	} catch {
-		throw error(400, 'Fail to fetch data from Firestore.');
+		throw error(400, 'Fail to fetch cases from Firestore.');
 	}
 };
 
-export const POST = async ({ request, params }) => {
+export const POST = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		throw error(400, 'User authentication error.');
+	}
 	try {
 		const { formCase, caseOnly = false } = await request.json();
 
@@ -56,17 +63,19 @@ export const POST = async ({ request, params }) => {
 		const docRef = await addDoc(collection(db, 'guilds', params.guildId, 'cases'), {
 			channel: formCase.data.channel,
 			createAt: serverTimestamp(),
+			creatorId: locals.user.userId,
+			generatedId: formCase.data.generatedId,
+			issue: formCase.data.issue,
 			realUserMessage: formCase.data.realUserMessage,
 			source: formCase.data.source,
-			userMessage: formCase.data.userMessage,
-			generatedId: formCase.data.generatedId,
-			issue: formCase.data.issue
+			userMessage: formCase.data.userMessage
 		});
 
 		if (!caseOnly) {
 			await addDoc(collection(db, 'guilds', params.guildId, 'cases', docRef.id, 'botResponses'), {
 				botResponse: formCase.data.botResponse,
 				createAt: serverTimestamp(),
+				creatorId: locals.user.userId,
 				proposalEditId: formCase.data.proposalEditId,
 				proposalId: formCase.data.proposalId,
 				taskHistoryId: formCase.data.taskHistoryId,

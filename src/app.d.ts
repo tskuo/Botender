@@ -41,7 +41,11 @@ declare global {
 		id: string;
 		channel: string;
 		createAt: Date;
+		creatorId: string;
+		generatedId: string;
+		issue: string;
 		realUserMessage: boolean;
+		source: string;
 		userMessage: string;
 	};
 
