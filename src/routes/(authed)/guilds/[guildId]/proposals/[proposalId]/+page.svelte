@@ -33,6 +33,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 
 	// import lucide icons
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
@@ -139,8 +140,25 @@
 	let api = $state<CarouselAPI>();
 	let previousTestCaseCount = $state(data.testCases.length);
 	let editQuestionnaire = $state<string[]>([]);
+
+	// label counters
 	let userLabeledCount = $derived(
 		testCaseRefs.filter((ref) => ref && ref.checkUserLabel && ref.checkUserLabel()).length
+	);
+	let thumbsUpMajorityCount = $derived(
+		testCaseRefs.filter(
+			(ref) => ref && ref.checkMajorityLabel && ref.checkMajorityLabel() === 'thumbsUp'
+		).length
+	);
+	let thumbsDownMajorityCount = $derived(
+		testCaseRefs.filter(
+			(ref) => ref && ref.checkMajorityLabel && ref.checkMajorityLabel() === 'thumbsDown'
+		).length
+	);
+	let tbdMajorityCount = $derived(
+		testCaseRefs.filter(
+			(ref) => ref && ref.checkMajorityLabel && ref.checkMajorityLabel() === 'tbd'
+		).length
 	);
 
 	// scroll to the end whenever a new test case is saved
@@ -785,12 +803,13 @@
 						<Alert.Root class="text-my-pink border-my-pink mb-2">
 							<TriangleAlertIcon />
 							<Alert.Title><h4>Heads Up!</h4></Alert.Title>
-							<Alert.Description class="text-my-pink"
-								>The latest proposed edit will result in a proposal that is identical to the
-								original task and does not include any changes. You cannot deploy a proposal if it
-								does not differ from the original tasks. If you want to discard a proposal, simply
-								click the three dots in the upper right corner of the screen and select "close
-								proposal."
+							<Alert.Description class="text-my-pink">
+								<p>
+									The latest proposed edit is identical to the original task and contains no
+									changes. Proposals must differ from the original task to be deployed. To discard a
+									proposal, click the three dots in the upper right corner and select "close
+									proposal."
+								</p>
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
@@ -1680,20 +1699,34 @@
 			</div>
 			<div class="flex-1 overflow-hidden">
 				<div class="flex flex-col p-4 md:h-1/2">
-					<div class="flex items-center gap-2 pb-2">
-						<h4>Saved test cases ( {testCases.length} )</h4>
-						<Popover.Root>
-							<Popover.Trigger>
-								<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
-							</Popover.Trigger>
-							<Popover.Content class="text-sm">
-								These cases are saved collaboratively by everyone to evaluate how the bot behaves
-								based on the proposed edits. You can give a thumbs up or thumbs down on each case to
-								indicate whether you think the bot's response is good or bad. You can also see how
-								others have reacted to each case. The purpose of these cases is to help you decide
-								whether to upvote or downvote the latest proposed edit for deployment.
-							</Popover.Content>
-						</Popover.Root>
+					<div class="flex items-center justify-between pb-2">
+						<div class="flex items-center gap-2">
+							<h4>
+								Saved test cases ( {testCases.length} )
+							</h4>
+							<Popover.Root>
+								<Popover.Trigger>
+									<InfoIcon class="text-muted-foreground size-4 hover:cursor-pointer" />
+								</Popover.Trigger>
+								<Popover.Content class="text-sm">
+									These cases are saved and labeled collaboratively to evaluate how the bot behaves
+									based on the proposed edits. You can give a thumbs up or down on each case and
+									view others' labels. The goal is to help you decide whether to upvote the latest
+									edit for deployment or to submit your own edit.
+								</Popover.Content>
+							</Popover.Root>
+						</div>
+						<div class="flex items-center gap-2">
+							<Badge variant="outline" class="border-my-green text-my-green"
+								>{runningTest || savingEdit ? '-' : thumbsUpMajorityCount} good</Badge
+							>
+							<Badge variant="outline" class="border-my-pink text-my-pink"
+								>{runningTest || savingEdit ? '-' : thumbsDownMajorityCount} bad</Badge
+							>
+							<Badge variant="outline" class="border-muted-foreground text-muted-foreground"
+								>{runningTest || savingEdit ? '-' : tbdMajorityCount} tbd</Badge
+							>
+						</div>
 					</div>
 					{#if testCases.length === 0}
 						<div class="flex flex-1 items-center justify-center rounded-md border-1">

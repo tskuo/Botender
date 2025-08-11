@@ -173,6 +173,30 @@
 		}
 	}
 
+	export function checkMajorityLabel() {
+		let response = undefined;
+		if (!_.isNil(tmpBotResponse)) {
+			response = tmpBotResponse;
+		} else if (edits.length > 0) {
+			response = botResponses.find((r: BotResponse) => r.proposalEditId === edits[0].id) as
+				| BotResponse
+				| undefined;
+		} else {
+			response = botResponses.find((r: BotResponse) => r.taskHistoryId === taskHistoryId) as
+				| BotResponse
+				| undefined;
+		}
+		if (response === undefined) {
+			return 'tbd';
+		} else if (response.thumbsUp.length > response.thumbsDown.length) {
+			return 'thumbsUp';
+		} else if (response.thumbsUp.length < response.thumbsDown.length) {
+			return 'thumbsDown';
+		} else {
+			return 'tbd';
+		}
+	}
+
 	const loadBotResponses = async () => {
 		if (generatedId !== undefined) {
 			botResponses = [];
