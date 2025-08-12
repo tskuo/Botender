@@ -263,7 +263,7 @@ export async function overspecifiedPipeline(
 
 	const allCases = [];
 	for (const [index, result] of evaluatorSettledResults.entries()) {
-		if (result.status === 'fulfilled' && result.value.output_parsed) {
+		if (result.status === 'fulfilled' && result.value.output_parsed?.label) {
 			allCases.push({
 				...botResponseResults[index],
 				...result.value.output_parsed,

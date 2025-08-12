@@ -233,7 +233,7 @@ export async function consequencePipeline(
 
 	const allCases = [];
 	for (const [index, result] of evaluatorSettledResults.entries()) {
-		if (result.status === 'fulfilled' && result.value.output_parsed) {
+		if (result.status === 'fulfilled' && result.value.output_parsed?.label) {
 			// Combine the original test case data with the new evaluation result
 			allCases.push({
 				...botResponseResults[index],
