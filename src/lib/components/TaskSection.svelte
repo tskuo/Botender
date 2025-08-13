@@ -7,7 +7,6 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 
 	// import lucide icons
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
 
@@ -17,7 +16,7 @@
 		trigger = $bindable(''),
 		action = $bindable(''),
 		triggersOnly = false,
-		readonly = false
+		disableEdit = false
 	} = $props();
 
 	let initName = name;
@@ -36,7 +35,7 @@
 					class="max-w-lg"
 					id="{id}-name"
 					bind:value={name}
-					{readonly}
+					disabled={disableEdit}
 				/>
 			</div>
 			<DropdownMenu.Root>
@@ -52,7 +51,8 @@
 						<DropdownMenu.Label>More Actions</DropdownMenu.Label>
 						<DropdownMenu.Separator />
 						<DropdownMenu.Item
-							disabled={name === initName && trigger === initTrigger && action === initAction}
+							disabled={(name === initName && trigger === initTrigger && action === initAction) ||
+								disableEdit}
 							class="hover:cursor-pointer"
 							onclick={() => {
 								name = initName;
@@ -63,7 +63,7 @@
 							Reset Task
 						</DropdownMenu.Item>
 						<DropdownMenu.Item
-							disabled={name === '' && trigger === '' && action === ''}
+							disabled={(name === '' && trigger === '' && action === '') || disableEdit}
 							class="hover:cursor-pointer"
 							onclick={() => {
 								name = '';
@@ -83,7 +83,7 @@
 				placeholder="When should the bot take action?"
 				id="{id}-trigger"
 				bind:value={trigger}
-				{readonly}
+				disabled={disableEdit}
 			/>
 		</div>
 		{#if !triggersOnly}
@@ -93,7 +93,7 @@
 					placeholder="What action should the bot take?"
 					id="{id}-action"
 					bind:value={action}
-					{readonly}
+					disabled={disableEdit}
 				/>
 			</div>
 		{/if}

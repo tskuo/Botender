@@ -122,6 +122,7 @@
 	let testCaseRefs = $state<any[]>([]);
 	let runningTest = $state(false);
 	let generatingCase = $state(false);
+	let runningSavedTestCases = $state(false);
 	let savingEdit = $state(false);
 	let generatedCases = $state<any[]>(
 		data.edits.length > 0 && data.edits[0].generatedCaseCache
@@ -442,8 +443,10 @@
 	};
 
 	let runTestCases = async (tasks: Tasks | undefined) => {
+		runningSavedTestCases = true;
 		const promises = testCaseRefs.map((ref) => ref.runTestForCase(tasks));
 		await Promise.all(promises);
+		runningSavedTestCases = false;
 	};
 
 	let generateCases = async (tasks: Tasks | undefined) => {
@@ -944,13 +947,14 @@
 								bind:name={editedTasks[taskId].name}
 								bind:trigger={editedTasks[taskId].trigger}
 								bind:action={editedTasks[taskId].action}
+								disableEdit={runningTest || runningSavedTestCases || generatingCase || savingEdit}
 							/>
 						{/each}
 					</div>
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger class="my-2 w-full">
 							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
-								<WrenchIcon />view more or hide tasks
+								<EyeIcon />view or hide tasks
 							</Button>
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content class="w-full">
@@ -1720,13 +1724,13 @@
 						</div>
 						<div class="flex items-center gap-2">
 							<Badge variant="outline" class="border-my-green text-my-green"
-								>{runningTest || savingEdit ? '-' : thumbsUpMajorityCount} good</Badge
+								>{runningSavedTestCases || savingEdit ? '-' : thumbsUpMajorityCount} good</Badge
 							>
 							<Badge variant="outline" class="border-my-pink text-my-pink"
-								>{runningTest || savingEdit ? '-' : thumbsDownMajorityCount} bad</Badge
+								>{runningSavedTestCases || savingEdit ? '-' : thumbsDownMajorityCount} bad</Badge
 							>
 							<Badge variant="outline" class="border-muted-foreground text-muted-foreground"
-								>{runningTest || savingEdit ? '-' : tbdMajorityCount} tbd</Badge
+								>{runningSavedTestCases || savingEdit ? '-' : tbdMajorityCount} tbd</Badge
 							>
 						</div>
 					</div>
