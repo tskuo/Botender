@@ -138,6 +138,9 @@
 	let closeAlertOpen = $state(false);
 	let reopeningProposal = $state(false);
 	let reopenAlertOpen = $state(false);
+	let caseHistoryOpen = $state(false);
+	let caseHistory = $state<any[]>([]);
+	let loadingCaseHistory = $state(false);
 	let api = $state<CarouselAPI>();
 	let previousTestCaseCount = $state(data.testCases.length);
 	let editQuestionnaire = $state<string[]>([]);
@@ -172,6 +175,29 @@
 				previousTestCaseCount = testCases.length;
 			});
 		}
+	});
+
+	$effect(() => {
+		const fetchCaseHistory = async () => {
+			if (caseHistoryOpen) {
+				loadingCaseHistory = true;
+				try {
+					const res = await fetch(
+						`/api/guilds/${page.params.guildId}/proposals/${data.proposal.id}/caseHistory`
+					);
+					if (res.ok) {
+						const caseHistoryData = await res.json();
+						caseHistory = caseHistoryData.caseHistory;
+					}
+				} catch (e) {
+					console.error('Failed to load case history', e);
+					// Optionally, you could set an error state here to show in the UI
+				} finally {
+					loadingCaseHistory = false;
+				}
+			}
+		};
+		fetchCaseHistory();
 	});
 
 	let editScope = $state(
@@ -664,92 +690,157 @@
 				<h2 class="text-xl font-bold">Proposal: {data.proposal.title}</h2>
 			</div>
 			<div class="flex items-center gap-x-2">
-				{#if data.proposal.open || (!data.proposal.open && !data.proposal.deployed)}
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							{#snippet child({ props })}
-								<Button {...props} variant="ghost" class="hover:cursor-pointer">
-									<EllipsisVerticalIcon />
-								</Button>
-							{/snippet}
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content>
-							{#if data.proposal.open}
-								<DropdownMenu.Item
-									class="hover:cursor-pointer"
-									onclick={() => (closeAlertOpen = true)}
-								>
-									<span class="text-my-pink">Close Proposal</span>
-								</DropdownMenu.Item>
-							{:else if !data.proposal.open && !data.proposal.deployed}
-								<DropdownMenu.Item
-									class="hover:cursor-pointer"
-									onclick={() => (reopenAlertOpen = true)}
-								>
-									Reopen Proposal
-								</DropdownMenu.Item>
-							{/if}
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-					<AlertDialog.Root bind:open={closeAlertOpen}>
-						<AlertDialog.Content>
-							<AlertDialog.Header>
-								<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
-								<AlertDialog.Description class="text-foreground text-base">
-									This action will temporarily close the proposal. A notification will be sent to
-									the Discord thread to inform everyone that the proposal has been closed. You can
-									reopen it later if needed.
-								</AlertDialog.Description>
-							</AlertDialog.Header>
-							<AlertDialog.Footer>
-								<AlertDialog.Cancel disabled={closingProposal} class="hover:cursor-pointer">
-									Cancel
-								</AlertDialog.Cancel>
-								<AlertDialog.Action
-									class={`${buttonVariants({ variant: 'destructive' })} hover:cursor-pointer`}
-									onclick={async () => {
-										await closeProposal();
-									}}
-									disabled={closingProposal}
-								>
-									{#if closingProposal}
-										<LoaderCircleIcon class="size-4 animate-spin" />
+				<!-- {#if data.proposal.open || (!data.proposal.open && !data.proposal.deployed)} -->
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<Button {...props} variant="ghost" class="hover:cursor-pointer">
+								<EllipsisVerticalIcon />
+							</Button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content>
+						<DropdownMenu.Item class="hover:cursor-pointer" onclick={() => (caseHistoryOpen = true)}
+							>View Case History</DropdownMenu.Item
+						>
+						{#if data.proposal.open}
+							<DropdownMenu.Item
+								class="hover:cursor-pointer"
+								onclick={() => (closeAlertOpen = true)}
+							>
+								<span class="text-my-pink">Close Proposal</span>
+							</DropdownMenu.Item>
+						{:else if !data.proposal.open && !data.proposal.deployed}
+							<DropdownMenu.Item
+								class="hover:cursor-pointer"
+								onclick={() => (reopenAlertOpen = true)}
+							>
+								Reopen Proposal
+							</DropdownMenu.Item>
+						{/if}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+				<Dialog.Root bind:open={caseHistoryOpen}>
+					<Dialog.Content class="flex max-h-[80vh] flex-col">
+						<Dialog.Header>
+							<Dialog.Title><h3>Case History</h3></Dialog.Title>
+							<Dialog.Description class="text-foreground text-base">
+								A log of when test cases were added to or removed from this proposal.
+							</Dialog.Description>
+						</Dialog.Header>
+						<div class="min-h-0 flex-1 overflow-y-auto">
+							<Table.Root>
+								<Table.Header>
+									<Table.Row class="hover:bg-trasparent">
+										<Table.Head>Time</Table.Head>
+										<Table.Head>Case ID</Table.Head>
+										<Table.Head>Editor</Table.Head>
+										<Table.Head>Action</Table.Head>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									{#if loadingCaseHistory}
+										<Table.Row class="hover:bg-trasparent">
+											<Table.Cell colspan={4} class="text-center">
+												<div class="flex items-center justify-center p-4">
+													<LoaderCircleIcon class="mr-2 size-4 animate-spin" />
+													Loading history...
+												</div>
+											</Table.Cell>
+										</Table.Row>
+									{:else if caseHistory.length === 0}
+										<Table.Row class="hover:bg-trasparent">
+											<Table.Cell colspan={4} class="text-center">
+												No case history found.
+											</Table.Cell>
+										</Table.Row>
+									{:else}
+										{#each caseHistory as item (item.id)}
+											<Table.Row class="hover:bg-trasparent">
+												<Table.Cell>
+													{new Date(item.createAt).toLocaleString([], {
+														year: 'numeric',
+														month: 'numeric',
+														day: 'numeric',
+														hour: '2-digit',
+														minute: '2-digit',
+														hour12: false
+													})}
+												</Table.Cell>
+												<Table.Cell>{item.caseId}</Table.Cell>
+												<Table.Cell>{item.editor}</Table.Cell>
+												<Table.Cell
+													class={item.action === 'addCase' ? 'text-my-green' : 'text-my-pink'}
+												>
+													{item.action === 'addCase' ? 'add' : 'remove'}
+												</Table.Cell>
+											</Table.Row>
+										{/each}
 									{/if}
-									Close
-								</AlertDialog.Action>
-							</AlertDialog.Footer>
-						</AlertDialog.Content>
-					</AlertDialog.Root>
-					<AlertDialog.Root bind:open={reopenAlertOpen}>
-						<AlertDialog.Content>
-							<AlertDialog.Header>
-								<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
-								<AlertDialog.Description class="text-foreground text-base">
-									This action will reopen the proposal. A notification will be sent to the Discord
-									thread to inform everyone that the proposal has been reopened. You can close it
-									later if needed.
-								</AlertDialog.Description>
-							</AlertDialog.Header>
-							<AlertDialog.Footer>
-								<AlertDialog.Cancel disabled={reopeningProposal} class="hover:cursor-pointer">
-									Cancel
-								</AlertDialog.Cancel>
-								<AlertDialog.Action
-									class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}
-									onclick={async () => {
-										await reopenProposal();
-									}}
-									disabled={reopeningProposal}
-								>
-									{#if reopeningProposal}
-										<LoaderCircleIcon class="size-4 animate-spin" />
-									{/if}
-									Reopen
-								</AlertDialog.Action>
-							</AlertDialog.Footer>
-						</AlertDialog.Content>
-					</AlertDialog.Root>
-				{/if}
+								</Table.Body>
+							</Table.Root>
+						</div>
+					</Dialog.Content>
+				</Dialog.Root>
+				<AlertDialog.Root bind:open={closeAlertOpen}>
+					<AlertDialog.Content>
+						<AlertDialog.Header>
+							<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
+							<AlertDialog.Description class="text-foreground text-base">
+								This action will temporarily close the proposal. A notification will be sent to the
+								Discord thread to inform everyone that the proposal has been closed. You can reopen
+								it later if needed.
+							</AlertDialog.Description>
+						</AlertDialog.Header>
+						<AlertDialog.Footer>
+							<AlertDialog.Cancel disabled={closingProposal} class="hover:cursor-pointer">
+								Cancel
+							</AlertDialog.Cancel>
+							<AlertDialog.Action
+								class={`${buttonVariants({ variant: 'destructive' })} hover:cursor-pointer`}
+								onclick={async () => {
+									await closeProposal();
+								}}
+								disabled={closingProposal}
+							>
+								{#if closingProposal}
+									<LoaderCircleIcon class="size-4 animate-spin" />
+								{/if}
+								Close
+							</AlertDialog.Action>
+						</AlertDialog.Footer>
+					</AlertDialog.Content>
+				</AlertDialog.Root>
+				<AlertDialog.Root bind:open={reopenAlertOpen}>
+					<AlertDialog.Content>
+						<AlertDialog.Header>
+							<AlertDialog.Title><h3>Are you absolutely sure?</h3></AlertDialog.Title>
+							<AlertDialog.Description class="text-foreground text-base">
+								This action will reopen the proposal. A notification will be sent to the Discord
+								thread to inform everyone that the proposal has been reopened. You can close it
+								later if needed.
+							</AlertDialog.Description>
+						</AlertDialog.Header>
+						<AlertDialog.Footer>
+							<AlertDialog.Cancel disabled={reopeningProposal} class="hover:cursor-pointer">
+								Cancel
+							</AlertDialog.Cancel>
+							<AlertDialog.Action
+								class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}
+								onclick={async () => {
+									await reopenProposal();
+								}}
+								disabled={reopeningProposal}
+							>
+								{#if reopeningProposal}
+									<LoaderCircleIcon class="size-4 animate-spin" />
+								{/if}
+								Reopen
+							</AlertDialog.Action>
+						</AlertDialog.Footer>
+					</AlertDialog.Content>
+				</AlertDialog.Root>
+				<!-- {/if} -->
 				<Button
 					href={`https://discord.com/channels/${page.params.guildId}/${data.proposal.threadId}`}
 					target="_blank"

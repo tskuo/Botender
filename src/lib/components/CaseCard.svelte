@@ -46,7 +46,6 @@
 		originalTasks = {},
 		tasks = {},
 		testCaseBadge = false,
-		// checkingBadge = false,
 		user,
 		generatedId = undefined,
 		issue = '',
