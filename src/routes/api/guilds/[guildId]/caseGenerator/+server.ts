@@ -64,126 +64,124 @@ export const POST = async ({ request, params }) => {
 			.sort();
 		const input_specification = `The input should consist of a Discord channel name and a user message. The channel name must begin with a hash (#) followed by a valid channel identifier, chosen from the following available channels on the server: ${formatChannelList(channels)} The user message should be a single string that realistically represents something a user might post in that channel. It must not include explicit formatting instructions, metadata, or explanations of its purpose. The message should be plausible and use natural language typical of a real Discord community, and the input must not contain bot commands, markup syntax, or JSON structures.`;
 
-		// =============== Botender's Pipeline Starts Here ===============
-		const underspecifiedPromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) =>
-				underspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
-			)
-		);
+		const USE_BASELINE = false;
 
-		const overspecifiedPromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) =>
-				overspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
-			)
-		);
-
-		const consequencePromise = Promise.allSettled(
-			diffTasks.map((diffTask: Task) =>
-				consequencePipeline(diffTask, newTasks, community_tone, input_specification)
-			)
-		);
-
-		const [underspecifiedSettled, overspecifiedSettled, consequenceSettled] = await Promise.all([
-			underspecifiedPromise,
-			overspecifiedPromise,
-			consequencePromise
-		]);
-
-		const underspecifiedResults = underspecifiedSettled
-			.filter((result) => {
-				if (result.status === 'rejected')
-					console.error('Underspecified pipeline failed:', result.reason);
-				return result.status === 'fulfilled';
-			})
-			.map((result) => (result as PromiseFulfilledResult<any>).value);
-
-		const overspecifiedResults = overspecifiedSettled
-			.filter((result) => {
-				if (result.status === 'rejected')
-					console.error('Overspecified pipeline failed:', result.reason);
-				return result.status === 'fulfilled';
-			})
-			.map((result) => (result as PromiseFulfilledResult<any>).value);
-
-		const consequenceResults = consequenceSettled
-			.filter((result) => {
-				if (result.status === 'rejected')
-					console.error('Consequence pipeline failed:', result.reason);
-				return result.status === 'fulfilled';
-			})
-			.map((result) => (result as PromiseFulfilledResult<any>).value);
-
-		const underspecifiedCases = underspecifiedResults.flat();
-		const overspecifiedCases = overspecifiedResults.flat();
-		const consequenceCases = consequenceResults.flat();
-
-		const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
-		const allRawCasesWithId = allRawCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
-
-		// Option 1: Use General Evaluator for Rating
-		// const allCases = await generalEvaluator(newTasks, allRawCasesWithId);
-		// return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
-
-		// Option 2: Use General Selector for Selection
-		const selectionResult = await generalSelector(newTasks, allRawCasesWithId);
-		const reasonsMap = new Map(selectionResult.map((item) => [item.caseId, item.selection_reason]));
-		const selectedCases = allRawCasesWithId
-			.filter((c) => reasonsMap.has(c.tmpId))
-			.map((c) => ({
-				...c,
-				selection_reason: reasonsMap.get(c.tmpId)
-			}));
-
-		// Generated Case Cache for Stable Edits
-		if (editId) {
-			const generatedCaseCache = selectedCases.map((c) => ({
-				channel: c.channel,
-				userMessage: c.userMessage,
-				tmpId: c.tmpId,
-				// tmpTasks: newTasks, // dont' need this because tmpTask is the edit's tasks
-				triggeredTask: c.triggeredTask,
-				botResponse: c.botResponse,
-				issue: c.issue
-			}));
-			const editDocRef = doc(
-				db,
-				'guilds',
-				params.guildId,
-				'proposals',
-				proposalId,
-				'edits',
-				editId
+		if (!USE_BASELINE) {
+			console.log('Using botender ...');
+			const underspecifiedPromise = Promise.allSettled(
+				diffTasks.map((diffTask: Task) =>
+					underspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
+				)
 			);
-			await updateDoc(editDocRef, {
-				generatedCaseCache: generatedCaseCache // Use the new, trimmed array
-			});
+
+			const overspecifiedPromise = Promise.allSettled(
+				diffTasks.map((diffTask: Task) =>
+					overspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
+				)
+			);
+
+			const consequencePromise = Promise.allSettled(
+				diffTasks.map((diffTask: Task) =>
+					consequencePipeline(diffTask, newTasks, community_tone, input_specification)
+				)
+			);
+
+			const [underspecifiedSettled, overspecifiedSettled, consequenceSettled] = await Promise.all([
+				underspecifiedPromise,
+				overspecifiedPromise,
+				consequencePromise
+			]);
+
+			const underspecifiedResults = underspecifiedSettled
+				.filter((result) => {
+					if (result.status === 'rejected')
+						console.error('Underspecified pipeline failed:', result.reason);
+					return result.status === 'fulfilled';
+				})
+				.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+			const overspecifiedResults = overspecifiedSettled
+				.filter((result) => {
+					if (result.status === 'rejected')
+						console.error('Overspecified pipeline failed:', result.reason);
+					return result.status === 'fulfilled';
+				})
+				.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+			const consequenceResults = consequenceSettled
+				.filter((result) => {
+					if (result.status === 'rejected')
+						console.error('Consequence pipeline failed:', result.reason);
+					return result.status === 'fulfilled';
+				})
+				.map((result) => (result as PromiseFulfilledResult<any>).value);
+
+			const underspecifiedCases = underspecifiedResults.flat();
+			const overspecifiedCases = overspecifiedResults.flat();
+			const consequenceCases = consequenceResults.flat();
+
+			const allRawCases = [...underspecifiedCases, ...overspecifiedCases, ...consequenceCases];
+			const allRawCasesWithId = allRawCases.map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
+
+			// Option 1: Use General Evaluator for Rating
+			// const allCases = await generalEvaluator(newTasks, allRawCasesWithId);
+			// return json({ cases: _.orderBy(allCases, ['rating'], ['desc']) }, { status: 201 });
+
+			// Option 2: Use General Selector for Selection
+			const selectionResult = await generalSelector(newTasks, allRawCasesWithId);
+			const reasonsMap = new Map(
+				selectionResult.map((item) => [item.caseId, item.selection_reason])
+			);
+			const selectedCases = allRawCasesWithId
+				.filter((c) => reasonsMap.has(c.tmpId))
+				.map((c) => ({
+					...c,
+					selection_reason: reasonsMap.get(c.tmpId)
+				}));
+
+			// Generated Case Cache for Stable Edits
+			if (editId) {
+				const generatedCaseCache = selectedCases.map((c) => ({
+					channel: c.channel,
+					userMessage: c.userMessage,
+					tmpId: c.tmpId,
+					// tmpTasks: newTasks, // dont' need this because tmpTask is the edit's tasks
+					triggeredTask: c.triggeredTask,
+					botResponse: c.botResponse,
+					issue: c.issue
+				}));
+				const editDocRef = doc(
+					db,
+					'guilds',
+					params.guildId,
+					'proposals',
+					proposalId,
+					'edits',
+					editId
+				);
+				await updateDoc(editDocRef, {
+					generatedCaseCache: generatedCaseCache // Use the new, trimmed array
+				});
+			}
+			return json({ cases: selectedCases }, { status: 201 });
+		} else {
+			console.log('Using baseline ...');
+			const baselinePromise = Promise.allSettled(
+				diffTasks.map((diffTask: Task) =>
+					baselinePipeline(diffTask, newTasks, community_tone, input_specification)
+				)
+			);
+			const baselineSettled = await baselinePromise;
+			const baselineResults = baselineSettled
+				.filter((result) => {
+					if (result.status === 'rejected')
+						console.error('Baseline pipeline failed:', result.reason);
+					return result.status === 'fulfilled';
+				})
+				.map((result) => (result as PromiseFulfilledResult<any>).value);
+			const allCases = baselineResults.flat().map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
+			return json({ cases: allCases }, { status: 201 });
 		}
-
-		return json({ cases: selectedCases }, { status: 201 });
-
-		// =============== Botender's Pipeline Ends Here ===============
-
-		// =============== Baseline Pipeline Starts Here ===============
-		// const baselinePromise = Promise.allSettled(
-		// 	diffTasks.map((diffTask: Task) =>
-		// 		baselinePipeline(diffTask, newTasks, community_tone, input_specification)
-		// 	)
-		// );
-		// const baselineSettled = await baselinePromise;
-
-		// const baselineResults = baselineSettled
-		// 	.filter((result) => {
-		// 		if (result.status === 'rejected') console.error('Baseline pipeline failed:', result.reason);
-		// 		return result.status === 'fulfilled';
-		// 	})
-		// 	.map((result) => (result as PromiseFulfilledResult<any>).value);
-
-		// const allCases = baselineResults.flat().map((c) => ({ ...c, tmpId: crypto.randomUUID() }));
-
-		// return json({ cases: allCases }, { status: 201 });
-		// =============== Baseline Pipeline Ends Here ===============
-
-		// Save generated cases to the database as cache if editId !== '', meaning its a stable, latest edit
 	} catch {
 		throw error(400, 'Fail to generate cases');
 	}
