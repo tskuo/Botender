@@ -1,5 +1,14 @@
 import { json, error } from '@sveltejs/kit';
-import { doc, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import {
+	doc,
+	getDoc,
+	updateDoc,
+	arrayRemove,
+	arrayUnion,
+	addDoc,
+	collection,
+	serverTimestamp
+} from 'firebase/firestore';
 import { db } from '$lib/firebase';
 import {
 	sendDeployNotificationToThread,
@@ -31,10 +40,30 @@ export const PATCH = async ({ params, request, locals }) => {
 			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
 				testCases: arrayRemove(caseId)
 			});
+			await addDoc(
+				collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
+				{
+					action: action,
+					caseId: caseId,
+					createAt: serverTimestamp(),
+					editor: locals.user.userName,
+					editorId: locals.user.userId
+				}
+			);
 		} else if (action === 'addCase') {
 			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
 				testCases: arrayUnion(caseId)
 			});
+			await addDoc(
+				collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
+				{
+					action: action,
+					caseId: caseId,
+					createAt: serverTimestamp(),
+					editor: locals.user.userName,
+					editorId: locals.user.userId
+				}
+			);
 		} else if (action === 'voteProposal') {
 			const userId = locals.user.userId;
 			if (vote === 'upvote') {
