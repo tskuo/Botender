@@ -20,7 +20,7 @@
 
 	// import svelte-related things
 	import type { PageProps } from './$types';
-	import { page } from '$app/state';
+	import { page, navigating } from '$app/state';
 	import { goto } from '$app/navigation';
 
 	// import form-related things
@@ -47,13 +47,21 @@
 </script>
 
 {#snippet proposalRow(proposal, showStatus = false)}
+	{@const targetUrl = `/guilds/${page.params.guildId}/proposals/${proposal.id}`}
 	<Table.Row
 		class="h-14 hover:cursor-pointer"
 		onclick={() => {
-			goto(`/guilds/${page.params.guildId}/proposals/${proposal.id}`);
+			goto(targetUrl);
 		}}
 	>
-		<Table.Cell class="font-medium">{proposal.title}</Table.Cell>
+		<Table.Cell>
+			<div class="flex items-center">
+				{#if navigating.to?.url.pathname === targetUrl}
+					<LoaderCircleIcon class="mr-2 size-4 animate-spin" />
+				{/if}
+				{proposal.title}
+			</div>
+		</Table.Cell>
 		<Table.Cell>{proposal.initiator}</Table.Cell>
 		<Table.Cell>
 			{proposal.edits.length > 0 ? proposal.edits[0].editor : 'No one has edited this yet'}

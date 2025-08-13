@@ -11,10 +11,11 @@
 	import FoldersIcon from '@lucide/svelte/icons/folders';
 	import WebhookIcon from '@lucide/svelte/icons/webhook';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 
 	import { signOut } from '@auth/sveltekit/client';
 
-	import { page } from '$app/state';
+	import { page, navigating } from '$app/state';
 
 	let { data } = $props();
 
@@ -69,7 +70,11 @@
 							<Sidebar.MenuButton>
 								{#snippet child({ props })}
 									<a href={item.url} {...props}>
-										<item.icon />
+										{#if navigating.to?.url.pathname === item.url}
+											<LoaderCircleIcon class="size-4 animate-spin" />
+										{:else}
+											<item.icon />
+										{/if}
 										<span class="font-medium">{item.title}</span>
 									</a>
 								{/snippet}
