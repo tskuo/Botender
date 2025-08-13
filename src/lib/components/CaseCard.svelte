@@ -81,6 +81,17 @@
 			return activeBotResponse.thumbsUp.length === activeBotResponse.thumbsDown.length;
 		}
 	});
+	let contentiousBadge = $derived.by(() => {
+		if (activeBotResponse === undefined) {
+			return false;
+		} else {
+			return (
+				activeBotResponse.thumbsUp.length === activeBotResponse.thumbsDown.length &&
+				activeBotResponse.thumbsUp.length > 0 &&
+				activeBotResponse.thumbsDown.length > 0
+			);
+		}
+	});
 
 	// for debugging
 	$effect(() => {
@@ -513,9 +524,19 @@
 					<Badge>test case</Badge>
 				{/if}
 				{#if checkingBadge}
-					<Badge class="bg-discord-yellow text-black">worth checking</Badge>
+					<Badge class="bg-discord-yellow text-foreground">worth checking</Badge>
 				{/if}
 			</Dialog.Title>
+			{#if contentiousBadge}
+				<Alert.Root class="mb-1">
+					<InfoIcon />
+					<Alert.Title><h4>Contentious Case</h4></Alert.Title>
+					<Alert.Description>
+						There's no consensus on whether the bot's response is good or bad. Consider discussing
+						it with others in the Discord thread.
+					</Alert.Description>
+				</Alert.Root>
+			{/if}
 			<Dialog.Description class="text-left">
 				<div class="text-foreground w-full text-base">
 					<div class="mb-2 flex items-center">
@@ -614,7 +635,6 @@
 				</div>
 			</Dialog.Description>
 		</Dialog.Header>
-		<!-- <Separator class="my-3" /> -->
 		<div class="flex-1">
 			{#if page.url.pathname.includes('/proposals/') && generatedId === undefined}
 				<div class="text-muted-foreground min-h-0 text-sm">
