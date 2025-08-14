@@ -139,6 +139,10 @@ export const POST = async ({ request, params }) => {
 					selection_reason: reasonsMap.get(c.tmpId)
 				}));
 
+			// const remainingCases = allRawCasesWithId.filter((c) => !reasonsMap.has(c.tmpId));
+			// console.log(`========== Remaining Cases (${remainingCases.length}) ==========`);
+			// console.log(remainingCases);
+
 			// Generated Case Cache for Stable Edits
 			if (editId) {
 				const generatedCaseCache = selectedCases.map((c) => ({

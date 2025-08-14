@@ -16,14 +16,14 @@ export async function baselinePipeline(
 
 	// One-Step Generator Module
 	const generatorSysPrompt = [
-		`You are a helpful assistant tasked with identifying potential issues in prompts written for language model-based bots deployed within an online community. This prompt defines:`,
+		`You are a helpful assistant tasked with generating test cases for prompts written for language model-based bots deployed within an online community. This prompt defines:`,
 		`\t- A trigger: when the bot should take action.`,
 		`\t- An action: what the bot should do when triggered.`,
 		bot_capability,
 		`You will be provided with:`,
 		`\t- prompt: the full prompt for the bot, including both the trigger and action components.`,
 		`Your Task:`,
-		`Generate ${SELECT_CASE_NUMBER} realistic test cases that could support people in reflecting on the wording of the prompt. A test case is an input to the bot that adheres to the following input specification:`,
+		`Generate ${SELECT_CASE_NUMBER} test cases across diverse scenarios for this prompt. A test case is an input to the bot that adheres to the following input specification:`,
 		input_specification,
 		`Additionally, the test cases should be realistic and natural, mirroring the typical messages found in the following community and reflecting its unique tone:`,
 		community_tone,
