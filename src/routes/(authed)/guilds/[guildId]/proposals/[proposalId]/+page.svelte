@@ -658,20 +658,24 @@
 
 	const editQuestionnaireItems = [
 		{
-			id: 'case_self',
-			label: 'address specific cases I entered myself'
-		},
-		{
 			id: 'case_test',
-			label: `address specific test cases I saw, but didn't create myself`
+			label: 'specific saved test cases I saw'
 		},
 		{
-			id: 'issue_self',
-			label: 'address general issues I thought of myself'
+			id: 'case_generated',
+			label: `specific generated test cases I saw`
+		},
+		{
+			id: 'case_self',
+			label: `specific cases I entered myself manually`
 		},
 		{
 			id: 'issue_others',
-			label: 'address general issues that someone else raised'
+			label: 'general issues that someone else raised'
+		},
+		{
+			id: 'issue_self',
+			label: 'general issues I thought of myself'
 		},
 		{
 			id: 'other',
@@ -1560,7 +1564,11 @@
 										<div class="mt-6 flex flex-col gap-2">
 											<div class="mb-1">
 												<h4>Questionnaire: What motivated you to make this edit?</h4>
-												<p>I am making this edit to...</p>
+												<p>
+													I am making this edit to address... <span class="text-muted-foreground"
+														>(select all that apply)</span
+													>
+												</p>
 											</div>
 											{#each editQuestionnaireItems as item (item.id)}
 												<div class="flex items-center gap-3">
