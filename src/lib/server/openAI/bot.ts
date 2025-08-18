@@ -56,6 +56,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 				{ role: 'system', content: agentSysPrompt },
 				{ role: 'user', content: agentUserPrompt }
 			],
+			tools: [{ type: 'web_search_preview' }],
 			text: {
 				format: zodTextFormat(z.object({ response: z.string() }), 'agentResult')
 			}

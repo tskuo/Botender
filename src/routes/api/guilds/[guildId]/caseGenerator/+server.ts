@@ -67,7 +67,7 @@ export const POST = async ({ request, params }) => {
 		const USE_BASELINE = false;
 
 		if (!USE_BASELINE) {
-			console.log('Using botender ...');
+			// console.log('Using botender ...');
 			const underspecifiedPromise = Promise.allSettled(
 				diffTasks.map((diffTask: Task) =>
 					underspecifiedPipeline(diffTask, newTasks, community_tone, input_specification)
@@ -169,7 +169,7 @@ export const POST = async ({ request, params }) => {
 			}
 			return json({ cases: selectedCases }, { status: 201 });
 		} else {
-			console.log('Using baseline ...');
+			// console.log('Using baseline ...');
 			const baselinePromise = Promise.allSettled(
 				diffTasks.map((diffTask: Task) =>
 					baselinePipeline(diffTask, newTasks, community_tone, input_specification)
