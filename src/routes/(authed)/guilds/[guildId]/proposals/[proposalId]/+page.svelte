@@ -499,7 +499,7 @@
 		if (resCaseGenerator.ok) {
 			const caseGeneratorData = await resCaseGenerator.json();
 			generatedCases = caseGeneratorData.cases;
-			console.log($state.snapshot(generatedCases));
+			// console.log($state.snapshot(generatedCases));
 			await tick();
 			generatedCaseRefs = generatedCaseRefs.slice(0, $state.snapshot(generatedCases.length));
 			generatedCaseRefs.forEach((ref, i) => {
