@@ -20,11 +20,11 @@
 	let { data } = $props();
 
 	const items = [
-		{
-			title: 'Dashboard',
-			url: `/guilds/${page.params.guildId}`,
-			icon: LayoutDashboardIcon
-		},
+		// {
+		// 	title: 'Dashboard',
+		// 	url: `/guilds/${page.params.guildId}`,
+		// 	icon: LayoutDashboardIcon
+		// },
 		{
 			title: 'Tasks',
 			url: `/guilds/${page.params.guildId}/tasks`,

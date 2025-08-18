@@ -20,11 +20,7 @@
 	{:else if data.user?.guilds && data.user.guilds.length > 0}
 		<div class="grid gap-4">
 			{#each data.user.guilds as guild}
-				<Button
-					href="/guilds/{guild.id}/playground"
-					variant="outline"
-					class="h-auto justify-start p-6"
-				>
+				<Button href="/guilds/{guild.id}/tasks" variant="outline" class="h-auto justify-start p-6">
 					<div>
 						<h3 class="font-semibold">{guild.name}</h3>
 						<p class="text-sm text-gray-600">Click to manage this server's bot</p>
