@@ -190,11 +190,10 @@ export const PATCH = async ({ params, request, locals }) => {
 				deployed: true
 			});
 
-			const proposalData = proposalSnap.data();
-			if (proposalData.threadId) {
+			if (proposalSnap.data().threadId) {
 				await sendDeployNotificationToThread(
 					params.guildId,
-					proposalData.threadId,
+					proposalSnap.data().threadId,
 					locals.user.userId,
 					params.proposalId,
 					editSnap.data().upvotes

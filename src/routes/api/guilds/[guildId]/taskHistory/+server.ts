@@ -6,7 +6,9 @@ import {
 	orderBy,
 	limit,
 	addDoc,
-	serverTimestamp
+	serverTimestamp,
+	doc,
+	getDoc
 } from 'firebase/firestore';
 import { db } from '$lib/firebase';
 import { sendTaskUpdateNotification } from '$lib/server/discord/api';
@@ -58,6 +60,16 @@ export const POST = async ({ request, params, locals }) => {
 		const changedTasks: Tasks = { ...formTaskHistory.data.changedTasks };
 		const proposalId: string = formTaskHistory.data.proposalId;
 		const messageId: string = formTaskHistory.data.messageId;
+
+		// Check if the proposal is already closed or deployed
+		const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', proposalId);
+		const proposalSnap = await getDoc(proposalRef);
+		if (!proposalSnap.exists()) {
+			throw error(404, 'Proposal not found.');
+		}
+		if (!proposalSnap.data().open || proposalSnap.data().deployed) {
+			throw error(400, 'The proposal is already closed or deployed.');
+		}
 
 		// Check if a new task is proposed
 		if ('new' in changedTasks) {

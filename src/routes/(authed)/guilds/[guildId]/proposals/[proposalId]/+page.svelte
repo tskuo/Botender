@@ -636,7 +636,6 @@
 						messageId: data.proposal.messageId
 					}
 				}
-				// caseOnly: true
 			}),
 			headers: {
 				'Content-Type': 'appplication/json'
@@ -654,6 +653,9 @@
 				}
 			});
 			goto(`/guilds/${page.params.guildId}/tasks`);
+		} else {
+			await invalidateAll();
+			reloadProposalState();
 		}
 		deployingProposal = false;
 	};
