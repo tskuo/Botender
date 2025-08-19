@@ -122,18 +122,22 @@ export const PATCH = async ({ params, request, locals }) => {
 			if (!proposalSnap.exists()) {
 				throw error(404, 'Proposal not found.');
 			}
-			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
-				open: false
-			});
 
-			const proposalData = proposalSnap.data();
-			if (proposalData.threadId) {
-				await sendCloseNotificationToThread(
-					params.guildId,
-					proposalData.threadId,
-					locals.user.userId,
-					params.proposalId
-				);
+			// check for potential conflict where another person has already closed the proposal
+			if (proposalSnap.data().open) {
+				await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+					open: false
+				});
+
+				const proposalData = proposalSnap.data();
+				if (proposalData.threadId) {
+					await sendCloseNotificationToThread(
+						params.guildId,
+						proposalData.threadId,
+						locals.user.userId,
+						params.proposalId
+					);
+				}
 			}
 		} else if (action === 'reopenProposal') {
 			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
@@ -142,18 +146,22 @@ export const PATCH = async ({ params, request, locals }) => {
 			if (!proposalSnap.exists()) {
 				throw error(404, 'Proposal not found.');
 			}
-			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
-				open: true
-			});
 
-			const proposalData = proposalSnap.data();
-			if (proposalData.threadId) {
-				await sendReopenNotificationToThread(
-					params.guildId,
-					proposalData.threadId,
-					locals.user.userId,
-					params.proposalId
-				);
+			// check for potential conflict where another person has already opened the proposal
+			if (!proposalSnap.data().open) {
+				await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+					open: true
+				});
+
+				const proposalData = proposalSnap.data();
+				if (proposalData.threadId) {
+					await sendReopenNotificationToThread(
+						params.guildId,
+						proposalData.threadId,
+						locals.user.userId,
+						params.proposalId
+					);
+				}
 			}
 		} else if (action === 'deployProposal') {
 			const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
