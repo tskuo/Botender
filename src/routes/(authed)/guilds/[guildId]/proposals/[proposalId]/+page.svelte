@@ -567,9 +567,11 @@
 				ref.saveTmpBotResponse(data.proposal.id, resEditData.id)
 			);
 			await Promise.all(promises);
-			await invalidateAll();
-			reloadProposalState();
+		} else {
+			testCaseRefs.forEach((ref) => ref.resetTestForCase());
 		}
+		await invalidateAll();
+		reloadProposalState();
 		generatedCases = [];
 		editMode = false;
 		savingEdit = false;

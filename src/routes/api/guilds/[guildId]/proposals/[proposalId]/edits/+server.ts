@@ -48,36 +48,41 @@ export const POST = async ({ request, params, locals }) => {
 	}
 	try {
 		const { tasks, editQuestionnaire = [] } = await request.json();
-		const docRef = await addDoc(
-			collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'edits'),
-			{
-				createAt: serverTimestamp(),
-				downvotes: [],
-				editor: locals.user.userName,
-				editorId: locals.user.userId,
-				tasks: tasks,
-				upvotes: [],
-				editQuestionnaire: editQuestionnaire
-			}
-		);
 
 		const proposalRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
 		const proposalSnap = await getDoc(proposalRef);
 
-		if (proposalSnap.exists()) {
-			const proposalData = proposalSnap.data();
-			// 2. If a threadId exists, call the notification function
-			if (proposalData.threadId) {
+		if (!proposalSnap.exists()) {
+			throw error(404, 'Proposal not found.');
+		}
+
+		if (proposalSnap.data().open) {
+			const docRef = await addDoc(
+				collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'edits'),
+				{
+					createAt: serverTimestamp(),
+					downvotes: [],
+					editor: locals.user.userName,
+					editorId: locals.user.userId,
+					tasks: tasks,
+					upvotes: [],
+					editQuestionnaire: editQuestionnaire
+				}
+			);
+
+			if (proposalSnap.data().threadId) {
 				await sendEditNotificationToThread(
 					params.guildId,
-					proposalData.threadId,
+					proposalSnap.data().threadId,
 					locals.user.userId,
 					params.proposalId
 				);
 			}
-		}
 
-		return json({ id: docRef.id }, { status: 201 });
+			return json({ id: docRef.id }, { status: 201 });
+		} else {
+			throw error(400, 'The proposal is already closed.');
+		}
 	} catch {
 		throw error(400, 'Fail to save a new edit in the database.');
 	}
