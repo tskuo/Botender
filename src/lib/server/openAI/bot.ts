@@ -56,10 +56,11 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 				{ role: 'system', content: agentSysPrompt },
 				{ role: 'user', content: agentUserPrompt }
 			],
-			tools: [{ type: 'web_search_preview' }],
+			// tools: [{ type: 'web_search_preview', search_context_size: 'low' }],
 			text: {
 				format: zodTextFormat(z.object({ response: z.string() }), 'agentResult')
 			}
+			// max_output_tokens: 450
 		});
 
 		// console.log(`========== agentSysPrompt ==========`);
@@ -69,6 +70,7 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		// console.log(agentUserPrompt);
 
 		const agentResult = agentResponse.output_parsed?.response;
+		// console.log(agentResult);
 
 		if (!agentResult || agentResult === null || agentResult === 'n/a' || agentResult === `"n/a"`) {
 			botResponse = '';
@@ -77,6 +79,10 @@ export async function bot(channel: string, userMessage: string, tasks: Tasks) {
 		}
 	} else {
 		triggeredTaskId = '0';
+	}
+
+	if (botResponse.length > 2000) {
+		botResponse = botResponse.substring(0, 1997) + '...'; // Discord limits 2000 charactors
 	}
 
 	return { taskId: triggeredTaskId, botResponse: botResponse };
