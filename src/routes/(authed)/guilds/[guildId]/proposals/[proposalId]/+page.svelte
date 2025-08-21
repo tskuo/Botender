@@ -733,7 +733,9 @@
 						<Dialog.Header>
 							<Dialog.Title><h3>Case History</h3></Dialog.Title>
 							<Dialog.Description class="text-foreground text-base">
-								A log of when test cases were added to or removed from this proposal.
+								A log of when test cases were added to or removed from this proposal. To add a
+								removed case back to your saved test cases, copy its case ID and enter it in the
+								"enter other cases manually" panel.
 							</Dialog.Description>
 						</Dialog.Header>
 						<div class="min-h-0 flex-1 overflow-y-auto">
@@ -1053,15 +1055,15 @@
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger class="my-2 w-full">
 							<Button variant="secondary" size="sm" class="w-full hover:cursor-pointer">
-								<EyeIcon />view or hide tasks
+								<EyeIcon />select a task to view or hide
 							</Button>
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content class="w-full">
 							<DropdownMenu.Group class="w-full">
-								<DropdownMenu.Label class="w-full">
+								<!-- <DropdownMenu.Label class="w-full">
 									Select a task to view or hide
 								</DropdownMenu.Label>
-								<DropdownMenu.Separator />
+								<DropdownMenu.Separator /> -->
 								{#each [...Object.keys(data.originalTasks.tasks).sort(), 'new'] as taskId (taskId)}
 									{#if taskId === 'new' ? true : !isTaskEmpty(data.originalTasks.tasks[taskId])}
 										<DropdownMenu.Item
@@ -2019,7 +2021,9 @@
 								{#if showAddCaseSuccess}
 									<Alert.Root class="text-primary border-primary mt-2">
 										<FolderCheckIcon class="size-4" />
-										<Alert.Title>Success! The case has been added to the test suite.</Alert.Title>
+										<Alert.Title
+											><h4>Success! The case has been added to the test suite.</h4></Alert.Title
+										>
 										<Alert.Description class="text-primary">
 											Click clear to check another case or close the sheet.
 										</Alert.Description>
@@ -2363,7 +2367,7 @@
 									<!-- Add to Test Suite Button -->
 									<Button
 										class="hover:cursor-pointer"
-										variant="secondary"
+										variant="default"
 										disabled={!showCase || checkingCaseManually || showAddCaseSuccess || addingCase}
 										onclick={async () => {
 											addingCase = true;
