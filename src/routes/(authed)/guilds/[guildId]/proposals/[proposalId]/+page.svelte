@@ -1486,7 +1486,7 @@
 							<!-- Save Button -->
 							<AlertDialog.Root>
 								<AlertDialog.Trigger
-									class={`${buttonVariants({ variant: 'secondary' })} hover:cursor-pointer`}
+									class={`${buttonVariants({ variant: 'default' })} hover:cursor-pointer`}
 									disabled={(data.edits.length > 0
 										? _.isEqualWith(editedTasks, data.edits[0].tasks, trimTaskCustomizer)
 										: _.isEqualWith(editedTasks, data.originalTasks.tasks, trimTaskCustomizer)) ||
