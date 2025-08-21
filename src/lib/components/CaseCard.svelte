@@ -93,13 +93,13 @@
 	});
 
 	// for debugging
-	$effect(() => {
-		if (tmpTasks && 'new' in tmpTasks && isTaskEmpty(tmpTasks['new'])) {
-			console.log('tmpTasks has an empty new task:', id, tmpTasks);
-		}
-	});
+	// $effect(() => {
+	// 	if (tmpTasks && 'new' in tmpTasks && isTaskEmpty(tmpTasks['new'])) {
+	// 		console.log('tmpTasks has an empty new task:', id, tmpTasks);
+	// 	}
+	// });
 
-	const textLengthCap = 100;
+	const textLengthCap = 80;
 
 	export async function runTestForCase(editedTasks: Tasks) {
 		loadingBotResponse = true;

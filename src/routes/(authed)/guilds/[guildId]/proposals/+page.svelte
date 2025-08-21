@@ -203,7 +203,7 @@
 						<Table.Row class="hover:bg-trasparent">
 							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
-							<Table.Head><h4>Initiate Time</h4></Table.Head>
+							<Table.Head><h4>Initiated</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
@@ -225,7 +225,7 @@
 						<Table.Row class="hover:bg-trasparent">
 							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
-							<Table.Head><h4>Initiate Time</h4></Table.Head>
+							<Table.Head><h4>Initiated</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
