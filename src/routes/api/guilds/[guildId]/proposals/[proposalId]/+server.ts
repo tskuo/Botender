@@ -37,33 +37,41 @@ export const PATCH = async ({ params, request, locals }) => {
 	try {
 		const { action = '', caseId, vote, proposalEditId } = await request.json();
 		if (action === 'removeCase') {
-			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
-				testCases: arrayRemove(caseId)
-			});
-			await addDoc(
-				collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
-				{
-					action: action,
-					caseId: caseId,
-					createAt: serverTimestamp(),
-					editor: locals.user.userName,
-					editorId: locals.user.userId
-				}
-			);
+			const proposalDocRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+			const proposalDocSnap = await getDoc(proposalDocRef);
+			if (proposalDocSnap.exists() && proposalDocSnap.data().testCases.includes(caseId)) {
+				await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+					testCases: arrayRemove(caseId)
+				});
+				await addDoc(
+					collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
+					{
+						action: action,
+						caseId: caseId,
+						createAt: serverTimestamp(),
+						editor: locals.user.userName,
+						editorId: locals.user.userId
+					}
+				);
+			}
 		} else if (action === 'addCase') {
-			await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
-				testCases: arrayUnion(caseId)
-			});
-			await addDoc(
-				collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
-				{
-					action: action,
-					caseId: caseId,
-					createAt: serverTimestamp(),
-					editor: locals.user.userName,
-					editorId: locals.user.userId
-				}
-			);
+			const proposalDocRef = doc(db, 'guilds', params.guildId, 'proposals', params.proposalId);
+			const proposalDocSnap = await getDoc(proposalDocRef);
+			if (proposalDocSnap.exists() && !proposalDocSnap.data().testCases.includes(caseId)) {
+				await updateDoc(doc(db, 'guilds', params.guildId, 'proposals', params.proposalId), {
+					testCases: arrayUnion(caseId)
+				});
+				await addDoc(
+					collection(db, 'guilds', params.guildId, 'proposals', params.proposalId, 'caseHistory'),
+					{
+						action: action,
+						caseId: caseId,
+						createAt: serverTimestamp(),
+						editor: locals.user.userName,
+						editorId: locals.user.userId
+					}
+				);
+			}
 		} else if (action === 'voteProposal') {
 			const userId = locals.user.userId;
 			if (vote === 'upvote') {
