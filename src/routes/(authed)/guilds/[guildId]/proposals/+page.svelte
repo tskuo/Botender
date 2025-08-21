@@ -64,6 +64,16 @@
 		</Table.Cell>
 		<Table.Cell>{proposal.initiator}</Table.Cell>
 		<Table.Cell>
+			{new Date(proposal.createAt).toLocaleString([], {
+				year: 'numeric',
+				month: 'numeric',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false
+			})}
+		</Table.Cell>
+		<Table.Cell>
 			{proposal.edits.length > 0 ? proposal.edits[0].editor : 'No one has edited this yet'}
 		</Table.Cell>
 		<Table.Cell>{proposal.testCases.length}</Table.Cell>
@@ -193,6 +203,7 @@
 						<Table.Row class="hover:bg-trasparent">
 							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
+							<Table.Head><h4>Initiate Time</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
@@ -214,6 +225,7 @@
 						<Table.Row class="hover:bg-trasparent">
 							<Table.Head><h4>Title</h4></Table.Head>
 							<Table.Head><h4>Initiator</h4></Table.Head>
+							<Table.Head><h4>Initiate Time</h4></Table.Head>
 							<Table.Head><h4>Last Edited By</h4></Table.Head>
 							<Table.Head><h4>Test Cases</h4></Table.Head>
 							<Table.Head><h4>Voting</h4></Table.Head>
